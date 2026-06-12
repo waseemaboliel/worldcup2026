@@ -192,12 +192,9 @@ git push
 - **Assists:** Type 1 timeline events — `IdPlayer` counted independently per player, top 20 ranked
 - **Clean Sheets (GK):** Type 57 (Goal Prevention) — `IdPlayer` is always the GK. Clean sheet = GK's team conceded 0 (cross-referenced with final score). GK name extracted from substitution events where available, falls back to `(GK)` if never subbed
 
-### Phase 6c — Team Stats: Goals, Conceded, Clean Sheets, Cards
-- All computed from match scores + timelines — no new API calls needed
-- **Goals per game:** sum of goals scored ÷ number of matches played
-- **Conceded per game:** sum of goals conceded ÷ number of matches played
-- **Clean Sheets:** count of finished matches where team conceded 0
-- **Yellow Cards:** count Type 2 events per team across all timelines
-- **Red Cards:** count Type 3 events per team across all timelines
-- Display as a ranked table sorted by the selected stat
-- Possession is excluded — FIFA API does not provide this data
+### Phase 6c — Team Stats ✅ (2026-06-12)
+- 5 sub-tabs: ⚽ Goals/Game, 🥅 Conceded/Game, 🧤 Clean Sheets, 🟨 Yellow Cards, 🟥 Red Cards
+- Goals/Game, Conceded/Game, Clean Sheets computed from match scores — no extra fetches
+- Yellow/Red Cards computed from timelines — reuses `timelineCache`
+- Each leaderboard ranked top 20, shows games played as subtitle
+- Possession excluded — FIFA API does not provide this data

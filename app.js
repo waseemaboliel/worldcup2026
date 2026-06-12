@@ -516,11 +516,145 @@ function renderPlayerStats(matches, container) {
 }
 
 function renderTeamStats(matches, container) {
+  const subs = [
+    { key: 'goals-per-game',     label: '⚽ Goals/Game' },
+    { key: 'conceded-per-game',  label: '🥅 Conceded/Game' },
+    { key: 'clean-sheets',       label: '🧤 Clean Sheets' },
+    { key: 'yellow-cards',       label: '🟨 Yellow Cards' },
+    { key: 'red-cards',          label: '🟥 Red Cards' },
+  ];
+
   container.innerHTML = `
     <div class="stats-tabs">
-      <button class="stats-tab stats-tab--active" data-sub="goals-per-game">⚽ Goals/Game</button>
+      ${subs.map(s => `<button class="stats-tab ${activeTeamSub === s.key ? 'stats-tab--active' : ''}" data-sub="${s.key}">${s.label}</button>`).join('')}
     </div>
-    <p class="detail-empty" style="margin-top:20px">Team Stats coming in Phase 6c.</p>`;
+    <div id="team-stats-content"></div>`;
+
+  container.querySelectorAll('.stats-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeTeamSub = btn.dataset.sub;
+      renderTeamStats(matches, container);
+    });
+  });
+
+  const inner = container.querySelector('#team-stats-content');
+  renderTeamLeaderboard(matches, inner, activeTeamSub);
+}
+
+async function renderTeamLeaderboard(matches, container, type) {
+  container.innerHTML = `<div class="loading"><div class="loading-spinner"></div>Computing…</div>`;
+
+  const finishedMatches = matches.filter(m => m.MatchStatus === STATUS_FINISHED);
+  const teamMap = new Map(); // teamId → { name, flag, played, scored, conceded, cleanSheets, yellow, red }
+
+  const ensureTeam = (team) => {
+    if (!team) return;
+    if (!teamMap.has(team.IdTeam)) {
+      teamMap.set(team.IdTeam, {
+        id: team.IdTeam,
+        name: getTeamName(team) || '?',
+        flag: countryToFlag(team.IdCountry),
+        played: 0, scored: 0, conceded: 0, cleanSheets: 0, yellow: 0, red: 0
+      });
+    }
+    return teamMap.get(team.IdTeam);
+  };
+
+  // Compute match-based stats
+  for (const m of finishedMatches) {
+    const home = ensureTeam(m.Home);
+    const away = ensureTeam(m.Away);
+    if (!home || !away) continue;
+
+    const hs = m.HomeTeamScore ?? 0;
+    const as = m.AwayTeamScore ?? 0;
+
+    home.played++;  away.played++;
+    home.scored   += hs; home.conceded += as;
+    away.scored   += as; away.conceded += hs;
+    if (as === 0) home.cleanSheets++;
+    if (hs === 0) away.cleanSheets++;
+  }
+
+  // Compute card stats from timelines
+  if (type === 'yellow-cards' || type === 'red-cards') {
+    const cardType = type === 'yellow-cards' ? 2 : 3;
+    for (const match of finishedMatches) {
+      let events;
+      if (timelineCache.has(match.IdMatch)) {
+        events = timelineCache.get(match.IdMatch);
+      } else {
+        try {
+          const url = TIMELINE_API.replace('{stage}', match.IdStage).replace('{match}', match.IdMatch);
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const data = await res.json();
+          events = data.Event || [];
+          timelineCache.set(match.IdMatch, events);
+        } catch { continue; }
+      }
+      for (const ev of events) {
+        if (ev.Type !== cardType || !ev.IdTeam) continue;
+        const entry = teamMap.get(ev.IdTeam);
+        if (!entry) continue;
+        if (type === 'yellow-cards') entry.yellow++;
+        else entry.red++;
+      }
+    }
+  }
+
+  const getValue = (t, key) => {
+    switch (key) {
+      case 'goals-per-game':    return t.played ? +(t.scored   / t.played).toFixed(2) : 0;
+      case 'conceded-per-game': return t.played ? +(t.conceded / t.played).toFixed(2) : 0;
+      case 'clean-sheets':      return t.cleanSheets;
+      case 'yellow-cards':      return t.yellow;
+      case 'red-cards':         return t.red;
+    }
+  };
+
+  const getLabel = (key) => {
+    switch (key) {
+      case 'goals-per-game':    return 'goals/game';
+      case 'conceded-per-game': return 'conceded/game';
+      case 'clean-sheets':      return 'clean sheets';
+      case 'yellow-cards':      return '🟨';
+      case 'red-cards':         return '🟥';
+    }
+  };
+
+  const sorted = [...teamMap.values()]
+    .filter(t => t.played > 0)
+    .sort((a, b) => getValue(b, type) - getValue(a, type))
+    .slice(0, 20);
+
+  if (sorted.length === 0) {
+    container.innerHTML = `<div class="error"><div class="error-icon">📊</div>No data yet.</div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  const list = document.createElement('div');
+  list.className = 'scorers-list';
+  sorted.forEach((t, i) => {
+    const value = getValue(t, type);
+    const label = getLabel(type);
+    const row = document.createElement('div');
+    row.className = 'scorer-row';
+    row.innerHTML = `
+      <div class="scorer-rank">${i + 1}</div>
+      <span class="scorer-flag">${t.flag}</span>
+      <div class="scorer-info">
+        <div class="scorer-name">${t.name}</div>
+        <div class="scorer-team">${t.played} games played</div>
+      </div>
+      <div>
+        <div class="scorer-goals">${value}</div>
+        <div class="scorer-goals-label">${label}</div>
+      </div>`;
+    list.appendChild(row);
+  });
+  container.appendChild(list);
 }
 
 // ── Standings (computed from match results) ────────────────────
