@@ -129,7 +129,8 @@ git push
 ### Phase 5a — Israel TV Channels on Match Cards ✅ (2026-06-12)
 - Fetches Watch API in parallel with matches on page load
 - Filters by `IdCountry === "ISR"`, builds `IdMatch → channels[]` map
-- Each match card shows clickable channel chips (link to broadcast site)
+- Kan Box always shown on every match (streams all matches live) — green chip
+- Other channels (KAN 11, MAKAN 33, Sport 1, etc.) shown as plain chips — no links
 - Dedup: skip `KAN` if `KAN 11` present; skip `MAKAN` if `MAKAN 33` present
 - Channels are non-critical — failures silently ignored, rest of app works fine
 

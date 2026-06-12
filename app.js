@@ -116,12 +116,10 @@ function toggleCard(card, match) {
 }
 
 function buildChannelsRow(matchId) {
-  const channels = israelChannels[matchId];
-  if (!channels || channels.length === 0) return '';
-  const chips = channels.map(c =>
-    `<a class="channel-chip" href="${c.Url || c.TvChannelUrl}" target="_blank" rel="noopener">${c.Name}</a>`
-  ).join('');
-  return `<div class="match-channels">📺 ${chips}</div>`;
+  const channels = israelChannels[matchId] || [];
+  const kanBox = `<span class="channel-chip channel-chip--kanbox">Kan Box 📱</span>`;
+  const rest = channels.map(c => `<span class="channel-chip">${c.Name}</span>`).join('');
+  return `<div class="match-channels">📺 ${kanBox}${rest}</div>`;
 }
 
 function buildMatchCard(match) {
