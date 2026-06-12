@@ -18,7 +18,7 @@ Always up to date from the live FIFA API. No login, no ads, no install required.
 - **Filter by stage** — Groups, R32, R16, QF, SF, Final
 - **Search by team** — type any team name to filter matches
 - **Installable** — works as a full-screen app on iPhone and Android
-- **Multi-language** — English / Hebrew / Arabic *(coming soon)*
+- **Multi-language** — English / עברית / العربية — full RTL support, translated UI, Arabic team names, Hebrew team names, localised dates
 
 ---
 

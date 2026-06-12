@@ -147,6 +147,26 @@ Use this as the reference when resuming development in a future session.
 
 ## Known Bugs
 
+### ✅ ~~Arabic Timeline: Raw Description Shown Instead of Player Name~~ — Fixed (2026-06-13)
+- **Problem:** Expanded match cards in Arabic showed raw Arabic API strings like "Julian QUINONES(المكسيك) يسجل هدفاً!" instead of just the player name
+- **Root cause:** Phase 7d fetched Arabic timelines for the expand panel. `parseTimeline` uses English regex patterns (`/^(.+?) scores/`, `/^(.+?) \(/` etc.) — when they fail to match Arabic text, the raw description string is used as the player name
+- **Fix:** Reverted `loadTimeline` to always use the EN timeline (`language=en-GB`). The translated section titles (⚽ الأهداف, 🟨 البطاقات الصفراء etc.) come from `t()` already, so the expand panel is fully translated while player names parse correctly. Removed `TIMELINE_API_AR`, `timelineCacheAr`, `activeCache()`, and `activeTimelineApi()` — no longer needed
+
+### ✅ ~~Stats Empty in Arabic~~ — Fixed (2026-06-13)
+- **Problem:** All player/team stat leaderboards showed empty when Arabic was active
+- **Root cause:** Phase 7d mistakenly routed stats timeline fetches to `ar-SA`. The stats functions parse player names via English regex (e.g. `/^(.+?) scores/`, `/Assisted by (.+)\./`) — these never match Arabic text, so every event was skipped
+- **Fix:** Stats functions always use `timelineCache` + `TIMELINE_API` (en-GB). Only `loadTimeline` (the expand panel) uses `activeCache()` / `activeTimelineApi()` to show descriptions in Arabic
+
+### ✅ ~~Standings Stuck Loading in Arabic~~ — Fixed (2026-06-13)
+- **Problem:** Standings tab showed loading spinner forever when Arabic was selected
+- **Root cause:** `computeStandings` filtered group-stage matches with `m.StageName[0].Description === 'First Stage'` — that string is in Arabic in the AR dataset, so every match was skipped and the groups map stayed empty
+- **Fix:** Replaced all language-dependent stage name comparisons with `IdStage` checks (`'289273'` = group stage). Added `isGroupStage(match)` helper and `STAGE_ID` map so filter chips also work correctly in Arabic
+
+### ✅ ~~Service Worker Error on `file://`~~ — Fixed (2026-06-13)
+- **Problem:** `Uncaught TypeError: Failed to register a ServiceWorker: The URL protocol of the current origin ('null') is not supported` in console when opening the HTML as a local file
+- **Root cause:** Opening `index.html` directly gives it a `null` origin; `navigator.serviceWorker.register()` throws synchronously in that context
+- **Fix:** Added guard `location.hostname !== ''` — SW registration is skipped when there is no real host; works as before on GitHub Pages
+
 ### 🐛 GK Clean Sheet — Name Shows as "[Team] GK"
 - **Problem:** Some goalkeepers show as e.g. "Mexico GK" instead of their real name
 - **Root cause:** Type 57 (Goal Prevention) descriptions never include the player name — only "The goalkeeper of [Team]". The name lookup scans other event types (fouls, cards, corners, subs) but if the GK never appears in any of those events in a given match, the name can't be resolved
@@ -180,38 +200,69 @@ Use this as the reference when resuming development in a future session.
 
 | | English | Hebrew | Arabic |
 |---|---|---|---|
-| Team names | API `en-GB` | API `en-GB` (FIFA has no Hebrew) | API `ar-SA` ✅ |
-| Stadium / City / Group / Stage | API `en-GB` | API `en-GB` | API `ar-SA` ✅ |
-| UI text (tabs, labels, messages) | Hardcoded EN | Hardcoded HE | Hardcoded AR |
-| Timeline event descriptions | API `en-GB` | API `en-GB` | API `ar-SA` ✅ |
-| Page direction | LTR | RTL | RTL |
+| Team names | API `en-GB` | `TEAM_NAME_HE` map ✅ | API `ar-SA` ✅ |
+| Stadium / City / Group / Stage | API `en-GB` | API `en-GB` (no Hebrew endpoint) | API `ar-SA` ✅ |
+| Stage badges | `STRINGS.en` | `STRINGS.he` ✅ | `STRINGS.ar` ✅ |
+| UI text (tabs, labels, messages) | `STRINGS.en` | `STRINGS.he` ✅ | `STRINGS.ar` ✅ |
+| Date headings | `en-GB` locale | `he-IL` locale ✅ | `ar-SA` locale ✅ |
+| Timeline event descriptions | API `en-GB` | API `en-GB` | API `en-GB` (Arabic unparseable) |
+| Page direction | LTR | RTL ✅ | RTL ✅ |
 
-### Phase 7a — Language Toggle UI
-- Add `EN / עב / عر` toggle buttons to the top nav
-- Clicking a button sets the active language and saves it to `localStorage`
-- Sets `dir="rtl"` or `dir="ltr"` on the `<html>` element
-- No text or data changes yet — just the toggle mechanism working
+### Phase 7a — Language Toggle UI ✅ (2026-06-13)
+- `EN / עב / عر` buttons added to the right of the nav bar via `.lang-toggle` div
+- `applyLang(lang)` sets `currentLang`, writes `wc2026-lang` to `localStorage`, toggles `dir`/`lang` on `<html>`, and updates the active button highlight
+- `initLangToggle()` restores the saved language on load
+- `.nav-inner` uses `justify-content: space-between` so logo stays left and lang buttons stay right in both LTR and RTL — direction-proof
 
-### Phase 7b — String System
+### Phase 7b — String System ✅ (2026-06-13)
+- `STRINGS` object in `app.js` — three sub-objects (`en`, `he`, `ar`) covering every UI string: tabs, chips, search placeholder, loading messages, error messages, match card labels (FT, vs), detail section titles (Goals, Yellow Cards, Red Cards, Substitutions, attendance), stats section/sub-tab labels, leaderboard labels (goals, assists, clean sheets), standings header, today suffix
+- `t(key, ...args)` helper — returns string for `currentLang`, falls back to `en`, supports function values for plurals/interpolation
+- `updateStaticStrings()` patches the static HTML elements (tabs, chips, search placeholder) — called from `applyLang()` on every language switch
+- `applyLang()` now also calls `renderActiveTab()` (guarded: only if data is loaded) so dynamic content re-renders instantly on switch
+- Fixed naming collision: loop variable `t` in `renderTeamLeaderboard` renamed to `team` throughout to avoid shadowing the `t()` helper
+
+### Phase 7c — Arabic Match Data
 - Create a `STRINGS` object in `app.js` with keys for every UI text string
 - Three sub-objects: `en`, `he`, `ar`
 - Strings include: tab labels, filter chip labels, section titles, status badges (FT, vs), loading/error messages, channel label, attendance label, stats labels, empty state messages
 - Wire up a `t(key)` helper function that returns the string for the current language
 - On language switch, re-render the current tab so all text updates instantly
 
-### Phase 7c — Arabic Match Data
-- On page load, fetch matches in both `en-GB` and `ar-SA` in parallel
-- Store both as `allMatchesEn` and `allMatchesAr`
-- When Arabic is selected, use `allMatchesAr` for rendering — Arabic team names, stadiums, cities, groups, stage names appear on match cards automatically
-- English and Hebrew both use `allMatchesEn`
+### Phase 7c — Arabic Match Data ✅ (2026-06-13)
+- `MATCHES_API_AR` added (`language=ar-SA`)
+- `fetchMatchesAr()` fetches Arabic matches in parallel with EN on load; stored in `allMatchesAr`; failure is silent (falls back to EN)
+- `activeMatches()` returns `allMatchesAr` when Arabic is active, `allMatches` otherwise
+- All render entry points use `activeMatches()` — Arabic team names, stadiums, cities, groups, stage names appear automatically on match cards and standings
+- EN and Hebrew both use `allMatches` (en-GB data)
+- Stage/group filter chips use `IdStage` (language-independent) rather than EN stage name strings — works in all languages
 
-### Phase 7d — Arabic Timeline Data
-- When a match card is expanded and Arabic is active, fetch the timeline with `language=ar-SA`
-- Cache Arabic timelines separately (`timelineCacheAr`) so switching back to EN doesn't re-fetch
-- Goal/card descriptions appear in Arabic when Arabic is selected
+### Phase 7d — Arabic Timeline Data ✅ (2026-06-13)
+- All timelines always fetched in `en-GB` — section titles (⚽ Goals, 🟨 Yellow Cards etc.) are translated via `t()`, player names parse correctly from English regex patterns
+- Arabic timeline API was attempted but reverted: Arabic descriptions couldn't be parsed and produced garbage output (see bug fix above)
+- Also fixed: `buildMatchCard` was using `stage === 'First Stage'` string comparison for group badge logic — replaced with `isGroupStage(match)` using `IdStage` (language-independent)
 
-### Phase 7e — RTL Layout Polish
-- Fine-tune layout for RTL: flip match card team layout (home on right, away on left in RTL)
-- Adjust text alignment, badge positions, stats rows, standings table for RTL
-- Ensure filter chips scroll correctly in RTL
-- Test all tabs and states in both RTL languages
+### Match Detail — Two-Column Timeline Layout ✅ (2026-06-13)
+- Redesigned expanded match panel: attendance and section titles (⚽ Goals, 🟨 Yellow Cards…) centred full-width
+- Each event row is a 3-column grid: **home team always LEFT** | **minute centre** | **away team always RIGHT** — `direction: ltr` hardcoded on `.detail-row` so it never flips in RTL
+- `eventRow(minute, homeContent, awayContent)` helper builds the row; whichever side is `null` renders an empty placeholder to keep the minute centred
+- Event icons moved inline (⚽ / 🟨 / 🟥) so the side column is self-explanatory without the section title
+
+### Phase 7g — Hebrew Country Names ✅ (2026-06-13)
+- Added `TEAM_NAME_HE` map in `app.js` — all 48+ qualified teams keyed by FIFA 3-letter code with Hebrew translations (e.g. `MEX:'מקסיקו'`, `BRA:'ברזיל'`, `ESP:'ספרד'` etc.), covering all confederations
+- `getTeamName()` now checks `currentLang === 'he'` and returns the Hebrew name from `TEAM_NAME_HE` if available, falling back to the API name otherwise
+- Applies everywhere team names appear: match cards, standings, stats leaderboards (team name under player), team stats rows
+
+### Phase 7f — Hebrew Content Improvements ✅ (2026-06-13)
+- **Date headings in Hebrew/Arabic:** `formatDateHeading` and `getTodayHeading` now use `LOCALE_MAP` (`he-IL` / `ar-SA`) so weekday and month names are in the correct language via `Intl` — no hardcoded translations needed
+- **Stage badges translated:** `STAGE_LABEL` now maps EN API strings to `STRINGS` keys (`stageGroupStage`, `stageR32`, etc.). Hebrew and Arabic translations added for all 7 stages. `buildMatchCard` calls `t(stageKey)` so badges read "שלב הבתים", "רבע גמר" etc. in Hebrew and Arabic equivalents in Arabic
+- **`text-transform: uppercase` suppressed in RTL:** Applied `text-transform: none; letter-spacing: 0` to `.date-label`, `.standings-group-title`, `.match-group`, `.match-status`, `.detail-section-title`, `.nav-sub` under `[dir="rtl"]` — uppercasing Hebrew/Arabic is meaningless and garbles the text
+- **What stays English (FIFA API limitation):** Team names, stadium/city names, group names (e.g. "Group A"), player names — FIFA provides no Hebrew endpoint
+
+### Phase 7e — RTL Layout Polish ✅ (2026-06-13)
+All overrides scoped to `[dir="rtl"]` — zero impact on LTR:
+- **Match card:** `border-left` accent flips to `border-right`; home team row mirrors to `row-reverse` + `text-align: right`; away team (`.team--right`) resets to normal `row` so the grid column flip handles it naturally
+- **Date label:** `padding-left` → `padding-right`
+- **Standings table:** first-child `th` and `td` alignment + padding flipped to right
+- **Filter chips:** `direction: rtl` on `.filters` so the scroll starts from the right edge
+- **Scorer value label:** `text-align: right` in RTL
+- **`text-transform: uppercase` suppressed** on date labels, standings group titles, match group/status badges, nav subtitle, detail section titles — uppercasing is meaningless in Hebrew/Arabic and garbles text

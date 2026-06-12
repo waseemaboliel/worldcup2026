@@ -28,6 +28,11 @@
           <span class="nav-sub">USA · Canada · Mexico</span>
         </div>
       </div>
+      <div class="lang-toggle" id="lang-toggle">
+        <button class="lang-btn lang-btn--active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="he">עב</button>
+        <button class="lang-btn" data-lang="ar">عر</button>
+      </div>
     </div>
     <!-- TABS -->
     <nav class="tabs">
@@ -56,7 +61,7 @@
 
   <script src="app.js"></script>
   <script>
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && location.protocol !== 'null:' && location.hostname !== '') {
       navigator.serviceWorker.register('/worldcup2026/sw.js');
     }
   </script>

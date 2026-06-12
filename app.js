@@ -1,5 +1,137 @@
-const MATCHES_API = 'https://api.fifa.com/api/v3/calendar/matches?language=en-GB&idCompetition=17&idSeason=285023&count=104';
-const WATCH_API   = 'https://api.fifa.com/api/v3/watch/season/285023?language=en-GB';
+const MATCHES_API    = 'https://api.fifa.com/api/v3/calendar/matches?language=en-GB&idCompetition=17&idSeason=285023&count=104';
+const MATCHES_API_AR = 'https://api.fifa.com/api/v3/calendar/matches?language=ar-SA&idCompetition=17&idSeason=285023&count=104';
+const WATCH_API      = 'https://api.fifa.com/api/v3/watch/season/285023?language=en-GB';
+
+const STRINGS = {
+  en: {
+    tabMatches: 'Matches', tabStandings: 'Standings', tabStats: 'Stats',
+    chipAll: 'All', chipGroups: 'Groups', chipR32: 'R32', chipR16: 'R16',
+    chipQF: 'QF', chipSF: 'SF', chipFinal: 'Final',
+    searchPlaceholder: '🔍  Search team…',
+    loadingMatches: 'Loading matches…', loadingComputing: 'Computing…',
+    loadingScorers: 'Computing top scorers…', loadingAssists: 'Computing assists…',
+    loadingClean: 'Computing clean sheets…',
+    errorMatches: 'Could not load matches. Please try again later.',
+    errorNoMatches: 'No matches found.',
+    errorNoGoals: 'No goals scored yet.', errorNoAssists: 'No assists recorded yet.',
+    errorNoClean: 'No clean sheets yet.', errorNoCards: (t) => `No ${t} cards yet.`,
+    errorNoData: 'No data yet.',
+    detailNoDetails: 'No match details yet — check back after kick-off.',
+    detailLoadError: 'Could not load match details.',
+    detailNoEvents: 'No detailed events available.',
+    detailAttendance: (n) => `👥 ${n} attendance`,
+    detailGoals: '⚽ Goals', detailYellow: '🟨 Yellow Cards',
+    detailRed: '🟥 Red Cards', detailSubs: '🔄 Substitutions',
+    matchVs: 'vs', matchFT: 'FT',
+    tvLabel: '📺',
+    statsPlayer: '👤 Player Stats', statsTeam: '🏳️ Team Stats',
+    statGoals: '⚽ Goals', statAssists: '🎯 Assists', statClean: '🧤 Clean Sheets',
+    statYellow: '🟨 Yellow', statRed: '🟥 Red',
+    teamGoalsGame: '⚽ Goals/Game', teamConcededGame: '🥅 Conceded/Game',
+    teamClean: '🧤 Clean Sheets', teamYellow: '🟨 Yellow Cards', teamRed: '🟥 Red Cards',
+    gamesPlayed: (n) => `${n} games played`,
+    goalLabel: (n) => `goal${n !== 1 ? 's' : ''}`,
+    assistLabel: (n) => `assist${n !== 1 ? 's' : ''}`,
+    cleanLabel: (n) => `clean sheet${n !== 1 ? 's' : ''}`,
+    standingsToday: '— Today',
+    standingsNoData: 'No standings yet.',
+    standingsTeam: 'Team',
+    stageGroupStage: 'Group Stage',
+    stageR32: 'Round of 32',
+    stageR16: 'Round of 16',
+    stageQF: 'Quarter-final',
+    stageSF: 'Semi-final',
+    stage3rd: '3rd Place',
+    stageFinal: 'Final',
+  },
+  he: {
+    tabMatches: 'משחקים', tabStandings: 'טבלאות', tabStats: 'סטטיסטיקה',
+    chipAll: 'הכל', chipGroups: 'בתים', chipR32: 'שלב 32', chipR16: 'שלב 16',
+    chipQF: 'רבע', chipSF: 'חצי', chipFinal: 'גמר',
+    searchPlaceholder: '🔍  חיפוש קבוצה…',
+    loadingMatches: 'טוען משחקים…', loadingComputing: 'מחשב…',
+    loadingScorers: 'מחשב מלכי שערים…', loadingAssists: 'מחשב בישולים…',
+    loadingClean: 'מחשב שמירות אפס…',
+    errorMatches: 'לא ניתן לטעון משחקים. נסה שוב מאוחר יותר.',
+    errorNoMatches: 'לא נמצאו משחקים.',
+    errorNoGoals: 'עדיין לא נכבשו שערים.', errorNoAssists: 'עדיין לא נרשמו בישולים.',
+    errorNoClean: 'עדיין אין שמירות אפס.', errorNoCards: (t) => `עדיין אין כרטיסים ${t === 'yellow' ? 'צהובים' : 'אדומים'}.`,
+    errorNoData: 'אין נתונים עדיין.',
+    detailNoDetails: 'אין פרטי משחק עדיין — חזור לאחר הקיקאוף.',
+    detailLoadError: 'לא ניתן לטעון פרטי משחק.',
+    detailNoEvents: 'אין אירועים מפורטים.',
+    detailAttendance: (n) => `👥 ${n} צופים`,
+    detailGoals: '⚽ שערים', detailYellow: '🟨 כרטיסים צהובים',
+    detailRed: '🟥 כרטיסים אדומים', detailSubs: '🔄 החלפות',
+    matchVs: 'נגד', matchFT: 'סיום',
+    tvLabel: '📺',
+    statsPlayer: '👤 סטטיסטיקת שחקנים', statsTeam: '🏳️ סטטיסטיקת קבוצות',
+    statGoals: '⚽ שערים', statAssists: '🎯 בישולים', statClean: '🧤 שמירות אפס',
+    statYellow: '🟨 צהוב', statRed: '🟥 אדום',
+    teamGoalsGame: '⚽ שערים/משחק', teamConcededGame: '🥅 ספיגות/משחק',
+    teamClean: '🧤 שמירות אפס', teamYellow: '🟨 כרטיסים צהובים', teamRed: '🟥 כרטיסים אדומים',
+    gamesPlayed: (n) => `${n} משחקים`,
+    goalLabel: (n) => `שער${n !== 1 ? 'ות' : ''}`,
+    assistLabel: (n) => `בישול${n !== 1 ? 'ים' : ''}`,
+    cleanLabel: (n) => `שמירת אפס${n !== 1 ? '' : ''}`,
+    standingsToday: '— היום',
+    standingsNoData: 'אין טבלאות עדיין.',
+    standingsTeam: 'קבוצה',
+    stageGroupStage: 'שלב הבתים',
+    stageR32: 'שמינית גמר',
+    stageR16: 'שישית עשרה',
+    stageQF: 'רבע גמר',
+    stageSF: 'חצי גמר',
+    stage3rd: 'מקום שלישי',
+    stageFinal: 'גמר',
+  },
+  ar: {
+    tabMatches: 'مباريات', tabStandings: 'ترتيب', tabStats: 'إحصاءات',
+    chipAll: 'الكل', chipGroups: 'المجموعات', chipR32: 'د.32', chipR16: 'د.16',
+    chipQF: 'ر.ن', chipSF: 'ن.ن', chipFinal: 'النهائي',
+    searchPlaceholder: '🔍  ابحث عن فريق…',
+    loadingMatches: 'جاري تحميل المباريات…', loadingComputing: 'جاري الحساب…',
+    loadingScorers: 'جاري حساب الهدافين…', loadingAssists: 'جاري حساب التمريرات…',
+    loadingClean: 'جاري حساب النظافة…',
+    errorMatches: 'تعذّر تحميل المباريات. حاول مرة أخرى لاحقاً.',
+    errorNoMatches: 'لا توجد مباريات.',
+    errorNoGoals: 'لم تُسجَّل أهداف بعد.', errorNoAssists: 'لا توجد تمريرات حاسمة بعد.',
+    errorNoClean: 'لا توجد شباك نظيفة بعد.', errorNoCards: (t) => `لا توجد بطاقات ${t === 'yellow' ? 'صفراء' : 'حمراء'} بعد.`,
+    errorNoData: 'لا توجد بيانات بعد.',
+    detailNoDetails: 'لا تفاصيل بعد — تحقق بعد انطلاق المباراة.',
+    detailLoadError: 'تعذّر تحميل تفاصيل المباراة.',
+    detailNoEvents: 'لا توجد أحداث مفصّلة.',
+    detailAttendance: (n) => `👥 ${n} مشجع`,
+    detailGoals: '⚽ الأهداف', detailYellow: '🟨 البطاقات الصفراء',
+    detailRed: '🟥 البطاقات الحمراء', detailSubs: '🔄 التبديلات',
+    matchVs: 'ضد', matchFT: 'انتهى',
+    tvLabel: '📺',
+    statsPlayer: '👤 إحصاءات اللاعبين', statsTeam: '🏳️ إحصاءات الفرق',
+    statGoals: '⚽ الأهداف', statAssists: '🎯 التمريرات', statClean: '🧤 الشباك النظيفة',
+    statYellow: '🟨 صفراء', statRed: '🟥 حمراء',
+    teamGoalsGame: '⚽ أهداف/مباراة', teamConcededGame: '🥅 مستقبل/مباراة',
+    teamClean: '🧤 شباك نظيفة', teamYellow: '🟨 بطاقات صفراء', teamRed: '🟥 بطاقات حمراء',
+    gamesPlayed: (n) => `${n} مباريات`,
+    goalLabel: (n) => `هدف${n !== 1 ? '' : ''}`,
+    assistLabel: (n) => `تمريرة حاسمة`,
+    cleanLabel: (n) => `شبكة نظيفة`,
+    standingsToday: '— اليوم',
+    standingsNoData: 'لا يوجد ترتيب بعد.',
+    standingsTeam: 'الفريق',
+    stageGroupStage: 'دور المجموعات',
+    stageR32: 'دور الـ32',
+    stageR16: 'دور الـ16',
+    stageQF: 'ربع النهائي',
+    stageSF: 'نصف النهائي',
+    stage3rd: 'المركز الثالث',
+    stageFinal: 'النهائي',
+  }
+};
+
+function t(key, ...args) {
+  const s = STRINGS[currentLang]?.[key] ?? STRINGS.en[key];
+  return typeof s === 'function' ? s(...args) : (s ?? key);
+}
 
 // FIFA 3-letter → ISO 3166-1 alpha-2 (from working calendar project)
 const FIFA_TO_ALPHA2 = {
@@ -18,14 +150,60 @@ const FIFA_TO_ALPHA2 = {
   HAI:'HT',SCO:'GB-SCT',CUW:'CW',CPV:'CV',COD:'CD'
 };
 
+const TEAM_NAME_HE = {
+  // North & Central America + Caribbean
+  USA:'ארצות הברית', CAN:'קנדה', MEX:'מקסיקו',
+  HON:'הונדורס', GTM:'גואטמלה', CRC:'קוסטה ריקה',
+  PAN:'פנמה', JAM:'ג׳מייקה', TRI:'טרינידד וטובגו',
+  HAI:'האיטי', CUB:'קובה', SLV:'אל סלבדור', NCA:'ניקרגואה',
+  // South America
+  BRA:'ברזיל', ARG:'ארגנטינה', URU:'אורוגוואי', COL:'קולומביה',
+  ECU:'אקוודור', CHI:'צ׳ילה', PAR:'פרגוואי', PER:'פרו',
+  VEN:'ונצואלה', BOL:'בוליביה',
+  // Europe
+  ESP:'ספרד', FRA:'צרפת', ENG:'אנגליה', GER:'גרמניה',
+  POR:'פורטוגל', NED:'הולנד', ITA:'איטליה', BEL:'בלגיה',
+  CRO:'קרואטיה', SUI:'שווייץ', AUT:'אוסטריה', POL:'פולין',
+  SRB:'סרביה', DEN:'דנמרק', HUN:'הונגריה', UKR:'אוקראינה',
+  TUR:'טורקיה', ROU:'רומניה', SCO:'סקוטלנד', GRE:'יוון',
+  SVK:'סלובקיה', SVN:'סלובניה', NOR:'נורווגיה', SWE:'שוודיה',
+  FIN:'פינלנד', IRL:'אירלנד', ALB:'אלבניה', MKD:'מקדוניה הצפונית',
+  MNE:'מונטנגרו', GEO:'גאורגיה', CZE:'צ׳כיה', BIH:'בוסניה והרצגובינה',
+  // Africa
+  MAR:'מרוקו', SEN:'סנגל', NGA:'ניגריה', CMR:'קמרון',
+  RSA:'דרום אפריקה', GHA:'גאנה', EGY:'מצרים', TUN:'תוניסיה',
+  CIV:'חוף השנהב', ALG:'אלג׳יריה', MAL:'מאלי', BFA:'בורקינה פאסו',
+  ZAM:'זמביה', UGA:'אוגנדה', COD:'קונגו (קינשסה)', CPV:'כף ורדה',
+  // Asia & Oceania
+  JPN:'יפן', KOR:'קוריאה הדרומית', IRN:'איראן', KSA:'ערב הסעודית',
+  AUS:'אוסטרליה', QAT:'קטאר', UAE:'איחוד האמירויות', JOR:'ירדן',
+  IRQ:'עיראק', ISR:'ישראל', UZB:'אוזבקיסטן', KAZ:'קזחסטן',
+  CHN:'סין', NZL:'ניו זילנד', VNM:'וייטנאם', THA:'תאילנד',
+  IDN:'אינדונזיה', MYS:'מלזיה', PHI:'פיליפינים',
+  // Middle East (non-Asian slot)
+  LBN:'לבנון', PAL:'פלסטין', KWT:'כווית', BHR:'בחריין',
+  OMN:'עומאן', YEM:'תימן', SYR:'סוריה',
+  CUW:'קוראסאו',
+};
+
 const STAGE_LABEL = {
-  'First Stage': 'Group Stage',
-  'Round of 32': 'Round of 32',
-  'Round of 16': 'Round of 16',
-  'Quarter-final': 'Quarter-final',
-  'Semi-final': 'Semi-final',
-  'Play-off for third place': '3rd Place',
-  'Final': 'Final'
+  'First Stage':              'stageGroupStage',
+  'Round of 32':              'stageR32',
+  'Round of 16':              'stageR16',
+  'Quarter-final':            'stageQF',
+  'Semi-final':               'stageSF',
+  'Play-off for third place': 'stage3rd',
+  'Final':                    'stageFinal',
+};
+
+// chip data-stage value → IdStage (language-independent)
+const STAGE_ID = {
+  'First Stage':        '289273',
+  'Round of 32':        '289287',
+  'Round of 16':        '289288',
+  'Quarter-final':      '289289',
+  'Semi-final':         '289290',
+  'Final':              '289291',
 };
 
 // MatchStatus: 0 = finished, 1 = upcoming (confirmed from API inspection)
@@ -45,8 +223,15 @@ function countryToFlag(fifaCode) {
 
 function getTeamName(team) {
   if (!team) return null;
+  if (currentLang === 'he' && team.IdCountry && TEAM_NAME_HE[team.IdCountry]) {
+    return TEAM_NAME_HE[team.IdCountry];
+  }
   return team.TeamName?.[0]?.Description || null;
 }
+
+const LOCALE_MAP = { en: 'en-GB', he: 'he-IL', ar: 'ar-SA' };
+
+function dateLocale() { return LOCALE_MAP[currentLang] || 'en-GB'; }
 
 function formatKickoff(utcDateStr) {
   const date = new Date(utcDateStr);
@@ -60,7 +245,7 @@ function formatKickoff(utcDateStr) {
 
 function formatDateHeading(utcDateStr) {
   const date = new Date(utcDateStr);
-  return date.toLocaleDateString('en-GB', {
+  return date.toLocaleDateString(dateLocale(), {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -105,7 +290,7 @@ function toggleCard(card, match) {
   detail.className = 'match-detail';
 
   if (!isFinished) {
-    detail.innerHTML = `<p class="detail-empty">No match details yet — check back after kick-off.</p>`;
+    detail.innerHTML = `<p class="detail-empty">${t('detailNoDetails')}</p>`;
     card.appendChild(detail);
     return;
   }
@@ -133,8 +318,9 @@ function buildMatchCard(match) {
   const venueStr = [venue, city].filter(Boolean).join(' · ');
   const stage = match.StageName?.[0]?.Description || '';
   const group = match.GroupName?.[0]?.Description || '';
-  const badgeText = STAGE_LABEL[stage] || stage;
-  const groupText = group && stage === 'First Stage' ? group : badgeText;
+  const stageKey = STAGE_LABEL[stage];
+  const badgeText = stageKey ? t(stageKey) : stage;
+  const groupText = group && isGroupStage(match) ? group : badgeText;
 
   const card = document.createElement('article');
   card.className = 'match-card' + (isFinished ? ' match-card--finished' : '');
@@ -164,7 +350,7 @@ function buildMatchCard(match) {
       </div>
       <div class="match-meta">
         <span class="match-venue">${venueStr}</span>
-        <span class="match-status match-status--ft">FT</span>
+        <span class="match-status match-status--ft">${t('matchFT')}</span>
       </div>
       ${buildChannelsRow(match.IdMatch)}`;
   } else {
@@ -177,7 +363,7 @@ function buildMatchCard(match) {
         </div>
         <div class="match-center">
           <span class="match-time">${kickoff}</span>
-          <span class="match-vs">vs</span>
+          <span class="match-vs">${t('matchVs')}</span>
         </div>
         <div class="team team--right">
           <span class="flag">${awayFlag}</span>
@@ -196,7 +382,7 @@ function buildMatchCard(match) {
 }
 
 // ── Timeline fetch + parse ─────────────────────────────────────
-const TIMELINE_API = 'https://api.fifa.com/api/v3/timelines/17/285023/{stage}/{match}?language=en-GB';
+const TIMELINE_API  = 'https://api.fifa.com/api/v3/timelines/17/285023/{stage}/{match}?language=en-GB';
 const timelineCache = new Map();
 
 async function loadTimeline(match, detail) {
@@ -216,7 +402,7 @@ async function loadTimeline(match, detail) {
       events = data.Event || [];
       timelineCache.set(cacheKey, events);
     } catch {
-      detail.innerHTML = `<p class="detail-empty">Could not load match details.</p>`;
+      detail.innerHTML = `<p class="detail-empty">${t('detailLoadError')}</p>`;
       return;
     }
   }
@@ -260,11 +446,26 @@ function parseTimeline(events, homeId, awayId) {
   return { goals, yellowCards, redCards, subs };
 }
 
+function eventRow(minute, homeContent, awayContent) {
+  // In RTL the teams are visually swapped: home is on the right, away on the left.
+  // Mirror the columns so events always appear under the correct team.
+  const isRtl = currentLang === 'he' || currentLang === 'ar';
+  const leftContent  = isRtl ? awayContent  : homeContent;
+  const rightContent = isRtl ? homeContent  : awayContent;
+  const left = leftContent
+    ? `<div class="detail-cell-home">${leftContent}</div>`
+    : `<div class="detail-cell-empty"></div>`;
+  const right = rightContent
+    ? `<div class="detail-cell-away">${rightContent}</div>`
+    : `<div class="detail-cell-empty"></div>`;
+  return `<div class="detail-row">${left}<span class="detail-minute">${minute}</span>${right}</div>`;
+}
+
 function renderTimeline(match, events, detail) {
   const homeId = match.Home?.IdTeam;
   const awayId = match.Away?.IdTeam;
   const attendance = match.Attendance
-    ? `<div class="detail-attendance">👥 ${Number(match.Attendance).toLocaleString()} attendance</div>`
+    ? `<div class="detail-attendance">${t('detailAttendance', Number(match.Attendance).toLocaleString())}</div>`
     : '';
   const homeFlag = match.Home ? countryToFlag(match.Home.IdCountry) : '';
   const awayFlag = match.Away ? countryToFlag(match.Away.IdCountry) : '';
@@ -274,44 +475,52 @@ function renderTimeline(match, events, detail) {
 
   if (goals.length) {
     const rows = goals.map(g => {
-      const flag = g.side === 'home' ? homeFlag : g.side === 'away' ? awayFlag : '';
       const assist = g.assist ? `<span class="detail-assist">↳ ${g.assist}</span>` : '';
-      return `<div class="detail-row">${flag} <span class="detail-minute">${g.minute}</span> <span class="detail-name">${g.scorer}</span>${assist}</div>`;
+      const content = `<span class="detail-name">⚽ ${g.scorer}${assist}</span>`;
+      const flag = g.side === 'home' ? homeFlag : awayFlag;
+      const cell = `${flag} ${content}`;
+      return eventRow(g.minute, g.side === 'home' ? cell : null, g.side === 'away' ? cell : null);
     }).join('');
-    sections.push(`<div class="detail-section"><div class="detail-section-title">⚽ Goals</div>${rows}</div>`);
+    sections.push(`<div class="detail-section"><div class="detail-section-title">${t('detailGoals')}</div>${rows}</div>`);
   }
 
   if (yellowCards.length) {
     const rows = yellowCards.map(c => {
-      const flag = c.side === 'home' ? homeFlag : c.side === 'away' ? awayFlag : '';
-      return `<div class="detail-row">${flag} <span class="detail-minute">${c.minute}</span> <span class="detail-name">${c.player}</span></div>`;
+      const content = `<span class="detail-name">🟨 ${c.player}</span>`;
+      const flag = c.side === 'home' ? homeFlag : awayFlag;
+      const cell = `${flag} ${content}`;
+      return eventRow(c.minute, c.side === 'home' ? cell : null, c.side === 'away' ? cell : null);
     }).join('');
-    sections.push(`<div class="detail-section"><div class="detail-section-title">🟨 Yellow Cards</div>${rows}</div>`);
+    sections.push(`<div class="detail-section"><div class="detail-section-title">${t('detailYellow')}</div>${rows}</div>`);
   }
 
   if (redCards.length) {
     const rows = redCards.map(c => {
-      const flag = c.side === 'home' ? homeFlag : c.side === 'away' ? awayFlag : '';
-      return `<div class="detail-row">${flag} <span class="detail-minute">${c.minute}</span> <span class="detail-name">${c.player}</span></div>`;
+      const content = `<span class="detail-name">🟥 ${c.player}</span>`;
+      const flag = c.side === 'home' ? homeFlag : awayFlag;
+      const cell = `${flag} ${content}`;
+      return eventRow(c.minute, c.side === 'home' ? cell : null, c.side === 'away' ? cell : null);
     }).join('');
-    sections.push(`<div class="detail-section"><div class="detail-section-title">🟥 Red Cards</div>${rows}</div>`);
+    sections.push(`<div class="detail-section"><div class="detail-section-title">${t('detailRed')}</div>${rows}</div>`);
   }
 
   if (subs.length) {
     const rows = subs.map(s => {
-      const flag = s.side === 'home' ? homeFlag : s.side === 'away' ? awayFlag : '';
-      return `<div class="detail-row">${flag} <span class="detail-minute">${s.minute}</span> <span class="detail-name">↑ ${s.playerIn}</span><span class="detail-sub-out">↓ ${s.playerOut}</span></div>`;
+      const content = `<span class="detail-name">↑ ${s.playerIn}</span><span class="detail-sub-out">↓ ${s.playerOut}</span>`;
+      const flag = s.side === 'home' ? homeFlag : awayFlag;
+      const cell = `${flag} ${content}`;
+      return eventRow(s.minute, s.side === 'home' ? cell : null, s.side === 'away' ? cell : null);
     }).join('');
-    sections.push(`<div class="detail-section"><div class="detail-section-title">🔄 Substitutions</div>${rows}</div>`);
+    sections.push(`<div class="detail-section"><div class="detail-section-title">${t('detailSubs')}</div>${rows}</div>`);
   }
 
   detail.innerHTML = attendance + (sections.length
     ? sections.join('')
-    : `<p class="detail-empty">No detailed events available.</p>`);
+    : `<p class="detail-empty">${t('detailNoEvents')}</p>`);
 }
 
 function getTodayHeading() {
-  return new Date().toLocaleDateString('en-GB', {
+  return new Date().toLocaleDateString(dateLocale(), {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     timeZone: 'Asia/Jerusalem'
   });
@@ -323,7 +532,7 @@ function renderMatches(matches, scrollToToday = false) {
 
   let filtered = activeStageFilter === 'all'
     ? matches
-    : matches.filter(m => m.StageName?.[0]?.Description === activeStageFilter);
+    : matches.filter(m => m.IdStage === STAGE_ID[activeStageFilter]);
 
   if (teamSearchQuery) {
     filtered = filtered.filter(m => {
@@ -334,7 +543,7 @@ function renderMatches(matches, scrollToToday = false) {
   }
 
   if (filtered.length === 0) {
-    main.innerHTML = `<div class="error"><div class="error-icon">📅</div>No matches found.</div>`;
+    main.innerHTML = `<div class="error"><div class="error-icon">📅</div>${t('errorNoMatches')}</div>`;
     return;
   }
 
@@ -347,7 +556,7 @@ function renderMatches(matches, scrollToToday = false) {
     section.className = 'date-group';
     const heading = document.createElement('h2');
     heading.className = 'date-label' + (dateLabel === todayHeading ? ' date-label--today' : '');
-    heading.textContent = dateLabel === todayHeading ? `${dateLabel} — Today` : dateLabel;
+    heading.textContent = dateLabel === todayHeading ? `${dateLabel} ${t('standingsToday')}` : dateLabel;
     section.appendChild(heading);
     for (const match of dayMatches) {
       section.appendChild(buildMatchCard(match));
@@ -365,7 +574,7 @@ function showLoading() {
   document.querySelector('.main').innerHTML = `
     <div class="loading">
       <div class="loading-spinner"></div>
-      Loading matches…
+      ${t('loadingMatches')}
     </div>`;
 }
 
@@ -397,32 +606,87 @@ async function fetchIsraelChannels() {
   } catch { /* channels are non-critical — silently skip */ }
 }
 
+async function fetchMatchesAr() {
+  try {
+    const res = await fetch(MATCHES_API_AR);
+    if (!res.ok) return;
+    const data = await res.json();
+    allMatchesAr = data.Results || [];
+  } catch { /* non-critical — fall back to EN */ }
+}
+
+function activeMatches() {
+  return currentLang === 'ar' && allMatchesAr.length > 0 ? allMatchesAr : allMatches;
+}
+
 async function init() {
+  initLangToggle();
   initTabs();
   initFilters();
   showLoading();
   try {
     const [matchRes] = await Promise.all([
       fetch(MATCHES_API),
-      fetchIsraelChannels()
+      fetchIsraelChannels(),
+      fetchMatchesAr()
     ]);
     if (!matchRes.ok) throw new Error(`FIFA API returned ${matchRes.status}`);
     const data = await matchRes.json();
     allMatches = data.Results || [];
     if (allMatches.length === 0) throw new Error('No matches returned from API');
-    renderMatches(allMatches, true);
+    renderMatches(activeMatches(), true);
   } catch (err) {
     console.error(err);
-    showError('Could not load matches. Please try again later.');
+    showError(t('errorMatches'));
   }
 }
 
 // ── Tab switching ──────────────────────────────────────────────
 let allMatches = [];
+let allMatchesAr = [];
 let israelChannels = {}; // IdMatch → channels[]
 let activeTab = 'matches';
 let activeStageFilter = 'all';
 let teamSearchQuery = '';
+let currentLang = localStorage.getItem('wc2026-lang') || 'en';
+
+function updateStaticStrings() {
+  // Tabs
+  document.querySelector('.tab[data-tab="matches"]').textContent   = t('tabMatches');
+  document.querySelector('.tab[data-tab="standings"]').textContent = t('tabStandings');
+  document.querySelector('.tab[data-tab="stats"]').textContent     = t('tabStats');
+  // Filter chips
+  document.querySelector('.chip[data-stage="all"]').textContent           = t('chipAll');
+  document.querySelector('.chip[data-stage="First Stage"]').textContent   = t('chipGroups');
+  document.querySelector('.chip[data-stage="Round of 32"]').textContent   = t('chipR32');
+  document.querySelector('.chip[data-stage="Round of 16"]').textContent   = t('chipR16');
+  document.querySelector('.chip[data-stage="Quarter-final"]').textContent = t('chipQF');
+  document.querySelector('.chip[data-stage="Semi-final"]').textContent    = t('chipSF');
+  document.querySelector('.chip[data-stage="Final"]').textContent         = t('chipFinal');
+  // Search placeholder
+  document.getElementById('team-search').placeholder = t('searchPlaceholder');
+}
+
+function applyLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('wc2026-lang', lang);
+  document.documentElement.setAttribute('lang', lang);
+  document.documentElement.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl');
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('lang-btn--active', btn.dataset.lang === lang);
+  });
+  updateStaticStrings();
+  if (allMatches.length > 0) renderActiveTab();
+}
+
+function initLangToggle() {
+  applyLang(currentLang);
+  document.getElementById('lang-toggle').addEventListener('click', e => {
+    const btn = e.target.closest('.lang-btn');
+    if (!btn) return;
+    applyLang(btn.dataset.lang);
+  });
+}
 
 function initTabs() {
   document.querySelectorAll('.tab').forEach(tab => {
@@ -442,14 +706,14 @@ function initFilters() {
       document.querySelectorAll('.chip').forEach(c => c.classList.remove('chip--active'));
       chip.classList.add('chip--active');
       activeStageFilter = chip.dataset.stage;
-      renderMatches(allMatches);
+      renderMatches(activeMatches());
     });
   });
 
   const searchInput = document.getElementById('team-search');
   searchInput.addEventListener('input', () => {
     teamSearchQuery = searchInput.value.trim().toLowerCase();
-    renderMatches(allMatches);
+    renderMatches(activeMatches());
   });
 }
 
@@ -463,17 +727,17 @@ let activePlayerSub = 'scorers';
 let activeTeamSub = 'goals-per-game';
 
 function renderActiveTab() {
-  if (activeTab === 'matches') renderMatches(allMatches);
-  else if (activeTab === 'standings') renderStandings(allMatches);
-  else if (activeTab === 'stats') renderStats(allMatches);
+  if (activeTab === 'matches') renderMatches(activeMatches());
+  else if (activeTab === 'standings') renderStandings(activeMatches());
+  else if (activeTab === 'stats') renderStats(activeMatches());
 }
 
 function renderStats(matches) {
   const main = document.querySelector('.main');
   main.innerHTML = `
     <div class="stats-section-tabs">
-      <button class="stats-section-tab ${activeStatsSection === 'player' ? 'stats-section-tab--active' : ''}" data-section="player">👤 Player Stats</button>
-      <button class="stats-section-tab ${activeStatsSection === 'team' ? 'stats-section-tab--active' : ''}" data-section="team">🏳️ Team Stats</button>
+      <button class="stats-section-tab ${activeStatsSection === 'player' ? 'stats-section-tab--active' : ''}" data-section="player">${t('statsPlayer')}</button>
+      <button class="stats-section-tab ${activeStatsSection === 'team' ? 'stats-section-tab--active' : ''}" data-section="team">${t('statsTeam')}</button>
     </div>
     <div id="stats-content"></div>`;
 
@@ -492,11 +756,11 @@ function renderStats(matches) {
 function renderPlayerStats(matches, container) {
   container.innerHTML = `
     <div class="stats-tabs">
-      <button class="stats-tab ${activePlayerSub === 'scorers'   ? 'stats-tab--active' : ''}" data-sub="scorers">⚽ Goals</button>
-      <button class="stats-tab ${activePlayerSub === 'assists'   ? 'stats-tab--active' : ''}" data-sub="assists">🎯 Assists</button>
-      <button class="stats-tab ${activePlayerSub === 'clean'     ? 'stats-tab--active' : ''}" data-sub="clean">🧤 Clean Sheets</button>
-      <button class="stats-tab ${activePlayerSub === 'yellow'    ? 'stats-tab--active' : ''}" data-sub="yellow">🟨 Yellow</button>
-      <button class="stats-tab ${activePlayerSub === 'red'       ? 'stats-tab--active' : ''}" data-sub="red">🟥 Red</button>
+      <button class="stats-tab ${activePlayerSub === 'scorers'   ? 'stats-tab--active' : ''}" data-sub="scorers">${t('statGoals')}</button>
+      <button class="stats-tab ${activePlayerSub === 'assists'   ? 'stats-tab--active' : ''}" data-sub="assists">${t('statAssists')}</button>
+      <button class="stats-tab ${activePlayerSub === 'clean'     ? 'stats-tab--active' : ''}" data-sub="clean">${t('statClean')}</button>
+      <button class="stats-tab ${activePlayerSub === 'yellow'    ? 'stats-tab--active' : ''}" data-sub="yellow">${t('statYellow')}</button>
+      <button class="stats-tab ${activePlayerSub === 'red'       ? 'stats-tab--active' : ''}" data-sub="red">${t('statRed')}</button>
     </div>
     <div id="player-stats-content"></div>`;
 
@@ -517,11 +781,11 @@ function renderPlayerStats(matches, container) {
 
 function renderTeamStats(matches, container) {
   const subs = [
-    { key: 'goals-per-game',     label: '⚽ Goals/Game' },
-    { key: 'conceded-per-game',  label: '🥅 Conceded/Game' },
-    { key: 'clean-sheets',       label: '🧤 Clean Sheets' },
-    { key: 'yellow-cards',       label: '🟨 Yellow Cards' },
-    { key: 'red-cards',          label: '🟥 Red Cards' },
+    { key: 'goals-per-game',     label: t('teamGoalsGame') },
+    { key: 'conceded-per-game',  label: t('teamConcededGame') },
+    { key: 'clean-sheets',       label: t('teamClean') },
+    { key: 'yellow-cards',       label: t('teamYellow') },
+    { key: 'red-cards',          label: t('teamRed') },
   ];
 
   container.innerHTML = `
@@ -542,7 +806,7 @@ function renderTeamStats(matches, container) {
 }
 
 async function renderTeamLeaderboard(matches, container, type) {
-  container.innerHTML = `<div class="loading"><div class="loading-spinner"></div>Computing…</div>`;
+  container.innerHTML = `<div class="loading"><div class="loading-spinner"></div>${t('loadingComputing')}</div>`;
 
   const finishedMatches = matches.filter(m => m.MatchStatus === STATUS_FINISHED);
   const teamMap = new Map(); // teamId → { name, flag, played, scored, conceded, cleanSheets, yellow, red }
@@ -603,50 +867,50 @@ async function renderTeamLeaderboard(matches, container, type) {
     }
   }
 
-  const getValue = (t, key) => {
+  const getValue = (team, key) => {
     switch (key) {
-      case 'goals-per-game':    return t.played ? +(t.scored   / t.played).toFixed(2) : 0;
-      case 'conceded-per-game': return t.played ? +(t.conceded / t.played).toFixed(2) : 0;
-      case 'clean-sheets':      return t.cleanSheets;
-      case 'yellow-cards':      return t.yellow;
-      case 'red-cards':         return t.red;
+      case 'goals-per-game':    return team.played ? +(team.scored   / team.played).toFixed(2) : 0;
+      case 'conceded-per-game': return team.played ? +(team.conceded / team.played).toFixed(2) : 0;
+      case 'clean-sheets':      return team.cleanSheets;
+      case 'yellow-cards':      return team.yellow;
+      case 'red-cards':         return team.red;
     }
   };
 
   const getLabel = (key) => {
     switch (key) {
-      case 'goals-per-game':    return 'goals/game';
-      case 'conceded-per-game': return 'conceded/game';
-      case 'clean-sheets':      return 'clean sheets';
+      case 'goals-per-game':    return t('teamGoalsGame');
+      case 'conceded-per-game': return t('teamConcededGame');
+      case 'clean-sheets':      return t('teamClean');
       case 'yellow-cards':      return '🟨';
       case 'red-cards':         return '🟥';
     }
   };
 
   const sorted = [...teamMap.values()]
-    .filter(t => t.played > 0)
+    .filter(team => team.played > 0)
     .sort((a, b) => getValue(b, type) - getValue(a, type))
     .slice(0, 20);
 
   if (sorted.length === 0) {
-    container.innerHTML = `<div class="error"><div class="error-icon">📊</div>No data yet.</div>`;
+    container.innerHTML = `<div class="error"><div class="error-icon">📊</div>${t('errorNoData')}</div>`;
     return;
   }
 
   container.innerHTML = '';
   const list = document.createElement('div');
   list.className = 'scorers-list';
-  sorted.forEach((t, i) => {
-    const value = getValue(t, type);
+  sorted.forEach((team, i) => {
+    const value = getValue(team, type);
     const label = getLabel(type);
     const row = document.createElement('div');
     row.className = 'scorer-row';
     row.innerHTML = `
       <div class="scorer-rank">${i + 1}</div>
-      <span class="scorer-flag">${t.flag}</span>
+      <span class="scorer-flag">${team.flag}</span>
       <div class="scorer-info">
-        <div class="scorer-name">${t.name}</div>
-        <div class="scorer-team">${t.played} games played</div>
+        <div class="scorer-name">${team.name}</div>
+        <div class="scorer-team">${t('gamesPlayed', team.played)}</div>
       </div>
       <div>
         <div class="scorer-goals">${value}</div>
@@ -658,11 +922,16 @@ async function renderTeamLeaderboard(matches, container, type) {
 }
 
 // ── Standings (computed from match results) ────────────────────
+function isGroupStage(match) {
+  // IdStage is language-independent; StageName text varies by language
+  return match.IdStage === '289273';
+}
+
 function computeStandings(matches) {
   const groups = new Map();
 
   for (const m of matches) {
-    if (m.StageName?.[0]?.Description !== 'First Stage') continue;
+    if (!isGroupStage(m)) continue;
     const group = m.GroupName?.[0]?.Description || 'Unknown';
     if (!groups.has(group)) groups.set(group, new Map());
     const table = groups.get(group);
@@ -712,7 +981,7 @@ function renderStandings(matches) {
   const standings = computeStandings(matches);
 
   if (standings.size === 0) {
-    main.innerHTML = `<div class="loading"><div class="loading-spinner"></div>No standings yet.</div>`;
+    main.innerHTML = `<div class="loading"><div class="loading-spinner"></div>${t('standingsNoData')}</div>`;
     return;
   }
 
@@ -725,7 +994,7 @@ function renderStandings(matches) {
     const table = document.createElement('table');
     table.className = 'standings-table';
     table.innerHTML = `<thead><tr>
-      <th colspan="2">Team</th>
+      <th colspan="2">${t('standingsTeam')}</th>
       <th>P</th><th>W</th><th>D</th><th>L</th>
       <th>GF</th><th>GA</th><th>GD</th><th>Pts</th>
     </tr></thead>`;
@@ -754,7 +1023,7 @@ function renderStandings(matches) {
 // ── Top Scorers (computed from already-cached timelines) ────────
 async function renderScorers(matches, container) {
   const main = container || document.querySelector('.main');
-  main.innerHTML = `<div class="loading"><div class="loading-spinner"></div>Computing top scorers…</div>`;
+  main.innerHTML = `<div class="loading"><div class="loading-spinner"></div>${t('loadingScorers')}</div>`;
 
   const finishedMatches = matches.filter(m => m.MatchStatus === STATUS_FINISHED);
   const scorerMap = new Map(); // playerId → { name, teamFlag, teamName, goals }
@@ -798,7 +1067,7 @@ async function renderScorers(matches, container) {
   const sorted = [...scorerMap.values()].sort((a, b) => b.goals - a.goals).slice(0, 20);
 
   if (sorted.length === 0) {
-    main.innerHTML = `<div class="error"><div class="error-icon">⚽</div>No goals scored yet.</div>`;
+    main.innerHTML = `<div class="error"><div class="error-icon">⚽</div>${t('errorNoGoals')}</div>`;
     return;
   }
 
@@ -818,7 +1087,7 @@ async function renderScorers(matches, container) {
       </div>
       <div>
         <div class="scorer-goals">${s.goals}</div>
-        <div class="scorer-goals-label">goal${s.goals !== 1 ? 's' : ''}</div>
+        <div class="scorer-goals-label">${t('goalLabel', s.goals)}</div>
       </div>`;
     list.appendChild(row);
   });
@@ -828,7 +1097,7 @@ async function renderScorers(matches, container) {
 
 // ── Assists (computed from timelines) ─────────────────────────
 async function renderAssists(matches, container) {
-  container.innerHTML = `<div class="loading"><div class="loading-spinner"></div>Computing assists…</div>`;
+  container.innerHTML = `<div class="loading"><div class="loading-spinner"></div>${t('loadingAssists')}</div>`;
 
   const finishedMatches = matches.filter(m => m.MatchStatus === STATUS_FINISHED);
   const playerMap = new Map();
@@ -865,7 +1134,7 @@ async function renderAssists(matches, container) {
   const sorted = [...playerMap.values()].sort((a, b) => b.count - a.count).slice(0, 20);
 
   if (sorted.length === 0) {
-    container.innerHTML = `<div class="error"><div class="error-icon">🎯</div>No assists recorded yet.</div>`;
+    container.innerHTML = `<div class="error"><div class="error-icon">🎯</div>${t('errorNoAssists')}</div>`;
     return;
   }
 
@@ -884,7 +1153,7 @@ async function renderAssists(matches, container) {
       </div>
       <div>
         <div class="scorer-goals">${s.count}</div>
-        <div class="scorer-goals-label">assist${s.count !== 1 ? 's' : ''}</div>
+        <div class="scorer-goals-label">${t('assistLabel', s.count)}</div>
       </div>`;
     list.appendChild(row);
   });
@@ -893,7 +1162,7 @@ async function renderAssists(matches, container) {
 
 // ── Clean Sheets GK (computed from timelines + match scores) ───
 async function renderCleanSheets(matches, container) {
-  container.innerHTML = `<div class="loading"><div class="loading-spinner"></div>Computing clean sheets…</div>`;
+  container.innerHTML = `<div class="loading"><div class="loading-spinner"></div>${t('loadingClean')}</div>`;
 
   const finishedMatches = matches.filter(m => m.MatchStatus === STATUS_FINISHED);
   const gkMap = new Map(); // playerId → { name, flag, teamName, count }
@@ -974,7 +1243,7 @@ async function renderCleanSheets(matches, container) {
   const sorted = [...gkMap.values()].sort((a, b) => b.count - a.count).slice(0, 20);
 
   if (sorted.length === 0) {
-    container.innerHTML = `<div class="error"><div class="error-icon">🧤</div>No clean sheets yet.</div>`;
+    container.innerHTML = `<div class="error"><div class="error-icon">🧤</div>${t('errorNoClean')}</div>`;
     return;
   }
 
@@ -994,7 +1263,7 @@ async function renderCleanSheets(matches, container) {
       </div>
       <div>
         <div class="scorer-goals">${s.count}</div>
-        <div class="scorer-goals-label">clean sheet${s.count !== 1 ? 's' : ''}</div>
+        <div class="scorer-goals-label">${t('cleanLabel', s.count)}</div>
       </div>`;
     list.appendChild(row);
   });
@@ -1003,7 +1272,7 @@ async function renderCleanSheets(matches, container) {
 
 // ── Card leaders (computed from timelines) ─────────────────────
 async function renderCardLeaders(matches, container, type) {
-  container.innerHTML = `<div class="loading"><div class="loading-spinner"></div>Computing…</div>`;
+  container.innerHTML = `<div class="loading"><div class="loading-spinner"></div>${t('loadingComputing')}</div>`;
 
   const finishedMatches = matches.filter(m => m.MatchStatus === STATUS_FINISHED);
   const playerMap = new Map();
@@ -1043,7 +1312,7 @@ async function renderCardLeaders(matches, container, type) {
   const sorted = [...playerMap.values()].sort((a, b) => b.count - a.count).slice(0, 20);
 
   if (sorted.length === 0) {
-    container.innerHTML = `<div class="error"><div class="error-icon">${icon}</div>No ${label} cards yet.</div>`;
+    container.innerHTML = `<div class="error"><div class="error-icon">${icon}</div>${t('errorNoCards', type)}</div>`;
     return;
   }
 
