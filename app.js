@@ -913,18 +913,46 @@ async function renderCleanSheets(matches, container) {
       } catch { continue; }
     }
 
-    // Find GKs from Type 57 (Goal Prevention) events — IdPlayer is always the GK
-    const gksSeen = new Map(); // teamId → { playerId, name }
+    // Find GKs from Type 57 (Goal Prevention) — IdPlayer is always the GK
+    const gksSeen = new Map(); // teamId → playerId
     for (const ev of events) {
       if (ev.Type !== 57 || !ev.IdPlayer || !ev.IdTeam) continue;
-      if (!gksSeen.has(ev.IdTeam)) {
-        const desc = ev.EventDescription?.[0]?.Description || '';
-        gksSeen.set(ev.IdTeam, { playerId: ev.IdPlayer, desc });
+      if (!gksSeen.has(ev.IdTeam)) gksSeen.set(ev.IdTeam, ev.IdPlayer);
+    }
+
+    // Build a name lookup: playerId → name, by scanning all named events in this timeline
+    const playerNames = new Map();
+    for (const ev of events) {
+      if (!ev.IdPlayer) continue;
+      const desc = ev.EventDescription?.[0]?.Description || '';
+      let name = null;
+      if (ev.Type === 2 || ev.Type === 3) {
+        // "MOKOENA (South Africa) is booked..." or "PLAYER (Team) receives..."
+        const m = desc.match(/^([A-ZÁÉÍÓÚÀÈÒÑÜ][^(]+?)\s*\(/);
+        if (m) name = m[1].trim();
+      } else if (ev.Type === 18) {
+        // "MODIBA (South Africa) commits a foul." or "Brian GUTIERREZ (Mexico) commits..."
+        const m = desc.match(/^([^(]+?)\s*\(/);
+        if (m) name = m[1].trim();
+      } else if (ev.Type === 5) {
+        // "Thalente MBATHA (in) comes off the bench to replace Lyle FOSTER (out)"
+        const mIn  = desc.match(/^(.+?) \(in\)/);
+        const mOut = desc.match(/replace (.+?) \(out\)/);
+        if (mIn  && ev.IdPlayer)    playerNames.set(ev.IdPlayer,    mIn[1].trim());
+        if (mOut && ev.IdSubPlayer) playerNames.set(ev.IdSubPlayer, mOut[1].trim());
+        continue;
+      } else if (ev.Type === 15 || ev.Type === 16) {
+        // "Brian GUTIERREZ (Mexico) takes a corner kick."
+        const m = desc.match(/^([^(]+?)\s*\(/);
+        if (m) name = m[1].trim();
+      }
+      if (name && ev.IdPlayer && !playerNames.has(ev.IdPlayer)) {
+        playerNames.set(ev.IdPlayer, name);
       }
     }
 
-    // Check if each GK kept a clean sheet (their team conceded 0)
-    for (const [teamId, gk] of gksSeen) {
+    // Check clean sheet and record GK
+    for (const [teamId, playerId] of gksSeen) {
       const isHome = teamId === match.Home?.IdTeam;
       const conceded = isHome ? match.AwayTeamScore : match.HomeTeamScore;
       if (conceded !== 0) continue;
@@ -932,29 +960,14 @@ async function renderCleanSheets(matches, container) {
       const team = isHome ? match.Home : match.Away;
       const flag = team ? countryToFlag(team.IdCountry) : '🏳️';
       const teamName = team ? (getTeamName(team) || '') : '';
+      const name = playerNames.get(playerId) || null;
 
-      // Extract GK name from description e.g. "The goalkeeper of Mexico pulls off a save."
-      // We don't have the name directly, so use the player description to get it from assists/subs
-      // Fall back to finding the name from any Type 57 event description that mentions the player
-      const nameEvent = events.find(e => e.Type === 57 && e.IdPlayer === gk.playerId && e.IdTeam === teamId);
-      // Description says "The goalkeeper of [Team] pulls off a save." — no name, so look in subs
-      const subEvent = events.find(e =>
-        e.Type === 5 && (e.IdPlayer === gk.playerId || e.IdSubPlayer === gk.playerId) && e.IdTeam === teamId
-      );
-      let name = '(GK)';
-      if (subEvent) {
-        const desc = subEvent.EventDescription?.[0]?.Description || '';
-        const mIn  = desc.match(/^(.+?) \(in\)/);
-        const mOut = desc.match(/replace (.+?) \(out\)/);
-        if (subEvent.IdPlayer === gk.playerId && mIn)  name = mIn[1];
-        if (subEvent.IdSubPlayer === gk.playerId && mOut) name = mOut[1];
+      if (!gkMap.has(playerId)) {
+        gkMap.set(playerId, { name, flag, teamName, count: 0 });
+      } else if (!gkMap.get(playerId).name && name) {
+        gkMap.get(playerId).name = name;
       }
-
-      if (!gkMap.has(gk.playerId)) gkMap.set(gk.playerId, { name, flag, teamName, count: 0 });
-      else if (gkMap.get(gk.playerId).name === '(GK)' && name !== '(GK)') {
-        gkMap.get(gk.playerId).name = name; // update name if we now have it
-      }
-      gkMap.get(gk.playerId).count++;
+      gkMap.get(playerId).count++;
     }
   }
 
@@ -971,11 +984,12 @@ async function renderCleanSheets(matches, container) {
   sorted.forEach((s, i) => {
     const row = document.createElement('div');
     row.className = 'scorer-row';
+    const displayName = s.name || `${s.teamName} GK`;
     row.innerHTML = `
       <div class="scorer-rank">${i + 1}</div>
       <span class="scorer-flag">${s.flag}</span>
       <div class="scorer-info">
-        <div class="scorer-name">${s.name}</div>
+        <div class="scorer-name">${displayName}</div>
         <div class="scorer-team">${s.teamName}</div>
       </div>
       <div>
