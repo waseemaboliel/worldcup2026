@@ -438,10 +438,35 @@ function initFilters() {
   });
 }
 
+let activeStatsSub = 'scorers';
+
 function renderActiveTab() {
   if (activeTab === 'matches') renderMatches(allMatches);
   else if (activeTab === 'standings') renderStandings(allMatches);
-  else if (activeTab === 'scorers') renderScorers(allMatches);
+  else if (activeTab === 'stats') renderStats(allMatches);
+}
+
+function renderStats(matches) {
+  const main = document.querySelector('.main');
+  main.innerHTML = `
+    <div class="stats-tabs">
+      <button class="stats-tab ${activeStatsSub === 'scorers' ? 'stats-tab--active' : ''}" data-sub="scorers">⚽ Goals</button>
+      <button class="stats-tab ${activeStatsSub === 'yellow' ? 'stats-tab--active' : ''}" data-sub="yellow">🟨 Yellow Cards</button>
+      <button class="stats-tab ${activeStatsSub === 'red' ? 'stats-tab--active' : ''}" data-sub="red">🟥 Red Cards</button>
+    </div>
+    <div id="stats-content"></div>`;
+
+  main.querySelectorAll('.stats-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeStatsSub = btn.dataset.sub;
+      renderStats(matches);
+    });
+  });
+
+  const content = main.querySelector('#stats-content');
+  if (activeStatsSub === 'scorers') renderScorers(matches, content);
+  else if (activeStatsSub === 'yellow') renderCardLeaders(matches, content, 'yellow');
+  else if (activeStatsSub === 'red') renderCardLeaders(matches, content, 'red');
 }
 
 // ── Standings (computed from match results) ────────────────────
@@ -539,8 +564,8 @@ function renderStandings(matches) {
 }
 
 // ── Top Scorers (computed from already-cached timelines) ────────
-async function renderScorers(matches) {
-  const main = document.querySelector('.main');
+async function renderScorers(matches, container) {
+  const main = container || document.querySelector('.main');
   main.innerHTML = `<div class="loading"><div class="loading-spinner"></div>Computing top scorers…</div>`;
 
   const finishedMatches = matches.filter(m => m.MatchStatus === STATUS_FINISHED);
@@ -597,7 +622,7 @@ async function renderScorers(matches) {
     const row = document.createElement('div');
     row.className = 'scorer-row';
     row.innerHTML = `
-      <div class="scorer-rank scorer-rank--top">${i + 1}</div>
+      <div class="scorer-rank">${i + 1}</div>
       <span class="scorer-flag">${s.flag}</span>
       <div class="scorer-info">
         <div class="scorer-name">${s.name}</div>
@@ -611,6 +636,76 @@ async function renderScorers(matches) {
   });
 
   main.appendChild(list);
+}
+
+// ── Card leaders (computed from timelines) ─────────────────────
+async function renderCardLeaders(matches, container, type) {
+  container.innerHTML = `<div class="loading"><div class="loading-spinner"></div>Computing…</div>`;
+
+  const finishedMatches = matches.filter(m => m.MatchStatus === STATUS_FINISHED);
+  const playerMap = new Map();
+  const eventType = type === 'yellow' ? 2 : 3;
+  const icon = type === 'yellow' ? '🟨' : '🟥';
+  const label = type === 'yellow' ? 'yellow' : 'red';
+
+  for (const match of finishedMatches) {
+    let events;
+    if (timelineCache.has(match.IdMatch)) {
+      events = timelineCache.get(match.IdMatch);
+    } else {
+      try {
+        const url = TIMELINE_API.replace('{stage}', match.IdStage).replace('{match}', match.IdMatch);
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const data = await res.json();
+        events = data.Event || [];
+        timelineCache.set(match.IdMatch, events);
+      } catch { continue; }
+    }
+
+    for (const ev of events) {
+      if (ev.Type !== eventType || !ev.IdPlayer) continue;
+      const desc = ev.EventDescription?.[0]?.Description || '';
+      const m = desc.match(/^(.+?) \(/);
+      const name = m ? m[1] : null;
+      if (!name) continue;
+      const team = ev.IdTeam === match.Home?.IdTeam ? match.Home : match.Away;
+      const flag = team ? countryToFlag(team.IdCountry) : '🏳️';
+      const teamName = team ? (getTeamName(team) || '') : '';
+      if (!playerMap.has(ev.IdPlayer)) playerMap.set(ev.IdPlayer, { name, flag, teamName, count: 0 });
+      playerMap.get(ev.IdPlayer).count++;
+    }
+  }
+
+  const sorted = [...playerMap.values()].sort((a, b) => b.count - a.count).slice(0, 20);
+
+  if (sorted.length === 0) {
+    container.innerHTML = `<div class="error"><div class="error-icon">${icon}</div>No ${label} cards yet.</div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  const list = document.createElement('div');
+  list.className = 'scorers-list';
+
+  sorted.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'scorer-row';
+    row.innerHTML = `
+      <div class="scorer-rank">${i + 1}</div>
+      <span class="scorer-flag">${s.flag}</span>
+      <div class="scorer-info">
+        <div class="scorer-name">${s.name}</div>
+        <div class="scorer-team">${s.teamName}</div>
+      </div>
+      <div>
+        <div class="scorer-goals">${s.count}</div>
+        <div class="scorer-goals-label">${icon}</div>
+      </div>`;
+    list.appendChild(row);
+  });
+
+  container.appendChild(list);
 }
 
 document.addEventListener('DOMContentLoaded', init);

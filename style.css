@@ -176,6 +176,32 @@ body {
 .standings-table tr.qualify td { background: #0d1a0d; }
 .standings-table tr.qualify-2 td { background: #0a1510; }
 
+/* ── Stats sub-tabs ── */
+.stats-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.stats-tab {
+  background: #1a1a1a;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.stats-tab:hover { color: var(--text); border-color: #444; }
+.stats-tab--active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #000;
+}
+
 /* ── Top Scorers ── */
 .scorers-list {
   display: flex;

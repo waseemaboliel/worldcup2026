@@ -144,9 +144,11 @@ git push
 - Formatted with thousands separator (e.g. 80,824)
 - Data from `match.Attendance` field — no extra API call needed
 
-### Phase 5d — Top Cards Leaderboard
-- Yellow card and red card rankings, same approach as top scorers
-- Separate ranked lists for yellow and red cards
+### Phase 5d — Top Cards Leaderboard ✅ (2026-06-12)
+- "Top Scorers" tab renamed to "Stats"
+- Stats tab has 3 sub-tabs: ⚽ Goals, 🟨 Yellow Cards, 🟥 Red Cards
+- Each leaderboard shows top 20: rank, flag, name, team, count
+- Computed from timelines — reuses `timelineCache`, same approach as top scorers
 
 ### Phase 5e — Filter by Team
 - Search input on Matches tab
