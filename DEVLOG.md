@@ -171,3 +171,47 @@ Use this as the reference when resuming development in a future session.
 - Fix GK name resolution in clean sheets leaderboard
 - Display starting XI inside expanded match cards
 - Use player positions to improve stats (e.g. filter goals by outfield players only)
+
+---
+
+## Phase 7 — Multi-language Support (English / Hebrew / Arabic)
+
+### Language support overview
+
+| | English | Hebrew | Arabic |
+|---|---|---|---|
+| Team names | API `en-GB` | API `en-GB` (FIFA has no Hebrew) | API `ar-SA` ✅ |
+| Stadium / City / Group / Stage | API `en-GB` | API `en-GB` | API `ar-SA` ✅ |
+| UI text (tabs, labels, messages) | Hardcoded EN | Hardcoded HE | Hardcoded AR |
+| Timeline event descriptions | API `en-GB` | API `en-GB` | API `ar-SA` ✅ |
+| Page direction | LTR | RTL | RTL |
+
+### Phase 7a — Language Toggle UI
+- Add `EN / עב / عر` toggle buttons to the top nav
+- Clicking a button sets the active language and saves it to `localStorage`
+- Sets `dir="rtl"` or `dir="ltr"` on the `<html>` element
+- No text or data changes yet — just the toggle mechanism working
+
+### Phase 7b — String System
+- Create a `STRINGS` object in `app.js` with keys for every UI text string
+- Three sub-objects: `en`, `he`, `ar`
+- Strings include: tab labels, filter chip labels, section titles, status badges (FT, vs), loading/error messages, channel label, attendance label, stats labels, empty state messages
+- Wire up a `t(key)` helper function that returns the string for the current language
+- On language switch, re-render the current tab so all text updates instantly
+
+### Phase 7c — Arabic Match Data
+- On page load, fetch matches in both `en-GB` and `ar-SA` in parallel
+- Store both as `allMatchesEn` and `allMatchesAr`
+- When Arabic is selected, use `allMatchesAr` for rendering — Arabic team names, stadiums, cities, groups, stage names appear on match cards automatically
+- English and Hebrew both use `allMatchesEn`
+
+### Phase 7d — Arabic Timeline Data
+- When a match card is expanded and Arabic is active, fetch the timeline with `language=ar-SA`
+- Cache Arabic timelines separately (`timelineCacheAr`) so switching back to EN doesn't re-fetch
+- Goal/card descriptions appear in Arabic when Arabic is selected
+
+### Phase 7e — RTL Layout Polish
+- Fine-tune layout for RTL: flip match card team layout (home on right, away on left in RTL)
+- Adjust text alignment, badge positions, stats rows, standings table for RTL
+- Ensure filter chips scroll correctly in RTL
+- Test all tabs and states in both RTL languages
