@@ -156,7 +156,9 @@ git push
 - Works combined with stage chips — e.g. "Brazil" + "Groups"
 - Search box hidden when on Standings or Stats tabs
 
-### Phase 5f — PWA (Add to Home Screen)
-- `manifest.json` with app name, theme color, icons
-- Service worker to cache shell offline
-- Installable on iOS/Android home screen
+### Phase 5f — PWA (Add to Home Screen) ✅ (2026-06-12)
+- `manifest.json`: app name "FIFA World Cup 2026", short name "WC 2026", dark theme color
+- `sw.js`: service worker caches the app shell (index.html, style.css, app.js) — FIFA API calls always go to network
+- Old caches auto-deleted on new deploy (bump `CACHE` version in sw.js when pushing updates)
+- iOS: Safari → Share → Add to Home Screen | Android: Chrome install banner
+- Apple-specific meta tags added for full-screen standalone mode on iOS
