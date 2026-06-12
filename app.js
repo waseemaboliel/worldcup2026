@@ -492,9 +492,11 @@ function renderStats(matches) {
 function renderPlayerStats(matches, container) {
   container.innerHTML = `
     <div class="stats-tabs">
-      <button class="stats-tab ${activePlayerSub === 'scorers' ? 'stats-tab--active' : ''}" data-sub="scorers">⚽ Goals</button>
-      <button class="stats-tab ${activePlayerSub === 'yellow' ? 'stats-tab--active' : ''}" data-sub="yellow">🟨 Yellow Cards</button>
-      <button class="stats-tab ${activePlayerSub === 'red' ? 'stats-tab--active' : ''}" data-sub="red">🟥 Red Cards</button>
+      <button class="stats-tab ${activePlayerSub === 'scorers'   ? 'stats-tab--active' : ''}" data-sub="scorers">⚽ Goals</button>
+      <button class="stats-tab ${activePlayerSub === 'assists'   ? 'stats-tab--active' : ''}" data-sub="assists">🎯 Assists</button>
+      <button class="stats-tab ${activePlayerSub === 'clean'     ? 'stats-tab--active' : ''}" data-sub="clean">🧤 Clean Sheets</button>
+      <button class="stats-tab ${activePlayerSub === 'yellow'    ? 'stats-tab--active' : ''}" data-sub="yellow">🟨 Yellow</button>
+      <button class="stats-tab ${activePlayerSub === 'red'       ? 'stats-tab--active' : ''}" data-sub="red">🟥 Red</button>
     </div>
     <div id="player-stats-content"></div>`;
 
@@ -506,9 +508,11 @@ function renderPlayerStats(matches, container) {
   });
 
   const inner = container.querySelector('#player-stats-content');
-  if (activePlayerSub === 'scorers') renderScorers(matches, inner);
-  else if (activePlayerSub === 'yellow') renderCardLeaders(matches, inner, 'yellow');
-  else if (activePlayerSub === 'red') renderCardLeaders(matches, inner, 'red');
+  if      (activePlayerSub === 'scorers') renderScorers(matches, inner);
+  else if (activePlayerSub === 'assists') renderAssists(matches, inner);
+  else if (activePlayerSub === 'clean')   renderCleanSheets(matches, inner);
+  else if (activePlayerSub === 'yellow')  renderCardLeaders(matches, inner, 'yellow');
+  else if (activePlayerSub === 'red')     renderCardLeaders(matches, inner, 'red');
 }
 
 function renderTeamStats(matches, container) {
@@ -686,6 +690,167 @@ async function renderScorers(matches, container) {
   });
 
   main.appendChild(list);
+}
+
+// ── Assists (computed from timelines) ─────────────────────────
+async function renderAssists(matches, container) {
+  container.innerHTML = `<div class="loading"><div class="loading-spinner"></div>Computing assists…</div>`;
+
+  const finishedMatches = matches.filter(m => m.MatchStatus === STATUS_FINISHED);
+  const playerMap = new Map();
+
+  for (const match of finishedMatches) {
+    let events;
+    if (timelineCache.has(match.IdMatch)) {
+      events = timelineCache.get(match.IdMatch);
+    } else {
+      try {
+        const url = TIMELINE_API.replace('{stage}', match.IdStage).replace('{match}', match.IdMatch);
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const data = await res.json();
+        events = data.Event || [];
+        timelineCache.set(match.IdMatch, events);
+      } catch { continue; }
+    }
+
+    for (const ev of events) {
+      if (ev.Type !== 1 || !ev.IdPlayer) continue;
+      const desc = ev.EventDescription?.[0]?.Description || '';
+      const m = desc.match(/Assisted by (.+)\./);
+      const name = m ? m[1] : null;
+      if (!name) continue;
+      const team = ev.IdTeam === match.Home?.IdTeam ? match.Home : match.Away;
+      const flag = team ? countryToFlag(team.IdCountry) : '🏳️';
+      const teamName = team ? (getTeamName(team) || '') : '';
+      if (!playerMap.has(ev.IdPlayer)) playerMap.set(ev.IdPlayer, { name, flag, teamName, count: 0 });
+      playerMap.get(ev.IdPlayer).count++;
+    }
+  }
+
+  const sorted = [...playerMap.values()].sort((a, b) => b.count - a.count).slice(0, 20);
+
+  if (sorted.length === 0) {
+    container.innerHTML = `<div class="error"><div class="error-icon">🎯</div>No assists recorded yet.</div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  const list = document.createElement('div');
+  list.className = 'scorers-list';
+  sorted.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'scorer-row';
+    row.innerHTML = `
+      <div class="scorer-rank">${i + 1}</div>
+      <span class="scorer-flag">${s.flag}</span>
+      <div class="scorer-info">
+        <div class="scorer-name">${s.name}</div>
+        <div class="scorer-team">${s.teamName}</div>
+      </div>
+      <div>
+        <div class="scorer-goals">${s.count}</div>
+        <div class="scorer-goals-label">assist${s.count !== 1 ? 's' : ''}</div>
+      </div>`;
+    list.appendChild(row);
+  });
+  container.appendChild(list);
+}
+
+// ── Clean Sheets GK (computed from timelines + match scores) ───
+async function renderCleanSheets(matches, container) {
+  container.innerHTML = `<div class="loading"><div class="loading-spinner"></div>Computing clean sheets…</div>`;
+
+  const finishedMatches = matches.filter(m => m.MatchStatus === STATUS_FINISHED);
+  const gkMap = new Map(); // playerId → { name, flag, teamName, count }
+
+  for (const match of finishedMatches) {
+    let events;
+    if (timelineCache.has(match.IdMatch)) {
+      events = timelineCache.get(match.IdMatch);
+    } else {
+      try {
+        const url = TIMELINE_API.replace('{stage}', match.IdStage).replace('{match}', match.IdMatch);
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const data = await res.json();
+        events = data.Event || [];
+        timelineCache.set(match.IdMatch, events);
+      } catch { continue; }
+    }
+
+    // Find GKs from Type 57 (Goal Prevention) events — IdPlayer is always the GK
+    const gksSeen = new Map(); // teamId → { playerId, name }
+    for (const ev of events) {
+      if (ev.Type !== 57 || !ev.IdPlayer || !ev.IdTeam) continue;
+      if (!gksSeen.has(ev.IdTeam)) {
+        const desc = ev.EventDescription?.[0]?.Description || '';
+        gksSeen.set(ev.IdTeam, { playerId: ev.IdPlayer, desc });
+      }
+    }
+
+    // Check if each GK kept a clean sheet (their team conceded 0)
+    for (const [teamId, gk] of gksSeen) {
+      const isHome = teamId === match.Home?.IdTeam;
+      const conceded = isHome ? match.AwayTeamScore : match.HomeTeamScore;
+      if (conceded !== 0) continue;
+
+      const team = isHome ? match.Home : match.Away;
+      const flag = team ? countryToFlag(team.IdCountry) : '🏳️';
+      const teamName = team ? (getTeamName(team) || '') : '';
+
+      // Extract GK name from description e.g. "The goalkeeper of Mexico pulls off a save."
+      // We don't have the name directly, so use the player description to get it from assists/subs
+      // Fall back to finding the name from any Type 57 event description that mentions the player
+      const nameEvent = events.find(e => e.Type === 57 && e.IdPlayer === gk.playerId && e.IdTeam === teamId);
+      // Description says "The goalkeeper of [Team] pulls off a save." — no name, so look in subs
+      const subEvent = events.find(e =>
+        e.Type === 5 && (e.IdPlayer === gk.playerId || e.IdSubPlayer === gk.playerId) && e.IdTeam === teamId
+      );
+      let name = '(GK)';
+      if (subEvent) {
+        const desc = subEvent.EventDescription?.[0]?.Description || '';
+        const mIn  = desc.match(/^(.+?) \(in\)/);
+        const mOut = desc.match(/replace (.+?) \(out\)/);
+        if (subEvent.IdPlayer === gk.playerId && mIn)  name = mIn[1];
+        if (subEvent.IdSubPlayer === gk.playerId && mOut) name = mOut[1];
+      }
+
+      if (!gkMap.has(gk.playerId)) gkMap.set(gk.playerId, { name, flag, teamName, count: 0 });
+      else if (gkMap.get(gk.playerId).name === '(GK)' && name !== '(GK)') {
+        gkMap.get(gk.playerId).name = name; // update name if we now have it
+      }
+      gkMap.get(gk.playerId).count++;
+    }
+  }
+
+  const sorted = [...gkMap.values()].sort((a, b) => b.count - a.count).slice(0, 20);
+
+  if (sorted.length === 0) {
+    container.innerHTML = `<div class="error"><div class="error-icon">🧤</div>No clean sheets yet.</div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  const list = document.createElement('div');
+  list.className = 'scorers-list';
+  sorted.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'scorer-row';
+    row.innerHTML = `
+      <div class="scorer-rank">${i + 1}</div>
+      <span class="scorer-flag">${s.flag}</span>
+      <div class="scorer-info">
+        <div class="scorer-name">${s.name}</div>
+        <div class="scorer-team">${s.teamName}</div>
+      </div>
+      <div>
+        <div class="scorer-goals">${s.count}</div>
+        <div class="scorer-goals-label">clean sheet${s.count !== 1 ? 's' : ''}</div>
+      </div>`;
+    list.appendChild(row);
+  });
+  container.appendChild(list);
 }
 
 // ── Card leaders (computed from timelines) ─────────────────────

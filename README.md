@@ -188,13 +188,9 @@ git push
 - Player Stats keeps existing sub-tabs: Goals, Yellow Cards, Red Cards
 - Team Stats section scaffolded — content coming in Phase 6c
 
-### Phase 6b — Player Stats: Add Assists and Clean Sheets
-- **Assists:** Parse Type 1 timeline events — `IdPlayer` on the Assist event is the assister
-  - Note: current code uses assists only to pair with goals. Need to also count them per player independently
-- **Clean Sheets (GK):** A goalkeeper gets a clean sheet when their team concedes 0 goals in a match
-  - Identify GK per match via Type 57 (Goal Prevention) events — `IdPlayer` is always the GK
-  - Cross-reference with final score: if the GK's team conceded 0, it's a clean sheet
-  - Edge case: if a match has no Type 57 events (no saves), fall back to checking if the team kept a clean sheet and attribute it to the GK registered in that match
+### Phase 6b — Player Stats: Assists and Clean Sheets ✅ (2026-06-12)
+- **Assists:** Type 1 timeline events — `IdPlayer` counted independently per player, top 20 ranked
+- **Clean Sheets (GK):** Type 57 (Goal Prevention) — `IdPlayer` is always the GK. Clean sheet = GK's team conceded 0 (cross-referenced with final score). GK name extracted from substitution events where available, falls back to `(GK)` if never subbed
 
 ### Phase 6c — Team Stats: Goals, Conceded, Clean Sheets, Cards
 - All computed from match scores + timelines — no new API calls needed
