@@ -150,9 +150,11 @@ git push
 - Each leaderboard shows top 20: rank, flag, name, team, count
 - Computed from timelines — reuses `timelineCache`, same approach as top scorers
 
-### Phase 5e — Filter by Team
-- Search input on Matches tab
-- Type a team name → filters match list to only that team's matches
+### Phase 5e — Filter by Team ✅ (2026-06-12)
+- Search input below the stage chips on the Matches tab
+- Type any team name → filters match list live (case-insensitive)
+- Works combined with stage chips — e.g. "Brazil" + "Groups"
+- Search box hidden when on Standings or Stats tabs
 
 ### Phase 5f — PWA (Add to Home Screen)
 - `manifest.json` with app name, theme color, icons

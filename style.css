@@ -176,6 +176,29 @@ body {
 .standings-table tr.qualify td { background: #0d1a0d; }
 .standings-table tr.qualify-2 td { background: #0a1510; }
 
+/* ── Team search ── */
+.team-search-wrap {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 8px 16px 10px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.team-search {
+  width: 100%;
+  background: #1a1a1a;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.team-search::placeholder { color: var(--text-muted); }
+.team-search:focus { border-color: var(--gold); }
+
 /* ── Stats sub-tabs ── */
 .stats-tabs {
   display: flex;

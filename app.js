@@ -321,12 +321,20 @@ function renderMatches(matches, scrollToToday = false) {
   const main = document.querySelector('.main');
   main.innerHTML = '';
 
-  const filtered = activeStageFilter === 'all'
+  let filtered = activeStageFilter === 'all'
     ? matches
     : matches.filter(m => m.StageName?.[0]?.Description === activeStageFilter);
 
+  if (teamSearchQuery) {
+    filtered = filtered.filter(m => {
+      const home = (getTeamName(m.Home) || m.PlaceHolderA || '').toLowerCase();
+      const away = (getTeamName(m.Away) || m.PlaceHolderB || '').toLowerCase();
+      return home.includes(teamSearchQuery) || away.includes(teamSearchQuery);
+    });
+  }
+
   if (filtered.length === 0) {
-    main.innerHTML = `<div class="error"><div class="error-icon">📅</div>No matches for this stage yet.</div>`;
+    main.innerHTML = `<div class="error"><div class="error-icon">📅</div>No matches found.</div>`;
     return;
   }
 
@@ -414,6 +422,7 @@ let allMatches = [];
 let israelChannels = {}; // IdMatch → channels[]
 let activeTab = 'matches';
 let activeStageFilter = 'all';
+let teamSearchQuery = '';
 
 function initTabs() {
   document.querySelectorAll('.tab').forEach(tab => {
@@ -421,7 +430,7 @@ function initTabs() {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('tab--active'));
       tab.classList.add('tab--active');
       activeTab = tab.dataset.tab;
-      document.getElementById('filters').style.display = activeTab === 'matches' ? 'flex' : 'none';
+      showMatchesUI(activeTab === 'matches');
       renderActiveTab();
     });
   });
@@ -436,6 +445,17 @@ function initFilters() {
       renderMatches(allMatches);
     });
   });
+
+  const searchInput = document.getElementById('team-search');
+  searchInput.addEventListener('input', () => {
+    teamSearchQuery = searchInput.value.trim().toLowerCase();
+    renderMatches(allMatches);
+  });
+}
+
+function showMatchesUI(show) {
+  document.getElementById('filters').style.display = show ? 'flex' : 'none';
+  document.getElementById('team-search-wrap').style.display = show ? 'block' : 'none';
 }
 
 let activeStatsSub = 'scorers';
