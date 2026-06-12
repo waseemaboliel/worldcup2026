@@ -133,9 +133,10 @@ git push
 - Dedup: skip `KAN` if `KAN 11` present; skip `MAKAN` if `MAKAN 33` present
 - Channels are non-critical — failures silently ignored, rest of app works fine
 
-### Phase 5b — Scroll to Today on Load
-- Auto-scroll to today's date group on page load (Israel timezone)
-- Highlight today's date label in gold
+### Phase 5b — Scroll to Today on Load ✅ (2026-06-12)
+- On page load, auto-scrolls to today's date group (Israel timezone)
+- Today's date label shown in gold with "— Today" suffix
+- Scroll only triggers on initial load, not when switching filters or tabs
 
 ### Phase 5c — Attendance in Match Detail
 - Show attendance inside expanded detail for finished matches

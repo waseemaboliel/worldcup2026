@@ -246,6 +246,9 @@ body {
   letter-spacing: 0.8px;
   padding-left: 2px;
 }
+.date-label--today {
+  color: var(--gold);
+}
 
 /* ── Match card ── */
 .match-card {

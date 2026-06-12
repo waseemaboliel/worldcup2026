@@ -309,7 +309,14 @@ function renderTimeline(match, events, detail) {
     : `<p class="detail-empty">No detailed events available.</p>`;
 }
 
-function renderMatches(matches) {
+function getTodayHeading() {
+  return new Date().toLocaleDateString('en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    timeZone: 'Asia/Jerusalem'
+  });
+}
+
+function renderMatches(matches, scrollToToday = false) {
   const main = document.querySelector('.main');
   main.innerHTML = '';
 
@@ -322,18 +329,26 @@ function renderMatches(matches) {
     return;
   }
 
+  const todayHeading = getTodayHeading();
+  let todaySection = null;
+
   const groups = groupByDate(filtered);
   for (const [dateLabel, dayMatches] of groups) {
     const section = document.createElement('section');
     section.className = 'date-group';
     const heading = document.createElement('h2');
-    heading.className = 'date-label';
-    heading.textContent = dateLabel;
+    heading.className = 'date-label' + (dateLabel === todayHeading ? ' date-label--today' : '');
+    heading.textContent = dateLabel === todayHeading ? `${dateLabel} — Today` : dateLabel;
     section.appendChild(heading);
     for (const match of dayMatches) {
       section.appendChild(buildMatchCard(match));
     }
     main.appendChild(section);
+    if (dateLabel === todayHeading) todaySection = section;
+  }
+
+  if (scrollToToday && todaySection) {
+    setTimeout(() => todaySection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   }
 }
 
@@ -386,7 +401,7 @@ async function init() {
     const data = await matchRes.json();
     allMatches = data.Results || [];
     if (allMatches.length === 0) throw new Error('No matches returned from API');
-    renderMatches(allMatches);
+    renderMatches(allMatches, true);
   } catch (err) {
     console.error(err);
     showError('Could not load matches. Please try again later.');
