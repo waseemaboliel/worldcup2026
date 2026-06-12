@@ -263,6 +263,9 @@ function parseTimeline(events, homeId, awayId) {
 function renderTimeline(match, events, detail) {
   const homeId = match.Home?.IdTeam;
   const awayId = match.Away?.IdTeam;
+  const attendance = match.Attendance
+    ? `<div class="detail-attendance">👥 ${Number(match.Attendance).toLocaleString()} attendance</div>`
+    : '';
   const homeFlag = match.Home ? countryToFlag(match.Home.IdCountry) : '';
   const awayFlag = match.Away ? countryToFlag(match.Away.IdCountry) : '';
   const { goals, yellowCards, redCards, subs } = parseTimeline(events, homeId, awayId);
@@ -302,9 +305,9 @@ function renderTimeline(match, events, detail) {
     sections.push(`<div class="detail-section"><div class="detail-section-title">🔄 Substitutions</div>${rows}</div>`);
   }
 
-  detail.innerHTML = sections.length
+  detail.innerHTML = attendance + (sections.length
     ? sections.join('')
-    : `<p class="detail-empty">No detailed events available.</p>`;
+    : `<p class="detail-empty">No detailed events available.</p>`);
 }
 
 function getTodayHeading() {

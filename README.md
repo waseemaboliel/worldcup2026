@@ -139,9 +139,10 @@ git push
 - Today's date label shown in gold with "— Today" suffix
 - Scroll only triggers on initial load, not when switching filters or tabs
 
-### Phase 5c — Attendance in Match Detail
-- Show attendance inside expanded detail for finished matches
-- Data already in `match.Attendance` — just needs rendering
+### Phase 5c — Attendance in Match Detail ✅ (2026-06-12)
+- Attendance shown at the top of the expanded detail panel for finished matches
+- Formatted with thousands separator (e.g. 80,824)
+- Data from `match.Attendance` field — no extra API call needed
 
 ### Phase 5d — Top Cards Leaderboard
 - Yellow card and red card rankings, same approach as top scorers
