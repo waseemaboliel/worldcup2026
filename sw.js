@@ -1,10 +1,14 @@
-const CACHE = 'wc2026-v1';
+const CACHE = 'wc2026-v2';
 const SHELL = [
   '/worldcup2026/',
   '/worldcup2026/index.html',
   '/worldcup2026/style.css',
   '/worldcup2026/app.js',
-  '/worldcup2026/manifest.json'
+  '/worldcup2026/manifest.json',
+  '/worldcup2026/favicon.ico',
+  '/worldcup2026/icons/icon-192.png',
+  '/worldcup2026/icons/icon-512.png',
+  '/worldcup2026/icons/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', e => {
