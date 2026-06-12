@@ -199,6 +199,32 @@ body {
 .team-search::placeholder { color: var(--text-muted); }
 .team-search:focus { border-color: var(--gold); }
 
+/* ── Stats section tabs (Player / Team) ── */
+.stats-section-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.stats-section-tab {
+  flex: 1;
+  background: #1a1a1a;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 0;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.stats-section-tab:hover { color: var(--text); border-color: #444; }
+.stats-section-tab--active {
+  background: #1e1a0e;
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
 /* ── Stats sub-tabs ── */
 .stats-tabs {
   display: flex;

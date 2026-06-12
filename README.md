@@ -162,3 +162,46 @@ git push
 - Old caches auto-deleted on new deploy (bump `CACHE` version in sw.js when pushing updates)
 - iOS: Safari → Share → Add to Home Screen | Android: Chrome install banner
 - Apple-specific meta tags added for full-screen standalone mode on iOS
+
+---
+
+## Phase 6 — Expanded Stats (Player Stats + Team Stats)
+
+### What can and can't be calculated
+
+| Stat | Source | Available? |
+|---|---|---|
+| Player Goals | Timeline Type 0 | ✅ Already built |
+| Player Assists | Timeline Type 1 — `IdPlayer` is the assister | ✅ Can calculate |
+| Player Yellow Cards | Timeline Type 2 | ✅ Already built |
+| Player Red Cards | Timeline Type 3 | ✅ Already built |
+| Player Clean Sheets | Timeline Type 57 (Goal Prevention) — `IdPlayer` is the GK. Clean sheet = GK's team conceded 0 | ✅ Can calculate |
+| Team Goals per game | Total goals scored ÷ matches played — from match scores | ✅ Can calculate |
+| Team Conceded per game | Total goals conceded ÷ matches played — from match scores | ✅ Can calculate |
+| Team Clean Sheets | Matches where team conceded 0 — from match scores | ✅ Can calculate |
+| Team Yellow Cards | Count Type 2 per team across all timelines | ✅ Can calculate |
+| Team Red Cards | Count Type 3 per team across all timelines | ✅ Can calculate |
+| Team Possession | `BallPossession` field exists in match API but is `null` for all matches — FIFA does not expose it. **Removed from scope.** | ❌ Not available |
+
+### Phase 6a — Expand Stats Tab: Two Sub-sections ✅ (2026-06-12)
+- Stats tab split into two top-level buttons: **👤 Player Stats** and **🏳️ Team Stats**
+- Player Stats keeps existing sub-tabs: Goals, Yellow Cards, Red Cards
+- Team Stats section scaffolded — content coming in Phase 6c
+
+### Phase 6b — Player Stats: Add Assists and Clean Sheets
+- **Assists:** Parse Type 1 timeline events — `IdPlayer` on the Assist event is the assister
+  - Note: current code uses assists only to pair with goals. Need to also count them per player independently
+- **Clean Sheets (GK):** A goalkeeper gets a clean sheet when their team concedes 0 goals in a match
+  - Identify GK per match via Type 57 (Goal Prevention) events — `IdPlayer` is always the GK
+  - Cross-reference with final score: if the GK's team conceded 0, it's a clean sheet
+  - Edge case: if a match has no Type 57 events (no saves), fall back to checking if the team kept a clean sheet and attribute it to the GK registered in that match
+
+### Phase 6c — Team Stats: Goals, Conceded, Clean Sheets, Cards
+- All computed from match scores + timelines — no new API calls needed
+- **Goals per game:** sum of goals scored ÷ number of matches played
+- **Conceded per game:** sum of goals conceded ÷ number of matches played
+- **Clean Sheets:** count of finished matches where team conceded 0
+- **Yellow Cards:** count Type 2 events per team across all timelines
+- **Red Cards:** count Type 3 events per team across all timelines
+- Display as a ranked table sorted by the selected stat
+- Possession is excluded — FIFA API does not provide this data

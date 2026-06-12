@@ -458,7 +458,9 @@ function showMatchesUI(show) {
   document.getElementById('team-search-wrap').style.display = show ? 'block' : 'none';
 }
 
-let activeStatsSub = 'scorers';
+let activeStatsSection = 'player'; // 'player' or 'team'
+let activePlayerSub = 'scorers';
+let activeTeamSub = 'goals-per-game';
 
 function renderActiveTab() {
   if (activeTab === 'matches') renderMatches(allMatches);
@@ -469,24 +471,52 @@ function renderActiveTab() {
 function renderStats(matches) {
   const main = document.querySelector('.main');
   main.innerHTML = `
-    <div class="stats-tabs">
-      <button class="stats-tab ${activeStatsSub === 'scorers' ? 'stats-tab--active' : ''}" data-sub="scorers">⚽ Goals</button>
-      <button class="stats-tab ${activeStatsSub === 'yellow' ? 'stats-tab--active' : ''}" data-sub="yellow">🟨 Yellow Cards</button>
-      <button class="stats-tab ${activeStatsSub === 'red' ? 'stats-tab--active' : ''}" data-sub="red">🟥 Red Cards</button>
+    <div class="stats-section-tabs">
+      <button class="stats-section-tab ${activeStatsSection === 'player' ? 'stats-section-tab--active' : ''}" data-section="player">👤 Player Stats</button>
+      <button class="stats-section-tab ${activeStatsSection === 'team' ? 'stats-section-tab--active' : ''}" data-section="team">🏳️ Team Stats</button>
     </div>
     <div id="stats-content"></div>`;
 
-  main.querySelectorAll('.stats-tab').forEach(btn => {
+  main.querySelectorAll('.stats-section-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      activeStatsSub = btn.dataset.sub;
+      activeStatsSection = btn.dataset.section;
       renderStats(matches);
     });
   });
 
   const content = main.querySelector('#stats-content');
-  if (activeStatsSub === 'scorers') renderScorers(matches, content);
-  else if (activeStatsSub === 'yellow') renderCardLeaders(matches, content, 'yellow');
-  else if (activeStatsSub === 'red') renderCardLeaders(matches, content, 'red');
+  if (activeStatsSection === 'player') renderPlayerStats(matches, content);
+  else renderTeamStats(matches, content);
+}
+
+function renderPlayerStats(matches, container) {
+  container.innerHTML = `
+    <div class="stats-tabs">
+      <button class="stats-tab ${activePlayerSub === 'scorers' ? 'stats-tab--active' : ''}" data-sub="scorers">⚽ Goals</button>
+      <button class="stats-tab ${activePlayerSub === 'yellow' ? 'stats-tab--active' : ''}" data-sub="yellow">🟨 Yellow Cards</button>
+      <button class="stats-tab ${activePlayerSub === 'red' ? 'stats-tab--active' : ''}" data-sub="red">🟥 Red Cards</button>
+    </div>
+    <div id="player-stats-content"></div>`;
+
+  container.querySelectorAll('.stats-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activePlayerSub = btn.dataset.sub;
+      renderPlayerStats(matches, container);
+    });
+  });
+
+  const inner = container.querySelector('#player-stats-content');
+  if (activePlayerSub === 'scorers') renderScorers(matches, inner);
+  else if (activePlayerSub === 'yellow') renderCardLeaders(matches, inner, 'yellow');
+  else if (activePlayerSub === 'red') renderCardLeaders(matches, inner, 'red');
+}
+
+function renderTeamStats(matches, container) {
+  container.innerHTML = `
+    <div class="stats-tabs">
+      <button class="stats-tab stats-tab--active" data-sub="goals-per-game">⚽ Goals/Game</button>
+    </div>
+    <p class="detail-empty" style="margin-top:20px">Team Stats coming in Phase 6c.</p>`;
 }
 
 // ── Standings (computed from match results) ────────────────────
