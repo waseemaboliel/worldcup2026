@@ -126,10 +126,12 @@ git push
 
 ## Future Features
 
-### Phase 5a — Israel TV Channels on Match Cards
-- Fetch Watch API on page load, filter by `IdCountry === "ISR"`
-- Show channel names on each match card (Kan Box always first, then API channels)
+### Phase 5a — Israel TV Channels on Match Cards ✅ (2026-06-12)
+- Fetches Watch API in parallel with matches on page load
+- Filters by `IdCountry === "ISR"`, builds `IdMatch → channels[]` map
+- Each match card shows clickable channel chips (link to broadcast site)
 - Dedup: skip `KAN` if `KAN 11` present; skip `MAKAN` if `MAKAN 33` present
+- Channels are non-critical — failures silently ignored, rest of app works fine
 
 ### Phase 5b — Scroll to Today on Load
 - Auto-scroll to today's date group on page load (Israel timezone)

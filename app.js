@@ -1,4 +1,5 @@
 const MATCHES_API = 'https://api.fifa.com/api/v3/calendar/matches?language=en-GB&idCompetition=17&idSeason=285023&count=104';
+const WATCH_API   = 'https://api.fifa.com/api/v3/watch/season/285023?language=en-GB';
 
 // FIFA 3-letter → ISO 3166-1 alpha-2 (from working calendar project)
 const FIFA_TO_ALPHA2 = {
@@ -114,6 +115,15 @@ function toggleCard(card, match) {
   loadTimeline(match, detail);
 }
 
+function buildChannelsRow(matchId) {
+  const channels = israelChannels[matchId];
+  if (!channels || channels.length === 0) return '';
+  const chips = channels.map(c =>
+    `<a class="channel-chip" href="${c.Url || c.TvChannelUrl}" target="_blank" rel="noopener">${c.Name}</a>`
+  ).join('');
+  return `<div class="match-channels">📺 ${chips}</div>`;
+}
+
 function buildMatchCard(match) {
   const isFinished = match.MatchStatus === STATUS_FINISHED;
   const homeName = getTeamName(match.Home) || match.PlaceHolderA || 'TBD';
@@ -157,7 +167,8 @@ function buildMatchCard(match) {
       <div class="match-meta">
         <span class="match-venue">${venueStr}</span>
         <span class="match-status match-status--ft">FT</span>
-      </div>`;
+      </div>
+      ${buildChannelsRow(match.IdMatch)}`;
   } else {
     const kickoff = formatKickoff(match.Date);
     card.innerHTML = `
@@ -178,7 +189,8 @@ function buildMatchCard(match) {
       <div class="match-meta">
         <span class="match-venue">${venueStr}</span>
         <span class="match-group">${groupText}</span>
-      </div>`;
+      </div>
+      ${buildChannelsRow(match.IdMatch)}`;
   }
 
   card.addEventListener('click', () => toggleCard(card, match));
@@ -341,14 +353,37 @@ function showError(msg) {
     </div>`;
 }
 
+async function fetchIsraelChannels() {
+  try {
+    const res = await fetch(WATCH_API);
+    if (!res.ok) return;
+    const data = await res.json();
+    const israel = (data.Results || []).find(r => r.IdCountry === 'ISR');
+    if (!israel) return;
+    for (const m of (israel.Matches || [])) {
+      const sources = m.Sources || [];
+      const hasKan11    = sources.some(s => s.Name === 'KAN 11');
+      const hasMakan33  = sources.some(s => s.Name === 'MAKAN 33');
+      israelChannels[m.IdMatch] = sources.filter(s => {
+        if (s.Name === 'KAN'   && hasKan11)   return false;
+        if (s.Name === 'MAKAN' && hasMakan33) return false;
+        return true;
+      });
+    }
+  } catch { /* channels are non-critical — silently skip */ }
+}
+
 async function init() {
   initTabs();
   initFilters();
   showLoading();
   try {
-    const res = await fetch(MATCHES_API);
-    if (!res.ok) throw new Error(`FIFA API returned ${res.status}`);
-    const data = await res.json();
+    const [matchRes] = await Promise.all([
+      fetch(MATCHES_API),
+      fetchIsraelChannels()
+    ]);
+    if (!matchRes.ok) throw new Error(`FIFA API returned ${matchRes.status}`);
+    const data = await matchRes.json();
     allMatches = data.Results || [];
     if (allMatches.length === 0) throw new Error('No matches returned from API');
     renderMatches(allMatches);
@@ -360,6 +395,7 @@ async function init() {
 
 // ── Tab switching ──────────────────────────────────────────────
 let allMatches = [];
+let israelChannels = {}; // IdMatch → channels[]
 let activeTab = 'matches';
 let activeStageFilter = 'all';
 
