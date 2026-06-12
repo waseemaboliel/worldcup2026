@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FIFA World Cup 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <header class="nav">
+    <div class="nav-inner">
+      <div class="nav-logo">
+        <span class="nav-trophy">🏆</span>
+        <div class="nav-title">
+          <span class="nav-main">World Cup 2026</span>
+          <span class="nav-sub">USA · Canada · Mexico</span>
+        </div>
+      </div>
+    </div>
+    <!-- TABS -->
+    <nav class="tabs">
+      <button class="tab tab--active" data-tab="matches">Matches</button>
+      <button class="tab" data-tab="standings">Standings</button>
+      <button class="tab" data-tab="scorers">Top Scorers</button>
+    </nav>
+  </header>
+
+  <!-- FILTER CHIPS (matches tab only) -->
+  <div class="filters" id="filters">
+    <button class="chip chip--active" data-stage="all">All</button>
+    <button class="chip" data-stage="First Stage">Groups</button>
+    <button class="chip" data-stage="Round of 32">R32</button>
+    <button class="chip" data-stage="Round of 16">R16</button>
+    <button class="chip" data-stage="Quarter-final">QF</button>
+    <button class="chip" data-stage="Semi-final">SF</button>
+    <button class="chip" data-stage="Final">Final</button>
+  </div>
+
+  <!-- MAIN — populated by app.js -->
+  <main class="main"></main>
+
+  <script src="app.js"></script>
+</body>
+</html>
