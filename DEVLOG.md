@@ -207,16 +207,17 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
 - In `renderStandings`, add a third CSS class `.qualify-third` for these rows (different colour from `.qualify`)
 - Works with live standings too — `espnLiveData` scores already feed into `computeStandings`
 
-#### 12b — Knockout Bracket View ✅ (2026-06-13)
+#### 12b — Knockout Bracket View ✅ (2026-06-13, redesigned 2026-06-13)
 - New **Bracket** tab (between Standings and Stats) with two sub-tabs:
   - **R32:** 16 match cards in list format, same card style as the Matches tab. TBD slots show readable resolved labels — "Group A Winner", "Best 3rd (A/B/C/D/F)" — fully translated in Hebrew/Arabic.
-  - **Bracket:** Visual 4-column tree — R16 → QF → SF → Final + 3rd Place (horizontally scrollable, always LTR regardless of app language direction).
-- **Visual bracket slots (`bslot`):** each shows both teams + flag, score (finished) or kickoff time (upcoming). Winner highlighted in gold. Live slots have green border + `🟢`. Upcoming slots dimmed.
-- **TBD slots in tree:** show short `W89`/`W90` labels until R32 finishes, then real team names + flags replace them automatically via `getTeamName`.
-- **Final column:** 3rd place and Final are grouped together with clear separation (`margin-top: 56px` between them) so they read as distinct matches.
-- Tapping a finished/live slot in the tree navigates to the Matches tab and opens that match's detail panel.
-- Match numbering chain hard-coded (FIFA API has no match-linkage field): R16 89–96 → QF 97–100 → SF 101–102 → 3rd place 103 (IdStage 289291) / Final 104 (IdStage 289292).
-- All round labels (`stageR16`, `stageQF`, `stageSF`, `stageFinal`, `stage3rd`) use `t()` — translated in all 3 languages.
+  - **Bracket:** Visual tournament bracket — top 4 and bottom 4 R16 matches converge through QF and SF to the Final in the centre-right column. 3rd place shown below Final.
+- **Layout:** Each round is a flex column with an internal CSS grid (`grid-template-rows: repeat(19, 26px)`). Each `bslot` is placed with `grid-row` so QF slots are vertically centred between their two R16 feeders, SF between QF pairs, and Final between both SFs.
+- **Visual bracket slots (`bslot`):** each shows both teams + flag, score (finished) or kickoff time (upcoming). Winner highlighted in gold. Live slots have green border + glow. Upcoming slots dimmed.
+- **TBD slots:** show short `W89`/`W90` labels until R32 finishes, then real team names + flags replace them automatically.
+- Always LTR regardless of app language direction.
+- Tapping a finished/live slot navigates to the Matches tab and opens that match's detail panel.
+- Match numbering chain hard-coded: R16 89–96 → QF 97–100 → SF 101–102 → 3rd place 103 / Final 104.
+- All round labels use `t()` — translated in all 3 languages.
 
 ### Phase 13 — Player Profiles
 - Tap any player name in stats leaderboards or match detail to open a profile

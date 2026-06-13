@@ -2180,30 +2180,6 @@ function renderBracketR32(matches, container) {
 }
 
 // ── Tab 2: Visual tree R16 → QF → SF → Final ─────────────────
-// Bracket structure (fixed, derived from PlaceHolder chain):
-// Left half:  R16: 89,90 → QF: 97 → SF: 101 → Final: 103
-//             R16: 91,92 → QF: 99 ↗
-// Right half: R16: 93,94 → QF: 98 → SF: 101 ↗
-//             R16: 95,96 → QF:100 → SF: 102 → Final: 103
-//                                   SF: 102 ↗
-// Full order top→bottom within each column:
-const BRACKET_TREE = [
-  // [R16, R16, QF, SF, Final]  — left half (feeds SF 101)
-  // [R16, R16, QF, SF]         — right half (feeds SF 102)
-  // Laid out as 8 rows of slots across 4 columns
-  // Each entry: match number
-  // Null = spacer row
-  //  col:   R16   QF    SF   Final
-  { r16: 89, qf: 97,  sf: 101, final: 103 }, // rows 1–2
-  { r16: 90                                }, // row  2
-  { r16: 91, qf: 99,  sf: 101             }, // rows 3–4
-  { r16: 92                                }, // row  4
-  { r16: 93, qf: 98,  sf: 102             }, // rows 5–6  (right half)
-  { r16: 94                                }, // row  6
-  { r16: 95, qf: 100, sf: 102, final: 103 }, // rows 7–8
-  { r16: 96                                }, // row  8
-];
-
 function bracketSlot(matchNum, matches, isHighlighted) {
   const m = matches.find(x => x.MatchNumber === matchNum);
   if (!m) return `<div class="bslot bslot--empty"></div>`;
@@ -2271,49 +2247,64 @@ function bracketSlot(matchNum, matches, isHighlighted) {
 }
 
 function renderBracketTree(matches, container) {
-  // Match number → match object for quick lookup
   const byNum = new Map(matches.map(m => [m.MatchNumber, m]));
 
-  // Build columns: R16 (8 slots), QF (4), SF (2), Final (1) + 3rd
-  // Lay out as a grid: 4 columns, 8 rows
-  // Each QF slot spans 2 R16 rows, each SF spans 4, Final spans 8
+  // Each column is an independent grid with GRID_ROWS rows of GRID_ROW_H px.
+  // Slots use grid-row to align vertically so each round is centred between its feeders.
+  //
+  // Grid rows (1-based, exclusive end):
+  //   R16:  89→1-3, 90→3-5, 91→5-7, 92→7-9   (top 4, each 2 rows)
+  //         93→9-11, 94→11-13, 95→13-15, 96→15-17 (bot 4)
+  //   QF:   97→2-6  (mid of 89+90),  99→6-10  (mid of 91+92)
+  //         98→10-14 (mid of 93+94), 100→14-18 (mid of 95+96)
+  //   SF:   101→4-10 (mid of 97+99), 102→12-18 (mid of 98+100)
+  //   Final: 104→8-14 (centre between both SFs)
+  //   3rd:   103→15-19
 
-  const r16nums  = [89, 90, 91, 92, 93, 94, 95, 96];
-  const qfnums   = [97, 99, 98, 100];   // order: top→bottom matching R16 pairs
-  const sfnums   = [101, 102];
-  const finalnums = [103];
-  const thirdnum  = 104;
+  function slotAt(matchNum, rowStart, rowEnd) {
+    const raw = bracketSlot(matchNum, matches);
+    // Replace only the opening <div class="bslot ..."> (first match only)
+    return raw.replace(/^<div class="bslot/, `<div style="grid-row:${rowStart}/${rowEnd}" class="bslot`);
+  }
 
-  const r16html  = r16nums.map(n  => bracketSlot(n, matches)).join('');
-  const qfhtml   = qfnums.map(n   => bracketSlot(n, matches)).join('');
-  const sfhtml   = sfnums.map(n   => bracketSlot(n, matches)).join('');
-  const thirdhtml = bracketSlot(103, matches); // M103 = 3rd place (RU101 vs RU102)
-  const finalhtml = bracketSlot(104, matches); // M104 = Final (W101 vs W102)
+  const r16col = [
+    slotAt(89, 1,  3), slotAt(90, 3,  5), slotAt(91, 5,  7), slotAt(92, 7,  9),
+    slotAt(93, 9,  11), slotAt(94, 11, 13), slotAt(95, 13, 15), slotAt(96, 15, 17),
+  ].join('');
+
+  const qfcol = [
+    slotAt(97,  2,  6),
+    slotAt(99,  6,  10),
+    slotAt(98,  10, 14),
+    slotAt(100, 14, 18),
+  ].join('');
+
+  const sfcol = [
+    slotAt(101, 4,  10),
+    slotAt(102, 12, 18),
+  ].join('');
+
+  // Final column: label → Final slot → label → 3rd place slot
+  const finalcol = `
+    <div class="btree-final-header" style="grid-row:7/9">${t('stageFinal')} 🏆</div>
+    ${slotAt(104, 8, 14)}
+    <div class="btree-third-header" style="grid-row:14/16">🥉 ${t('stage3rd')}</div>
+    ${slotAt(103, 15, 19)}
+  `;
 
   container.innerHTML = `
     <div class="btree-wrap">
+      <div class="btree-labels">
+        <div>${t('stageR16')}</div>
+        <div>${t('stageQF')}</div>
+        <div>${t('stageSF')}</div>
+        <div></div>
+      </div>
       <div class="btree">
-        <div class="btree-col btree-col--r16">
-          <div class="btree-col-label">${t('stageR16')}</div>
-          ${r16html}
-        </div>
-        <div class="btree-col btree-col--qf">
-          <div class="btree-col-label">${t('stageQF')}</div>
-          ${qfhtml}
-        </div>
-        <div class="btree-col btree-col--sf">
-          <div class="btree-col-label">${t('stageSF')}</div>
-          ${sfhtml}
-        </div>
-        <div class="btree-col btree-col--final">
-          <div class="btree-col-label">&nbsp;</div>
-          <div class="btree-final-group">
-            <div class="btree-third-label">🥉 ${t('stage3rd')}</div>
-            ${thirdhtml}
-            <div class="btree-final-label">🏆 ${t('stageFinal')}</div>
-            ${finalhtml}
-          </div>
-        </div>
+        <div class="btree-col btree-col--r16">${r16col}</div>
+        <div class="btree-col btree-col--qf">${qfcol}</div>
+        <div class="btree-col btree-col--sf">${sfcol}</div>
+        <div class="btree-col btree-col--final">${finalcol}</div>
       </div>
     </div>`;
 
@@ -2324,13 +2315,11 @@ function renderBracketTree(matches, container) {
     if (m.MatchStatus === STATUS_FINISHED || m.MatchStatus === STATUS_LIVE) {
       el.style.cursor = 'pointer';
       el.addEventListener('click', () => {
-        // Open the match detail in the Matches tab
         activeTab = 'matches';
         document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('tab--active'));
         document.querySelector('.tab[data-tab="matches"]')?.classList.add('tab--active');
         showMatchesUI(true);
         renderMatches(activeMatches());
-        // Small delay to let DOM render, then find and open the card
         setTimeout(() => {
           const card = document.querySelector(`.match-card[data-match-id="${m.IdMatch}"]`);
           if (card) { card.scrollIntoView({ behavior: 'smooth', block: 'center' }); card.click(); }
@@ -2357,13 +2346,16 @@ function standingSort(a, b) {
 }
 
 function computeStandings(matches) {
+  // Key by IdGroup (numeric, language-independent) to guarantee A→L order.
+  // Each entry is { label, table } where label is the display name.
   const groups = new Map();
 
   for (const m of matches) {
     if (!isGroupStage(m)) continue;
-    const group = m.GroupName?.[0]?.Description || 'Unknown';
-    if (!groups.has(group)) groups.set(group, new Map());
-    const table = groups.get(group);
+    const groupId = m.IdGroup || 'Unknown';
+    const label   = m.GroupName?.[0]?.Description || 'Unknown';
+    if (!groups.has(groupId)) groups.set(groupId, { label, table: new Map() });
+    const { table } = groups.get(groupId);
 
     const addTeam = (team) => {
       if (!team) return;
@@ -2426,11 +2418,10 @@ function computeStandings(matches) {
     }
   }
 
-  // Sort each group
+  // Sort groups by IdGroup (numeric → A through L), then sort rows within each group
   const sorted = new Map();
-  for (const [group, table] of groups) {
-    const rows = [...table.values()].sort(standingSort);
-    sorted.set(group, rows);
+  for (const [groupId, { label, table }] of [...groups.entries()].sort((a, b) => a[0] - b[0])) {
+    sorted.set(label, [...table.values()].sort(standingSort));
   }
   return sorted;
 }
