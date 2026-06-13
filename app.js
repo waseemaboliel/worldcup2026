@@ -2228,6 +2228,12 @@ function bracketSlot(matchNum, matches, isHighlighted) {
     awayFlag = '';
   }
 
+  // Short date: "Jun 28" in current locale
+  const shortDate = new Date(m.Date).toLocaleDateString(dateLocale(), {
+    day: 'numeric', month: 'short', timeZone: 'Asia/Jerusalem'
+  });
+  const kickoffTime = formatKickoff(m.Date);
+
   let homeWon = false, awayWon = false;
   if (isFinished) {
     const hs = m.HomeTeamScore ?? 0, as = m.AwayTeamScore ?? 0;
@@ -2241,7 +2247,7 @@ function bracketSlot(matchNum, matches, isHighlighted) {
     scoreStr = liveData?.score || `${m.HomeTeamScore ?? 0}–${m.AwayTeamScore ?? 0}`;
     statusClass = 'bslot--live';
   } else {
-    scoreStr = formatKickoff(m.Date);
+    scoreStr = kickoffTime;
     statusClass = 'bslot--upcoming';
   }
 
@@ -2257,6 +2263,7 @@ function bracketSlot(matchNum, matches, isHighlighted) {
       <span class="bslot-flag">${awayFlag}</span>
       <span class="bslot-name">${awayStr}</span>
     </div>
+    <div class="bslot-datetime">${shortDate}${!isFinished && !isLive ? ` · ${kickoffTime}` : ''}</div>
   </div>`;
 }
 
