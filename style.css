@@ -609,6 +609,189 @@ body {
   display: block;
 }
 
+/* ── Lineup panel ── */
+.lineup-section {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.lineup-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+[dir="rtl"] .lineup-title { letter-spacing: 0; }
+.lineup-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+  direction: ltr; /* always LTR so home=left away=right regardless of page dir */
+}
+.lineup-team { min-width: 0; }
+.lineup-team--away { text-align: right; }
+.lineup-formation {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 2px;
+}
+.lineup-coach {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.lineup-pos-group { margin-bottom: 6px; }
+.lineup-pos-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 2px;
+}
+[dir="rtl"] .lineup-pos-label { text-transform: none; letter-spacing: 0; }
+.lineup-player {
+  font-size: 12px;
+  color: var(--text);
+  padding: 1px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lineup-shirt {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+.lineup-team--away .lineup-shirt { margin-right: 0; margin-left: 4px; }
+.lineup-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 6px 0;
+}
+.lineup-subs-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 2px;
+}
+[dir="rtl"] .lineup-subs-label { text-transform: none; letter-spacing: 0; }
+.lineup-player--sub { color: var(--text-muted); }
+
+/* ── Pitch view ── */
+.pitch-wrap {
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.pitch {
+  background: #2d7a3a;
+  background-image:
+    /* centre line */
+    linear-gradient(to bottom, transparent calc(50% - 0.5px), rgba(255,255,255,0.15) calc(50% - 0.5px), rgba(255,255,255,0.15) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+    /* outer border */
+    linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 25%, 25% 100%;
+  padding: 10px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  direction: ltr;
+}
+/* Alternating grass stripes */
+.pitch-half { display: flex; flex-direction: column; gap: 6px; }
+.pitch-half--home { border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 8px; }
+.pitch-half--away { padding-top: 8px; }
+.pitch-row {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+.pitch-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 44px;
+  max-width: 56px;
+}
+.pitch-shirt {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: 2px solid rgba(255,255,255,0.5);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.pitch-shirt--away {
+  background: rgba(0,0,0,0.25);
+  border-color: rgba(255,255,255,0.35);
+}
+.pitch-name {
+  font-size: 9px;
+  color: #fff;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 52px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+}
+.pitch-formation {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.7);
+  text-align: center;
+  padding: 2px 0 4px;
+  letter-spacing: 0.5px;
+}
+.pitch-subs-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 8px;
+  margin-top: 8px;
+  direction: ltr;
+}
+.pitch-subs-col { min-width: 0; }
+.pitch-subs-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.pitch-subs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.pitch-sub-chip {
+  background: #1a1a1a;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+.pitch-sub-chip span {
+  color: var(--gold);
+  font-weight: 700;
+  margin-right: 4px;
+}
+
 /* ── Loading state ── */
 .loading {
   text-align: center;

@@ -1,6 +1,7 @@
 const MATCHES_API    = 'https://api.fifa.com/api/v3/calendar/matches?language=en-GB&idCompetition=17&idSeason=285023&count=104';
 const MATCHES_API_AR = 'https://api.fifa.com/api/v3/calendar/matches?language=ar-SA&idCompetition=17&idSeason=285023&count=104';
 const WATCH_API      = 'https://api.fifa.com/api/v3/watch/season/285023?language=en-GB';
+const ESPN_INDEX_API = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=200';
 
 const STRINGS = {
   en: {
@@ -43,6 +44,10 @@ const STRINGS = {
     stageSF: 'Semi-final',
     stage3rd: '3rd Place',
     stageFinal: 'Final',
+    lineupTitle: '📋 Lineups',
+    lineupCoach: 'Coach',
+    lineupSubs: 'Substitutes',
+    posGK: 'GK', posDEF: 'DEF', posMID: 'MID', posFWD: 'FWD',
   },
   he: {
     tabMatches: 'משחקים', tabStandings: 'טבלאות', tabStats: 'סטטיסטיקה',
@@ -84,6 +89,10 @@ const STRINGS = {
     stageSF: 'חצי גמר',
     stage3rd: 'מקום שלישי',
     stageFinal: 'גמר',
+    lineupTitle: '📋 הרכבים',
+    lineupCoach: 'מאמן',
+    lineupSubs: 'שחקני חילוף',
+    posGK: 'שוע', posDEF: 'הגנה', posMID: 'קשר', posFWD: 'התקפה',
   },
   ar: {
     tabMatches: 'مباريات', tabStandings: 'ترتيب', tabStats: 'إحصاءات',
@@ -125,6 +134,10 @@ const STRINGS = {
     stageSF: 'نصف النهائي',
     stage3rd: 'المركز الثالث',
     stageFinal: 'النهائي',
+    lineupTitle: '📋 التشكيلات',
+    lineupCoach: 'المدرب',
+    lineupSubs: 'الاحتياطيون',
+    posGK: 'حارس', posDEF: 'دفاع', posMID: 'وسط', posFWD: 'هجوم',
   }
 };
 
@@ -387,27 +400,143 @@ const timelineCache = new Map();
 
 async function loadTimeline(match, detail) {
   const cacheKey = match.IdMatch;
-  let events;
 
-  if (timelineCache.has(cacheKey)) {
-    events = timelineCache.get(cacheKey);
-  } else {
-    try {
-      const url = TIMELINE_API
-        .replace('{stage}', match.IdStage)
-        .replace('{match}', match.IdMatch);
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`${res.status}`);
-      const data = await res.json();
-      events = data.Event || [];
-      timelineCache.set(cacheKey, events);
-    } catch {
-      detail.innerHTML = `<p class="detail-empty">${t('detailLoadError')}</p>`;
-      return;
-    }
+  // Fetch timeline, FIFA lineup, and ESPN lineup in parallel
+  const [events, lineup, espnLineup] = await Promise.all([
+    fetchTimeline(match, detail),
+    fetchLineup(match),
+    fetchEspnLineup(match),
+  ]);
+
+  if (events === null) return; // fetchTimeline already rendered the error
+  renderTimeline(match, events, lineup, espnLineup, detail);
+}
+
+async function fetchTimeline(match, detail) {
+  const cacheKey = match.IdMatch;
+  if (timelineCache.has(cacheKey)) return timelineCache.get(cacheKey);
+  try {
+    const url = TIMELINE_API
+      .replace('{stage}', match.IdStage)
+      .replace('{match}', match.IdMatch);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${res.status}`);
+    const data = await res.json();
+    const events = data.Event || [];
+    timelineCache.set(cacheKey, events);
+    return events;
+  } catch {
+    detail.innerHTML = `<p class="detail-empty">${t('detailLoadError')}</p>`;
+    return null;
+  }
+}
+
+// ── Lineup fetch + parse ───────────────────────────────────────
+const LINEUP_API   = 'https://api.fifa.com/api/v3/live/football/17/285023/{stage}/{match}?language=en-GB';
+const lineupCache  = new Map(); // IdMatch → { home, away }
+
+function parseLineupTeam(teamData) {
+  if (!teamData) return null;
+  const players = teamData.Players || [];
+  const toPlayer = p => ({
+    id:       p.IdPlayer,
+    name:     p.PlayerName?.[0]?.Description || '',
+    shirt:    p.ShirtNumber,
+    position: p.Position, // 0=GK 1=DEF 2=MID 3=FWD
+    status:   p.Status,   // 1=starter 2=sub
+    fieldStatus: p.FieldStatus, // 0=on pitch 1=subbed off 2=subbed on
+  });
+  const coach = teamData.Coaches?.[0]?.Name?.[0]?.Description || null;
+  return {
+    formation: teamData.Tactics || null,
+    coach,
+    starters: players.filter(p => p.Status === 1).map(toPlayer),
+    subs:     players.filter(p => p.Status === 2).map(toPlayer),
+  };
+}
+
+async function fetchLineup(match) {
+  const cacheKey = match.IdMatch;
+  if (lineupCache.has(cacheKey)) return lineupCache.get(cacheKey);
+  try {
+    const url = LINEUP_API
+      .replace('{stage}', match.IdStage)
+      .replace('{match}', match.IdMatch);
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const lineup = {
+      home: parseLineupTeam(data.HomeTeam),
+      away: parseLineupTeam(data.AwayTeam),
+    };
+    lineupCache.set(cacheKey, lineup);
+    return lineup;
+  } catch {
+    return null;
+  }
+}
+
+// ── ESPN lineup fetch + parse ──────────────────────────────────
+const ESPN_SUMMARY_API  = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event={espnId}';
+const espnLineupCache   = new Map(); // IdMatch → { home, away } | null
+
+function parseEspnRoster(roster) {
+  if (!roster) return null;
+  const players = roster.roster || [];
+
+  // Map ESPN abbreviated position → FIFA-style integer bucket for grouping
+  const posMap = { G: 0, GK: 0 };
+  ['CB','CD','CD-L','CD-R','LB','RB','LWB','RWB','SW','D'].forEach(p => posMap[p] = 1);
+  ['CM','CM-L','CM-R','DM','AM','LM','RM','CAM','CDM','MF','M'].forEach(p => posMap[p] = 2);
+  ['CF','CF-L','CF-R','LW','RW','SS','FW','F','ST'].forEach(p => posMap[p] = 3);
+
+  const toPlayer = p => ({
+    name:           p.athlete?.displayName || '',
+    shirt:          p.jersey || '',           // normalised to 'shirt' like FIFA
+    posAbbr:        p.position?.abbreviation || '',
+    position:       posMap[p.position?.abbreviation] ?? 2, // fallback to MID
+    formationPlace: p.formationPlace ?? null,
+    subbedOut:      p.subbedOut || false,
+    subbedIn:       p.subbedIn  || false,
+  });
+
+  return {
+    formation: roster.formation || null,
+    coach:     null, // ESPN doesn't expose coach in this endpoint
+    starters:  players.filter(p =>  p.starter).sort((a, b) => (a.formationPlace ?? 99) - (b.formationPlace ?? 99)).map(toPlayer),
+    subs:      players.filter(p => !p.starter).map(toPlayer),
+  };
+}
+
+async function fetchEspnLineup(match) {
+  const cacheKey = match.IdMatch;
+  if (espnLineupCache.has(cacheKey)) return espnLineupCache.get(cacheKey);
+
+  const espnId = fifaToEspn.get(match.IdMatch);
+  if (!espnId) {
+    espnLineupCache.set(cacheKey, null);
+    return null;
   }
 
-  renderTimeline(match, events, detail);
+  try {
+    const url = ESPN_SUMMARY_API.replace('{espnId}', espnId);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${res.status}`);
+    const data = await res.json();
+    const rosters = data.rosters || [];
+    // ESPN marks home/away on each roster entry
+    const homeRoster = rosters.find(r => r.homeAway === 'home');
+    const awayRoster = rosters.find(r => r.homeAway === 'away');
+    const result = {
+      home: parseEspnRoster(homeRoster),
+      away: parseEspnRoster(awayRoster),
+    };
+    espnLineupCache.set(cacheKey, result);
+    return result;
+  } catch {
+    espnLineupCache.set(cacheKey, null);
+    return null;
+  }
 }
 
 function parseTimeline(events, homeId, awayId) {
@@ -461,7 +590,7 @@ function eventRow(minute, homeContent, awayContent) {
   return `<div class="detail-row">${left}<span class="detail-minute">${minute}</span>${right}</div>`;
 }
 
-function renderTimeline(match, events, detail) {
+function renderTimeline(match, events, lineup, espnLineup, detail) {
   const homeId = match.Home?.IdTeam;
   const awayId = match.Away?.IdTeam;
   const attendance = match.Attendance
@@ -517,6 +646,186 @@ function renderTimeline(match, events, detail) {
   detail.innerHTML = attendance + (sections.length
     ? sections.join('')
     : `<p class="detail-empty">${t('detailNoEvents')}</p>`);
+
+  if (espnLineup || lineup) {
+    detail.appendChild(renderLineup(match, espnLineup, lineup));
+  }
+}
+
+function shortName(fullName) {
+  // "Maxime Crépeau" → "Crépeau", "Jonathan David" → "J. David"
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  return parts[parts.length - 1]; // last name only
+}
+
+// Left-to-right sort weight — ONLY for positions where ESPN's abbr genuinely encodes
+// lateral placement. CM-R/CM-L and CF-R/CF-L are foot-based role names, not positional,
+// so they are NOT included here and fall through to formationPlace ordering instead.
+function lateralOrder(posAbbr) {
+  const p = (posAbbr || '').toUpperCase();
+  switch (p) {
+    case 'LB':  case 'LWB': case 'LW':  case 'LM':  return 0; // far left
+    case 'CD-L': case 'CB-L':                         return 1; // left-centre
+    case 'G': case 'GK': case 'CD': case 'CB':
+    case 'DM': case 'CDM': case 'CM': case 'CAM':
+    case 'F': case 'ST': case 'CF': case 'SS':        return 2; // centre
+    case 'CD-R': case 'CB-R':                         return 3; // right-centre
+    case 'RB':  case 'RWB': case 'RW':  case 'RM':  return 4; // far right
+    default:                                           return 2; // unknown → centre, let fp order decide
+  }
+}
+
+function lateralSort(players) {
+  // Sort left-to-right: primary = lateralOrder (unambiguous positions like LB/RB/LM/RM/CD-L/CD-R)
+  // Tiebreak = descending formationPlace — ESPN assigns lower fp numbers to right-side players
+  return [...players].sort((a, b) => {
+    const la = lateralOrder(a.posAbbr), lb = lateralOrder(b.posAbbr);
+    if (la !== lb) return la - lb;
+    return (b.formationPlace ?? 0) - (a.formationPlace ?? 0); // higher fp = further left
+  });
+}
+
+function splitIntoRows(players, sizes, reverseOrder = false) {
+  if (sizes.length === 1) return [lateralSort(players)];
+  // For FWD groups: higher fp = shadow striker (further from goal, closest to mids)
+  // so we slice in descending fp order to put the shadow row first, lone striker last
+  const byFP = [...players].sort((a, b) =>
+    reverseOrder
+      ? (b.formationPlace ?? 0) - (a.formationPlace ?? 0)
+      : (a.formationPlace ?? 99) - (b.formationPlace ?? 99)
+  );
+  let i = 0;
+  return sizes.map(count => {
+    const row = byFP.slice(i, i + count);
+    i += count;
+    return lateralSort(row);
+  });
+}
+
+function pitchHalfHTML(teamData, isAway) {
+  if (!teamData) return '';
+  const shirtClass = isAway ? 'pitch-shirt--away' : '';
+  const formation  = teamData.formation || '';
+
+  // Group players by position bucket — this is always correct
+  const gk   = teamData.starters.filter(p => p.position === 0);
+  const defs  = teamData.starters.filter(p => p.position === 1);
+  const mids  = teamData.starters.filter(p => p.position === 2);
+  const fwds  = teamData.starters.filter(p => p.position === 3);
+
+  let defRows = [lateralSort(defs)];
+  let midRows = [lateralSort(mids)];
+  let fwdRows = [lateralSort(fwds)];
+
+  if (formation) {
+    const parts = formation.split('-').map(Number);
+    // parts = e.g. [3,4,2,1] for "3-4-2-1"
+    // Strategy: match parts to groups by count from outside in:
+    //   - First part that sums to defs.length → def row sizes
+    //   - Last part(s) that sum to fwds.length → fwd row sizes
+    //   - Remaining middle parts → mid row sizes
+
+    // Find how many leading parts sum to defs.length
+    let defSizes = [], defSum = 0, di = 0;
+    while (di < parts.length && defSum < defs.length) {
+      defSum += parts[di];
+      defSizes.push(parts[di]);
+      di++;
+      if (defSum === defs.length) break;
+    }
+    // Find how many trailing parts sum to fwds.length
+    let fwdSizes = [], fwdSum = 0, fi = parts.length - 1;
+    while (fi >= di && fwdSum < fwds.length) {
+      fwdSum += parts[fi];
+      fwdSizes.unshift(parts[fi]);
+      fi--;
+      if (fwdSum === fwds.length) break;
+    }
+    // Remaining middle parts are for mids
+    const midSizes = parts.slice(di, fi + 1);
+
+    if (defSum === defs.length && defSizes.length)
+      defRows = splitIntoRows(defs, defSizes);
+    if (fwdSum === fwds.length && fwdSizes.length)
+      fwdRows = splitIntoRows(fwds, fwdSizes, true);
+    if (midSizes.length && midSizes.reduce((s, n) => s + n, 0) === mids.length)
+      midRows = splitIntoRows(mids, midSizes);
+  }
+
+  const rows = [gk, ...defRows, ...midRows, ...fwdRows].filter(r => r.length);
+
+  const rowHTMLs = rows.map(players => {
+    const chips = players.map(p => `
+      <div class="pitch-player">
+        <div class="pitch-shirt ${shirtClass}">${p.shirt}</div>
+        <div class="pitch-name">${shortName(p.name)}</div>
+      </div>`).join('');
+    return `<div class="pitch-row">${chips}</div>`;
+  });
+
+  // Home: GK at bottom (reverse so FWD nearest centre), Away: GK at top
+  if (!isAway) rowHTMLs.reverse();
+
+  const formationBadge = formation
+    ? `<div class="pitch-formation">${formation}</div>`
+    : '';
+
+  return isAway
+    ? `<div class="pitch-half pitch-half--away">${formationBadge}${rowHTMLs.join('')}</div>`
+    : `<div class="pitch-half pitch-half--home">${rowHTMLs.join('')}${formationBadge}</div>`;
+}
+
+function renderLineup(match, espnLineup, fifaLineup) {
+  const lineup = espnLineup || fifaLineup;
+  if (!lineup) return document.createDocumentFragment();
+
+  const isRtl = currentLang === 'he' || currentLang === 'ar';
+  // In RTL the home team displays on the right — keep pitch columns consistent with match card
+  const leftTeam  = isRtl ? lineup.away : lineup.home;
+  const rightTeam = isRtl ? lineup.home : lineup.away;
+  const leftIsAway  = isRtl; // left column is away team in RTL
+  const rightIsAway = !isRtl;
+
+  // All starters from both teams for the shared pitch
+  const homeName = getTeamName(match.Home) || '';
+  const awayName = getTeamName(match.Away) || '';
+  const homeFlag = match.Home ? countryToFlag(match.Home.IdCountry) : '';
+  const awayFlag = match.Away ? countryToFlag(match.Away.IdCountry) : '';
+
+  // Subs: two columns — home left, away right (always, regardless of RTL)
+  const subChips = (teamData) =>
+    (teamData?.subs || []).map(p =>
+      `<div class="pitch-sub-chip"><span>${p.shirt}</span>${shortName(p.name)}</div>`
+    ).join('');
+
+  const homeSubs = subChips(lineup.home);
+  const awaySubs = subChips(lineup.away);
+
+  const subsHTML = (homeSubs || awaySubs) ? `
+    <div class="pitch-subs-wrap">
+      <div class="pitch-subs-col">
+        <div class="pitch-subs-label">${homeFlag} ${homeName}</div>
+        <div class="pitch-subs">${homeSubs}</div>
+      </div>
+      <div class="pitch-subs-col">
+        <div class="pitch-subs-label">${awayFlag} ${awayName}</div>
+        <div class="pitch-subs">${awaySubs}</div>
+      </div>
+    </div>` : '';
+
+  const section = document.createElement('div');
+  section.className = 'lineup-section';
+  section.innerHTML = `
+    <div class="lineup-title">${t('lineupTitle')}</div>
+    <div class="pitch-wrap">
+      <div class="pitch">
+        ${pitchHalfHTML(lineup.away, true)}
+        ${pitchHalfHTML(lineup.home, false)}
+      </div>
+    </div>
+    ${subsHTML}`;
+  return section;
 }
 
 function getTodayHeading() {
@@ -615,6 +924,62 @@ async function fetchMatchesAr() {
   } catch { /* non-critical — fall back to EN */ }
 }
 
+// Normalise a team name for fuzzy matching across FIFA and ESPN naming differences
+function normaliseName(name) {
+  return (name || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // strip accents
+    .replace(/[^a-z0-9]/g, ''); // strip spaces/punctuation
+}
+
+// Known name discrepancies between FIFA (en-GB) and ESPN
+const ESPN_NAME_MAP = {
+  'czechia':              'czechrepublic',
+  'türkiye':              'turkey',
+  'ivorycoast':           'cotedivoire',
+  'unitedstates':         'usa',
+  'korearepublic':        'southkorea',
+  'bosniaandherzegovina': 'bosniaherzegovina',
+  'iriran':               'iran',
+  'caboverde':            'capeverde',
+};
+
+function normTeam(name) {
+  const n = normaliseName(name);
+  return ESPN_NAME_MAP[n] || n;
+}
+
+async function fetchEspnIndex() {
+  try {
+    const res = await fetch(ESPN_INDEX_API);
+    if (!res.ok) return;
+    const data = await res.json();
+    const espnEvents = data.events || [];
+
+    // Build a lookup: normKey → espnEventId
+    const espnByKey = new Map();
+    for (const ev of espnEvents) {
+      const comp = ev.competitions?.[0];
+      if (!comp) continue;
+      const date = ev.date?.slice(0, 10) || '';
+      const teams = comp.competitors.map(c => normTeam(c.team?.displayName));
+      const key = `${date}_${teams.sort().join('_')}`;
+      espnByKey.set(key, ev.id);
+    }
+
+    // Match against FIFA allMatches
+    for (const m of allMatches) {
+      const date = m.Date?.slice(0, 10) || '';
+      const home = normTeam(getTeamName(m.Home) || m.PlaceHolderA || '');
+      const away = normTeam(getTeamName(m.Away) || m.PlaceHolderB || '');
+      const key  = `${date}_${[home, away].sort().join('_')}`;
+      if (espnByKey.has(key)) {
+        fifaToEspn.set(m.IdMatch, espnByKey.get(key));
+      }
+    }
+  } catch { /* non-critical — pitch view won't show if unavailable */ }
+}
+
 function activeMatches() {
   return currentLang === 'ar' && allMatchesAr.length > 0 ? allMatchesAr : allMatches;
 }
@@ -634,6 +999,7 @@ async function init() {
     const data = await matchRes.json();
     allMatches = data.Results || [];
     if (allMatches.length === 0) throw new Error('No matches returned from API');
+    fetchEspnIndex(); // non-blocking — populates fifaToEspn in the background
     renderMatches(activeMatches(), true);
   } catch (err) {
     console.error(err);
@@ -645,6 +1011,7 @@ async function init() {
 let allMatches = [];
 let allMatchesAr = [];
 let israelChannels = {}; // IdMatch → channels[]
+const fifaToEspn = new Map(); // FIFA IdMatch → ESPN event ID
 let activeTab = 'matches';
 let activeStageFilter = 'all';
 let teamSearchQuery = '';
@@ -1160,7 +1527,7 @@ async function renderAssists(matches, container) {
   container.appendChild(list);
 }
 
-// ── Clean Sheets GK (computed from timelines + match scores) ───
+// ── Clean Sheets GK (from lineup API — starter Position=0 per match) ───
 async function renderCleanSheets(matches, container) {
   container.innerHTML = `<div class="loading"><div class="loading-spinner"></div>${t('loadingClean')}</div>`;
 
@@ -1168,75 +1535,34 @@ async function renderCleanSheets(matches, container) {
   const gkMap = new Map(); // playerId → { name, flag, teamName, count }
 
   for (const match of finishedMatches) {
-    let events;
-    if (timelineCache.has(match.IdMatch)) {
-      events = timelineCache.get(match.IdMatch);
-    } else {
-      try {
-        const url = TIMELINE_API.replace('{stage}', match.IdStage).replace('{match}', match.IdMatch);
-        const res = await fetch(url);
-        if (!res.ok) continue;
-        const data = await res.json();
-        events = data.Event || [];
-        timelineCache.set(match.IdMatch, events);
-      } catch { continue; }
-    }
+    // A clean sheet only exists if at least one team scored 0
+    const homeScore = match.HomeTeamScore ?? null;
+    const awayScore = match.AwayTeamScore ?? null;
+    if (homeScore === null || awayScore === null) continue;
+    if (homeScore !== 0 && awayScore !== 0) continue; // no clean sheet in this match
 
-    // Find GKs from Type 57 (Goal Prevention) — IdPlayer is always the GK
-    const gksSeen = new Map(); // teamId → playerId
-    for (const ev of events) {
-      if (ev.Type !== 57 || !ev.IdPlayer || !ev.IdTeam) continue;
-      if (!gksSeen.has(ev.IdTeam)) gksSeen.set(ev.IdTeam, ev.IdPlayer);
-    }
+    const lineup = await fetchLineup(match);
+    if (!lineup) continue;
 
-    // Build a name lookup: playerId → name, by scanning all named events in this timeline
-    const playerNames = new Map();
-    for (const ev of events) {
-      if (!ev.IdPlayer) continue;
-      const desc = ev.EventDescription?.[0]?.Description || '';
-      let name = null;
-      if (ev.Type === 2 || ev.Type === 3) {
-        // "MOKOENA (South Africa) is booked..." or "PLAYER (Team) receives..."
-        const m = desc.match(/^([A-ZÁÉÍÓÚÀÈÒÑÜ][^(]+?)\s*\(/);
-        if (m) name = m[1].trim();
-      } else if (ev.Type === 18) {
-        // "MODIBA (South Africa) commits a foul." or "Brian GUTIERREZ (Mexico) commits..."
-        const m = desc.match(/^([^(]+?)\s*\(/);
-        if (m) name = m[1].trim();
-      } else if (ev.Type === 5) {
-        // "Thalente MBATHA (in) comes off the bench to replace Lyle FOSTER (out)"
-        const mIn  = desc.match(/^(.+?) \(in\)/);
-        const mOut = desc.match(/replace (.+?) \(out\)/);
-        if (mIn  && ev.IdPlayer)    playerNames.set(ev.IdPlayer,    mIn[1].trim());
-        if (mOut && ev.IdSubPlayer) playerNames.set(ev.IdSubPlayer, mOut[1].trim());
-        continue;
-      } else if (ev.Type === 15 || ev.Type === 16) {
-        // "Brian GUTIERREZ (Mexico) takes a corner kick."
-        const m = desc.match(/^([^(]+?)\s*\(/);
-        if (m) name = m[1].trim();
-      }
-      if (name && ev.IdPlayer && !playerNames.has(ev.IdPlayer)) {
-        playerNames.set(ev.IdPlayer, name);
-      }
-    }
+    for (const side of ['home', 'away']) {
+      const team      = side === 'home' ? match.Home : match.Away;
+      const conceded  = side === 'home' ? awayScore  : homeScore;
+      if (conceded !== 0) continue; // this side didn't keep a clean sheet
 
-    // Check clean sheet and record GK
-    for (const [teamId, playerId] of gksSeen) {
-      const isHome = teamId === match.Home?.IdTeam;
-      const conceded = isHome ? match.AwayTeamScore : match.HomeTeamScore;
-      if (conceded !== 0) continue;
+      const lineupSide = lineup[side];
+      if (!lineupSide) continue;
 
-      const team = isHome ? match.Home : match.Away;
-      const flag = team ? countryToFlag(team.IdCountry) : '🏳️';
+      // Starting GK = starter with Position 0
+      const gk = lineupSide.starters.find(p => p.position === 0);
+      if (!gk || !gk.id) continue;
+
+      const flag     = team ? countryToFlag(team.IdCountry) : '🏳️';
       const teamName = team ? (getTeamName(team) || '') : '';
-      const name = playerNames.get(playerId) || null;
 
-      if (!gkMap.has(playerId)) {
-        gkMap.set(playerId, { name, flag, teamName, count: 0 });
-      } else if (!gkMap.get(playerId).name && name) {
-        gkMap.get(playerId).name = name;
+      if (!gkMap.has(gk.id)) {
+        gkMap.set(gk.id, { name: gk.name, flag, teamName, count: 0 });
       }
-      gkMap.get(playerId).count++;
+      gkMap.get(gk.id).count++;
     }
   }
 
@@ -1253,12 +1579,11 @@ async function renderCleanSheets(matches, container) {
   sorted.forEach((s, i) => {
     const row = document.createElement('div');
     row.className = 'scorer-row';
-    const displayName = s.name || `${s.teamName} GK`;
     row.innerHTML = `
       <div class="scorer-rank">${i + 1}</div>
       <span class="scorer-flag">${s.flag}</span>
       <div class="scorer-info">
-        <div class="scorer-name">${displayName}</div>
+        <div class="scorer-name">${s.name}</div>
         <div class="scorer-team">${s.teamName}</div>
       </div>
       <div>

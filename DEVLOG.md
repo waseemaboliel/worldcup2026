@@ -31,27 +31,26 @@ Use this as the reference when resuming development in a future session.
 
 ---
 
-## FIFA API Reference
+## API Reference
+
+### FIFA APIs
 
 | Data | Endpoint |
 |---|---|
-| All 104 matches | `https://api.fifa.com/api/v3/calendar/matches?language=en-GB&idCompetition=17&idSeason=285023&count=104` |
+| All 104 matches (EN) | `https://api.fifa.com/api/v3/calendar/matches?language=en-GB&idCompetition=17&idSeason=285023&count=104` |
+| All 104 matches (AR) | `https://api.fifa.com/api/v3/calendar/matches?language=ar-SA&idCompetition=17&idSeason=285023&count=104` |
 | Match timeline | `https://api.fifa.com/api/v3/timelines/17/285023/{IdStage}/{IdMatch}?language=en-GB` |
+| Match lineup (FIFA) | `https://api.fifa.com/api/v3/live/football/17/285023/{IdStage}/{IdMatch}?language=en-GB` |
 | Israel TV channels | `https://api.fifa.com/api/v3/watch/season/285023?language=en-GB` |
 
 **Key facts:**
 - `MatchStatus`: `0` = finished, `1` = upcoming
-- `IdStage` group stage: `289273` | Round of 32: `289287`
+- `IdStage`: group stage = `289273`, R32 = `289287`, R16 = `289288`, QF = `289289`, SF = `289290`, Final = `289291`
 - 12 groups (A–L), `IdGroup` from `289275` to `289286`
 - `BallPossession` field exists in match API but is always `null` — FIFA does not expose it
 - No dedicated standings or scorers API — computed from match/timeline data
 
-**Flag emoji:**
-- FIFA 3-letter codes mapped to ISO alpha-2 via `FIFA_TO_ALPHA2` in `app.js`
-- Base codepoint must be `0x1F1E6` (not `0x1F1E0`) — confirmed bug fix
-- Special cases: `HAI`→`HT`, `SCO`→🏴󠁧󠁢󠁳󠁣󠁴󠁿 tag emoji, `CUW`→`CW`, `CPV`→`CV`, `COD`→`CD`
-
-**Timeline event types used:**
+**Timeline event types:**
 | Type | Meaning |
 |---|---|
 | 0 | Goal |
@@ -60,6 +59,33 @@ Use this as the reference when resuming development in a future session.
 | 3 | Red card |
 | 5 | Substitution |
 | 57 | Goal Prevention (save) — `IdPlayer` is always the goalkeeper |
+
+**Flag emoji:**
+- FIFA 3-letter codes mapped to ISO alpha-2 via `FIFA_TO_ALPHA2` in `app.js`
+- Base codepoint must be `0x1F1E6` (not `0x1F1E0`)
+- Special cases: `HAI`→`HT`, `SCO`→🏴󠁧󠁢󠁳󠁣󠁴󠁿 tag emoji, `CUW`→`CW`, `CPV`→`CV`, `COD`→`CD`
+
+### ESPN Public API (no key required)
+
+| Purpose | Endpoint |
+|---|---|
+| All 104 event IDs | `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=200` |
+| Match lineup + formation | `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event={espnId}` |
+
+**ESPN roster fields per player:**
+| Field | Meaning |
+|---|---|
+| `starter` | true = starting XI |
+| `jersey` | shirt number |
+| `athlete.displayName` | full name |
+| `position.abbreviation` | granular position: `G`, `LB`, `RB`, `CD-L`, `CD-R`, `LM`, `RM`, `CM-L`, `CM-R`, `CF-L`, `CF-R`, `F` etc. |
+| `formationPlace` | pitch slot 1–11; lower numbers = further right within a line |
+| `formation` (team level) | e.g. `"4-4-2"` — matches actual tactical setup ✅ |
+
+**Important ESPN quirks:**
+- `CM-L`/`CM-R` and `CF-L`/`CF-R` denote foot preference, NOT lateral position — don't sort by suffix
+- `formationPlace` is not grouped by row — use position bucket to assign rows, then `formationPlace` descending for left-to-right order within ambiguous positions
+- FWD sub-rows (e.g. shadow strikers in `3-4-2-1`): slice by `formationPlace` descending (higher fp = closer to midfield = shadow striker row)
 
 ---
 
@@ -77,192 +103,94 @@ Use this as the reference when resuming development in a future session.
 - Grouped by date in Israel timezone (`Asia/Jerusalem`)
 - Upcoming: kickoff time, group badge | Finished: score, PSO if applicable, FT badge
 
-### Phase 3a — Expand/Collapse ✅ (2026-06-12)
-- Click card → expands inline with fadeIn animation
-- One card open at a time; `toggleCard()` + `activeCard` manage state
-- Finished: spinner while timeline loads | Upcoming: "No match details yet"
+### Phase 3 — Match Detail Panel ✅ (2026-06-12)
+- Click card → expands inline with fadeIn animation; one card open at a time
+- Finished matches: timeline fetched on demand; `timelineCache` Map prevents re-fetching
+- Goals with assists, yellow/red cards, substitutions
+- Attendance shown at top
+- Upcoming matches: "No match details yet"
+- Two-column layout: home events always LEFT, minute CENTRE, away events always RIGHT — `direction: ltr` hardcoded so it never flips in RTL. In RTL columns swap so events stay under the correct team
 
-### Phase 3b — Timeline: Goals ✅ (2026-06-12)
-- Fetches timeline API on demand; `timelineCache` Map prevents re-fetching
-- Goals: scorer extracted from description, assist paired via Type=1 before Type=0
+### Phase 4 — Tabs, Standings, Stats, Filters ✅ (2026-06-12)
+- Tabs: Matches / Standings / Stats; filter chips + search visible only on Matches tab
+- Group standings computed from match scores (no API); 12 groups sorted by Pts → GD → GF; top 2 highlighted green
+- Stats tab: Player Stats (Goals, Assists, Clean Sheets, Yellow, Red) + Team Stats (Goals/Game, Conceded/Game, Clean Sheets, Yellow, Red)
+- Stage filter chips: All / Groups / R32 / R16 / QF / SF / Final — filter by `IdStage` (language-independent)
+- Team search: live, case-insensitive, combines with stage filter
 
-### Phase 3c — Timeline: Cards & Subs ✅ (2026-06-12)
-- Yellow cards, red cards, substitutions in expanded panel
-- Subs: ↑ player in / ↓ player out + minute
+### Phase 5 — Israel TV, PWA, UX Polish ✅ (2026-06-12)
+- Israel TV channels shown on every match card (Kan Box always shown green; dedup KAN/KAN 11 and MAKAN/MAKAN 33)
+- Auto-scroll to today's date group on load; today label shown in gold
+- PWA: `manifest.json` + `sw.js` (cache shell for offline/fast load)
 
-### Phase 4a — Nav Tabs ✅ (2026-06-12)
-- Tabs: Matches / Standings / Stats
-- Filter chips + search visible only on Matches tab
+### Phase 6 — Extended Stats ✅ (2026-06-12)
+- Player Stats: top scorers, assists, clean sheets (originally from timeline heuristic, replaced in Phase 8b), yellow/red card leaders
+- Team Stats: 5 sub-tabs, first 3 from match scores, cards from timelines
 
-### Phase 4b — Group Standings ✅ (2026-06-12)
-- Computed from match scores — no standings API exists
-- 12 groups sorted by Pts → GD → GF
-- Top 2 rows highlighted green (qualification)
+### Phase 7 — Multi-language: English / Hebrew / Arabic ✅ (2026-06-13)
 
-### Phase 4c — Top Scorers (now part of Stats tab) ✅ (2026-06-12)
-- Computed from timelines; reuses `timelineCache`
-
-### Phase 4d — Stage Filter ✅ (2026-06-12)
-- Chips: All / Groups / R32 / R16 / QF / SF / Final — filters live
-
-### Phase 5a — Israel TV Channels ✅ (2026-06-12)
-- Watch API fetched in parallel with matches on load
-- `IdCountry === "ISR"` filter; `IdMatch → channels[]` map
-- Kan Box always shown (green chip — streams all matches)
-- Dedup: skip `KAN` if `KAN 11` present; skip `MAKAN` if `MAKAN 33` present
-
-### Phase 5b — Scroll to Today ✅ (2026-06-12)
-- Auto-scrolls to today's date group on page load
-- Today label shown in gold with "— Today" suffix
-
-### Phase 5c — Attendance in Match Detail ✅ (2026-06-12)
-- Shown at top of expanded detail for finished matches
-- From `match.Attendance`, formatted with thousands separator
-
-### Phase 5d — Stats Tab: Goals / Yellow / Red ✅ (2026-06-12)
-- Stats tab with 3 sub-tabs; top 20 leaderboards
-
-### Phase 5e — Filter by Team ✅ (2026-06-12)
-- Search input below chips; filters live, case-insensitive
-- Combines with stage chips
-
-### Phase 5f — PWA ✅ (2026-06-12)
-- `manifest.json` + `sw.js` (cache version: bump on each deploy)
-- iOS: Safari → Share → Add to Home Screen
-- Android: Chrome install banner
-
-### Phase 6a — Stats Split: Player / Team ✅ (2026-06-12)
-- Stats tab has two top-level sections: 👤 Player Stats and 🏳️ Team Stats
-
-### Phase 6b — Player Stats: Assists + Clean Sheets ✅ (2026-06-12)
-- Assists: Type 1 events, `IdPlayer` counted per player
-- Clean Sheets: Type 57 identifies GK via `IdPlayer`; clean sheet = team conceded 0
-- GK name resolved by scanning all named events in the timeline (fouls, cards, corners, subs)
-
-### Phase 6c — Team Stats ✅ (2026-06-12)
-- 5 sub-tabs: Goals/Game, Conceded/Game, Clean Sheets, Yellow Cards, Red Cards
-- First 3 from match scores; cards from timelines
-
----
-
-## Known Bugs
-
-### ✅ ~~Arabic Timeline: Raw Description Shown Instead of Player Name~~ — Fixed (2026-06-13)
-- **Problem:** Expanded match cards in Arabic showed raw Arabic API strings like "Julian QUINONES(المكسيك) يسجل هدفاً!" instead of just the player name
-- **Root cause:** Phase 7d fetched Arabic timelines for the expand panel. `parseTimeline` uses English regex patterns (`/^(.+?) scores/`, `/^(.+?) \(/` etc.) — when they fail to match Arabic text, the raw description string is used as the player name
-- **Fix:** Reverted `loadTimeline` to always use the EN timeline (`language=en-GB`). The translated section titles (⚽ الأهداف, 🟨 البطاقات الصفراء etc.) come from `t()` already, so the expand panel is fully translated while player names parse correctly. Removed `TIMELINE_API_AR`, `timelineCacheAr`, `activeCache()`, and `activeTimelineApi()` — no longer needed
-
-### ✅ ~~Stats Empty in Arabic~~ — Fixed (2026-06-13)
-- **Problem:** All player/team stat leaderboards showed empty when Arabic was active
-- **Root cause:** Phase 7d mistakenly routed stats timeline fetches to `ar-SA`. The stats functions parse player names via English regex (e.g. `/^(.+?) scores/`, `/Assisted by (.+)\./`) — these never match Arabic text, so every event was skipped
-- **Fix:** Stats functions always use `timelineCache` + `TIMELINE_API` (en-GB). Only `loadTimeline` (the expand panel) uses `activeCache()` / `activeTimelineApi()` to show descriptions in Arabic
-
-### ✅ ~~Standings Stuck Loading in Arabic~~ — Fixed (2026-06-13)
-- **Problem:** Standings tab showed loading spinner forever when Arabic was selected
-- **Root cause:** `computeStandings` filtered group-stage matches with `m.StageName[0].Description === 'First Stage'` — that string is in Arabic in the AR dataset, so every match was skipped and the groups map stayed empty
-- **Fix:** Replaced all language-dependent stage name comparisons with `IdStage` checks (`'289273'` = group stage). Added `isGroupStage(match)` helper and `STAGE_ID` map so filter chips also work correctly in Arabic
-
-### ✅ ~~Service Worker Error on `file://`~~ — Fixed (2026-06-13)
-- **Problem:** `Uncaught TypeError: Failed to register a ServiceWorker: The URL protocol of the current origin ('null') is not supported` in console when opening the HTML as a local file
-- **Root cause:** Opening `index.html` directly gives it a `null` origin; `navigator.serviceWorker.register()` throws synchronously in that context
-- **Fix:** Added guard `location.hostname !== ''` — SW registration is skipped when there is no real host; works as before on GitHub Pages
-
-### 🐛 GK Clean Sheet — Name Shows as "[Team] GK"
-- **Problem:** Some goalkeepers show as e.g. "Mexico GK" instead of their real name
-- **Root cause:** Type 57 (Goal Prevention) descriptions never include the player name — only "The goalkeeper of [Team]". The name lookup scans other event types (fouls, cards, corners, subs) but if the GK never appears in any of those events in a given match, the name can't be resolved
-- **Proper fix:** Needs a squad/lineup API that maps `IdPlayer` → player name for each match
-- **See next steps below**
-
----
-
-## Next Steps
-
-### Find and integrate a Squad / Lineup API
-- We need an API that returns the starting lineup (or full squad) for each match, including player names and positions
-- This would give us `IdPlayer` → name for every player including the GK
-- Once we have this, the GK clean sheet bug is fixed completely
-- It would also enable future features: starting XI display on match cards, player profile pages, etc.
-- **Suggested endpoints to investigate:**
-  - `https://api.fifa.com/api/v3/live/football/17/285023/{IdStage}/{IdMatch}?language=en-GB`
-  - `https://api.fifa.com/api/v3/lineups/17/285023/{IdStage}/{IdMatch}?language=en-GB`
-  - Any FIFA match detail endpoint that returns team sheets
-
-### After squad API is found:
-- Fix GK name resolution in clean sheets leaderboard
-- Display starting XI inside expanded match cards
-- Use player positions to improve stats (e.g. filter goals by outfield players only)
-
----
-
-## Phase 7 — Multi-language Support (English / Hebrew / Arabic)
-
-### Language support overview
-
+**Language support:**
 | | English | Hebrew | Arabic |
 |---|---|---|---|
-| Team names | API `en-GB` | `TEAM_NAME_HE` map ✅ | API `ar-SA` ✅ |
-| Stadium / City / Group / Stage | API `en-GB` | API `en-GB` (no Hebrew endpoint) | API `ar-SA` ✅ |
-| Stage badges | `STRINGS.en` | `STRINGS.he` ✅ | `STRINGS.ar` ✅ |
-| UI text (tabs, labels, messages) | `STRINGS.en` | `STRINGS.he` ✅ | `STRINGS.ar` ✅ |
-| Date headings | `en-GB` locale | `he-IL` locale ✅ | `ar-SA` locale ✅ |
-| Timeline event descriptions | API `en-GB` | API `en-GB` | API `en-GB` (Arabic unparseable) |
-| Page direction | LTR | RTL ✅ | RTL ✅ |
+| Team names | API `en-GB` | `TEAM_NAME_HE` map | API `ar-SA` |
+| Stadium / City / Group | API `en-GB` | API `en-GB` (no Hebrew endpoint) | API `ar-SA` |
+| Stage badges | `STRINGS.en` | `STRINGS.he` | `STRINGS.ar` |
+| UI text | `STRINGS.en` | `STRINGS.he` | `STRINGS.ar` |
+| Date headings | `en-GB` locale | `he-IL` locale | `ar-SA` locale |
+| Timeline descriptions | API `en-GB` | API `en-GB` | API `en-GB` (Arabic unparseable) |
+| Page direction | LTR | RTL | RTL |
 
-### Phase 7a — Language Toggle UI ✅ (2026-06-13)
-- `EN / עב / عر` buttons added to the right of the nav bar via `.lang-toggle` div
-- `applyLang(lang)` sets `currentLang`, writes `wc2026-lang` to `localStorage`, toggles `dir`/`lang` on `<html>`, and updates the active button highlight
-- `initLangToggle()` restores the saved language on load
-- `.nav-inner` uses `justify-content: space-between` so logo stays left and lang buttons stay right in both LTR and RTL — direction-proof
+- **Toggle:** `EN / עב / عر` buttons right-pinned in nav; `localStorage` persistence; `dir`/`lang` set on `<html>`; nav always LTR (`direction: ltr` on `.nav-inner`)
+- **String system:** `STRINGS` object + `t(key, ...args)` helper; covers all UI strings with Hebrew and Arabic translations
+- **Arabic match data:** `allMatchesAr` fetched in parallel on load; `activeMatches()` routes to AR data when Arabic active
+- **Hebrew team names:** `TEAM_NAME_HE` map (48+ teams keyed by FIFA 3-letter code); `getTeamName()` uses it when `currentLang === 'he'`
+- **Hebrew content:** dates via `he-IL` locale (`Intl`); stage badges translated in all 3 languages; `text-transform: uppercase` suppressed in RTL
+- **RTL layout:** `[dir="rtl"]` overrides for match card border, team row direction, standings alignment, filter chip scroll, scorer labels
 
-### Phase 7b — String System ✅ (2026-06-13)
-- `STRINGS` object in `app.js` — three sub-objects (`en`, `he`, `ar`) covering every UI string: tabs, chips, search placeholder, loading messages, error messages, match card labels (FT, vs), detail section titles (Goals, Yellow Cards, Red Cards, Substitutions, attendance), stats section/sub-tab labels, leaderboard labels (goals, assists, clean sheets), standings header, today suffix
-- `t(key, ...args)` helper — returns string for `currentLang`, falls back to `en`, supports function values for plurals/interpolation
-- `updateStaticStrings()` patches the static HTML elements (tabs, chips, search placeholder) — called from `applyLang()` on every language switch
-- `applyLang()` now also calls `renderActiveTab()` (guarded: only if data is loaded) so dynamic content re-renders instantly on switch
-- Fixed naming collision: loop variable `t` in `renderTeamLeaderboard` renamed to `team` throughout to avoid shadowing the `t()` helper
+### Phase 8 — Lineups, Pitch View & Clean Sheet Fix ✅ (2026-06-13)
 
-### Phase 7c — Arabic Match Data
-- Create a `STRINGS` object in `app.js` with keys for every UI text string
-- Three sub-objects: `en`, `he`, `ar`
-- Strings include: tab labels, filter chip labels, section titles, status badges (FT, vs), loading/error messages, channel label, attendance label, stats labels, empty state messages
-- Wire up a `t(key)` helper function that returns the string for the current language
-- On language switch, re-render the current tab so all text updates instantly
+- **Phase 8a — Lineup fetch & cache:** `fetchTimeline` + `fetchLineup` (FIFA) + `fetchEspnLineup` (ESPN) all run in `Promise.all` — zero extra latency. `lineupCache` + `espnLineupCache` Maps prevent re-fetching. FIFA lineup normalised to `{ formation, coach, starters[], subs[] }` with `{ id, name, shirt, position(0-3) }` per player. ESPN lineup normalised to same shape with additional `posAbbr` and `formationPlace`.
+- **Phase 8b — Clean sheet fix:** `renderCleanSheets` now uses `fetchLineup` (FIFA) per match; starting GK = `starters.find(p => p.position === 0)`. Keyed by `IdPlayer` so different GKs across matches accumulate separately. No more `[Team] GK` fallback.
+- **Phase 8c — ESPN bridge:** `fetchEspnIndex()` fetches all 104 ESPN event IDs once on load, builds `fifaToEspn` Map (`IdMatch → espnEventId`) by matching date + normalised team names. 72/72 named matches bridge correctly. `ESPN_NAME_MAP` handles FIFA↔ESPN name discrepancies (IR Iran, Cabo Verde, Czechia, Türkiye, etc.).
+- **Phase 8d — Pitch view:** Green CSS pitch, away team in top half (GK at top, FWD towards centre), home team in bottom half (FWD towards centre, GK at bottom) — teams face each other. Formation string parsed into row sizes (`"3-4-2-1"` → `[1,3,4,2,1]`). Players assigned to rows by position bucket (GK/DEF/MID/FWD), then formation string splits MID and FWD into sub-rows. Within each row: `lateralSort()` uses `lateralOrder(posAbbr)` for unambiguous positions (LB=0, CD-L=1, CD-R=3, RB=4) with `formationPlace` descending as tiebreaker (lower fp = further right in ESPN's scheme). FWD sub-rows sliced by descending fp so shadow strikers (higher fp) appear in their own row above the lone striker. Substitutes shown in two columns below the pitch (home left, away right). Falls back silently if no lineup data available.
 
-### Phase 7c — Arabic Match Data ✅ (2026-06-13)
-- `MATCHES_API_AR` added (`language=ar-SA`)
-- `fetchMatchesAr()` fetches Arabic matches in parallel with EN on load; stored in `allMatchesAr`; failure is silent (falls back to EN)
-- `activeMatches()` returns `allMatchesAr` when Arabic is active, `allMatches` otherwise
-- All render entry points use `activeMatches()` — Arabic team names, stadiums, cities, groups, stage names appear automatically on match cards and standings
-- EN and Hebrew both use `allMatches` (en-GB data)
-- Stage/group filter chips use `IdStage` (language-independent) rather than EN stage name strings — works in all languages
+---
 
-### Phase 7d — Arabic Timeline Data ✅ (2026-06-13)
-- All timelines always fetched in `en-GB` — section titles (⚽ Goals, 🟨 Yellow Cards etc.) are translated via `t()`, player names parse correctly from English regex patterns
-- Arabic timeline API was attempted but reverted: Arabic descriptions couldn't be parsed and produced garbage output (see bug fix above)
-- Also fixed: `buildMatchCard` was using `stage === 'First Stage'` string comparison for group badge logic — replaced with `isGroupStage(match)` using `IdStage` (language-independent)
+## Known Bugs (all fixed)
 
-### Match Detail — Two-Column Timeline Layout ✅ (2026-06-13)
-- Redesigned expanded match panel: attendance and section titles (⚽ Goals, 🟨 Yellow Cards…) centred full-width
-- Each event row is a 3-column grid: **home team always LEFT** | **minute centre** | **away team always RIGHT** — `direction: ltr` hardcoded on `.detail-row` so it never flips in RTL
-- `eventRow(minute, homeContent, awayContent)` helper builds the row; whichever side is `null` renders an empty placeholder to keep the minute centred
-- Event icons moved inline (⚽ / 🟨 / 🟥) so the side column is self-explanatory without the section title
+| Bug | Fix |
+|---|---|
+| Arabic timeline showed raw Arabic descriptions instead of player names | Always fetch timelines in `en-GB`; section titles translated via `t()` |
+| Stats leaderboards empty in Arabic | Stats always use EN timelines (name parsing relies on English regex) |
+| Standings stuck loading in Arabic | Filter by `IdStage` (language-independent) instead of `StageName` string |
+| Service worker error on `file://` | Guard `location.hostname !== ''` before SW registration |
+| Manifest CORS error on `file://` | Inject `<link rel="manifest">` via JS only when `location.hostname` is truthy |
+| GK clean sheet name showed as "[Team] GK" | Use FIFA lineup API; starter with `Position=0` is always the correct GK |
 
-### Phase 7g — Hebrew Country Names ✅ (2026-06-13)
-- Added `TEAM_NAME_HE` map in `app.js` — all 48+ qualified teams keyed by FIFA 3-letter code with Hebrew translations (e.g. `MEX:'מקסיקו'`, `BRA:'ברזיל'`, `ESP:'ספרד'` etc.), covering all confederations
-- `getTeamName()` now checks `currentLang === 'he'` and returns the Hebrew name from `TEAM_NAME_HE` if available, falling back to the API name otherwise
-- Applies everywhere team names appear: match cards, standings, stats leaderboards (team name under player), team stats rows
+---
 
-### Phase 7f — Hebrew Content Improvements ✅ (2026-06-13)
-- **Date headings in Hebrew/Arabic:** `formatDateHeading` and `getTodayHeading` now use `LOCALE_MAP` (`he-IL` / `ar-SA`) so weekday and month names are in the correct language via `Intl` — no hardcoded translations needed
-- **Stage badges translated:** `STAGE_LABEL` now maps EN API strings to `STRINGS` keys (`stageGroupStage`, `stageR32`, etc.). Hebrew and Arabic translations added for all 7 stages. `buildMatchCard` calls `t(stageKey)` so badges read "שלב הבתים", "רבע גמר" etc. in Hebrew and Arabic equivalents in Arabic
-- **`text-transform: uppercase` suppressed in RTL:** Applied `text-transform: none; letter-spacing: 0` to `.date-label`, `.standings-group-title`, `.match-group`, `.match-status`, `.detail-section-title`, `.nav-sub` under `[dir="rtl"]` — uppercasing Hebrew/Arabic is meaningless and garbles the text
-- **What stays English (FIFA API limitation):** Team names, stadium/city names, group names (e.g. "Group A"), player names — FIFA provides no Hebrew endpoint
+## Future Ideas
 
-### Phase 7e — RTL Layout Polish ✅ (2026-06-13)
-All overrides scoped to `[dir="rtl"]` — zero impact on LTR:
-- **Match card:** `border-left` accent flips to `border-right`; home team row mirrors to `row-reverse` + `text-align: right`; away team (`.team--right`) resets to normal `row` so the grid column flip handles it naturally
-- **Date label:** `padding-left` → `padding-right`
-- **Standings table:** first-child `th` and `td` alignment + padding flipped to right
-- **Filter chips:** `direction: rtl` on `.filters` so the scroll starts from the right edge
-- **Scorer value label:** `text-align: right` in RTL
-- **`text-transform: uppercase` suppressed** on date labels, standings group titles, match group/status badges, nav subtitle, detail section titles — uppercasing is meaningless in Hebrew/Arabic and garbles text
+### Phase 9 — Live Match Updates
+- Auto-refresh scores for in-progress matches (poll the matches API every ~60 seconds)
+- Show a 🟢 LIVE badge on match cards when a match is in progress
+- Update score and minute in real time without a full page reload
+- Only poll when the Matches tab is active and at least one match is currently live
+
+### Phase 10 — Knockout Bracket View
+- New tab or sub-view showing the full tournament bracket from R32 onwards
+- Visual bracket: each round as a column, matches connect winners left-to-right
+- Completed matches show scores; upcoming show TBD with kickoff time
+- Clicking a match in the bracket expands it (same detail panel as the Matches tab)
+
+### Phase 11 — Player Profiles
+- Tap any player name in the stats leaderboards or expanded match detail to open a profile
+- Profile shows: flag, name, team, all goals / assists / cards across the tournament with match and minute
+- Back button / close to return to previous view
+- Data already available in `timelineCache` — no new API needed
+
+### Phase 12 — Push Notifications (PWA)
+- Alert users when a match they care about is about to kick off
+- Use the Web Push API via the service worker
+- Options: notify for all matches, or only bookmarked teams
+- Requires a small backend (push subscription storage) — not purely static
