@@ -1,6 +1,6 @@
-const MATCHES_API    = 'https://api.fifa.com/api/v3/calendar/matches?language=en-GB&idCompetition=17&idSeason=285023&count=104';
+const MATCHES_API = 'https://api.fifa.com/api/v3/calendar/matches?language=en-GB&idCompetition=17&idSeason=285023&count=104';
 const MATCHES_API_AR = 'https://api.fifa.com/api/v3/calendar/matches?language=ar-SA&idCompetition=17&idSeason=285023&count=104';
-const WATCH_API      = 'https://api.fifa.com/api/v3/watch/season/285023?language=en-GB';
+const WATCH_API = 'https://api.fifa.com/api/v3/watch/season/285023?language=en-GB';
 const ESPN_INDEX_API = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=200';
 
 const STRINGS = {
@@ -11,8 +11,8 @@ const STRINGS = {
     bracketTBD: 'TBD',
     bracketGroupWinner: (g) => `Group ${g} Winner`,
     bracketGroupSecond: (g) => `Group ${g} Runner-up`,
-    bracketBestThird:   (g) => `Best 3rd (${g})`,
-    bracketWinnerOf:    (a, b) => `W(${a} v ${b})`,
+    bracketBestThird: (g) => `Best 3rd (${g})`,
+    bracketWinnerOf: (a, b) => `W(${a} v ${b})`,
     chipAll: 'All', chipGroups: 'Groups', chipR32: 'R32', chipR16: 'R16',
     chipQF: 'QF', chipSF: 'SF', chipFinal: 'Final',
     searchPlaceholder: '🔍  Search team…',
@@ -89,8 +89,8 @@ const STRINGS = {
     bracketTBD: 'לא ידוע',
     bracketGroupWinner: (g) => `מקום ראשון בית ${g}`,
     bracketGroupSecond: (g) => `מקום שני בית ${g}`,
-    bracketBestThird:   (g) => `שלישי טוב (${g})`,
-    bracketWinnerOf:    (a, b) => `מנצח(${a} נ׳ ${b})`,
+    bracketBestThird: (g) => `שלישי טוב (${g})`,
+    bracketWinnerOf: (a, b) => `מנצח(${a} נ׳ ${b})`,
     chipAll: 'הכל', chipGroups: 'בתים', chipR32: 'שלב 32', chipR16: 'שלב 16',
     chipQF: 'רבע', chipSF: 'חצי', chipFinal: 'גמר',
     searchPlaceholder: '🔍  חיפוש קבוצה…',
@@ -167,8 +167,8 @@ const STRINGS = {
     bracketTBD: 'غير محدد',
     bracketGroupWinner: (g) => `المركز الأول في المجموعة ${g}`,
     bracketGroupSecond: (g) => `المركز الثاني في المجموعة ${g}`,
-    bracketBestThird:   (g) => `أفضل ثالث (${g})`,
-    bracketWinnerOf:    (a, b) => `فائز(${a} ضد ${b})`,
+    bracketBestThird: (g) => `أفضل ثالث (${g})`,
+    bracketWinnerOf: (a, b) => `فائز(${a} ضد ${b})`,
     chipAll: 'الكل', chipGroups: 'المجموعات', chipR32: 'د.32', chipR16: 'د.16',
     chipQF: 'ر.ن', chipSF: 'ن.ن', chipFinal: 'النهائي',
     searchPlaceholder: '🔍  ابحث عن فريق…',
@@ -247,80 +247,80 @@ function t(key, ...args) {
 
 // FIFA 3-letter → ISO 3166-1 alpha-2 (from working calendar project)
 const FIFA_TO_ALPHA2 = {
-  MEX:'MX',RSA:'ZA',KOR:'KR',CZE:'CZ',CAN:'CA',BIH:'BA',USA:'US',PAR:'PY',
-  QAT:'QA',SUI:'CH',BRA:'BR',MAR:'MA',ARG:'AR',ESP:'ES',POR:'PT',FRA:'FR',
-  GER:'DE',ENG:'GB',ITA:'IT',NED:'NL',BEL:'BE',URU:'UY',COL:'CO',CHI:'CL',
-  ECU:'EC',PER:'PE',VEN:'VE',BOL:'BO',HON:'HN',CRC:'CR',PAN:'PA',JAM:'JM',
-  TRI:'TT',NGA:'NG',GHA:'GH',CMR:'CM',SEN:'SN',CIV:'CI',EGY:'EG',ALG:'DZ',
-  TUN:'TN',MAL:'ML',BFA:'BF',ZAM:'ZM',UGA:'UG',JPN:'JP',AUS:'AU',TUR:'TR',
-  IRN:'IR',KSA:'SA',UAE:'AE',JOR:'JO',IRQ:'IQ',ISR:'IL',UZB:'UZ',KAZ:'KZ',
-  CHN:'CN',NZL:'NZ',POL:'PL',CRO:'HR',SRB:'RS',SVK:'SK',SVN:'SI',AUT:'AT',
-  SWE:'SE',DEN:'DK',NOR:'NO',FIN:'FI',IRL:'IE',GRE:'GR',ROU:'RO',HUN:'HU',
-  UKR:'UA',GEO:'GE',ALB:'AL',MKD:'MK',MNE:'ME',VNM:'VN',THA:'TH',IDN:'ID',
-  MYS:'MY',PHI:'PH',GTM:'GT',SLV:'SV',NCA:'NI',CUB:'CU',LBN:'LB',PAL:'PS',
-  KWT:'KW',BHR:'BH',OMN:'OM',YEM:'YE',SYR:'SY',
-  HAI:'HT',SCO:'GB-SCT',CUW:'CW',CPV:'CV',COD:'CD'
+  MEX: 'MX', RSA: 'ZA', KOR: 'KR', CZE: 'CZ', CAN: 'CA', BIH: 'BA', USA: 'US', PAR: 'PY',
+  QAT: 'QA', SUI: 'CH', BRA: 'BR', MAR: 'MA', ARG: 'AR', ESP: 'ES', POR: 'PT', FRA: 'FR',
+  GER: 'DE', ENG: 'GB', ITA: 'IT', NED: 'NL', BEL: 'BE', URU: 'UY', COL: 'CO', CHI: 'CL',
+  ECU: 'EC', PER: 'PE', VEN: 'VE', BOL: 'BO', HON: 'HN', CRC: 'CR', PAN: 'PA', JAM: 'JM',
+  TRI: 'TT', NGA: 'NG', GHA: 'GH', CMR: 'CM', SEN: 'SN', CIV: 'CI', EGY: 'EG', ALG: 'DZ',
+  TUN: 'TN', MAL: 'ML', BFA: 'BF', ZAM: 'ZM', UGA: 'UG', JPN: 'JP', AUS: 'AU', TUR: 'TR',
+  IRN: 'IR', KSA: 'SA', UAE: 'AE', JOR: 'JO', IRQ: 'IQ', ISR: 'IL', UZB: 'UZ', KAZ: 'KZ',
+  CHN: 'CN', NZL: 'NZ', POL: 'PL', CRO: 'HR', SRB: 'RS', SVK: 'SK', SVN: 'SI', AUT: 'AT',
+  SWE: 'SE', DEN: 'DK', NOR: 'NO', FIN: 'FI', IRL: 'IE', GRE: 'GR', ROU: 'RO', HUN: 'HU',
+  UKR: 'UA', GEO: 'GE', ALB: 'AL', MKD: 'MK', MNE: 'ME', VNM: 'VN', THA: 'TH', IDN: 'ID',
+  MYS: 'MY', PHI: 'PH', GTM: 'GT', SLV: 'SV', NCA: 'NI', CUB: 'CU', LBN: 'LB', PAL: 'PS',
+  KWT: 'KW', BHR: 'BH', OMN: 'OM', YEM: 'YE', SYR: 'SY',
+  HAI: 'HT', SCO: 'GB-SCT', CUW: 'CW', CPV: 'CV', COD: 'CD'
 };
 
 const TEAM_NAME_HE = {
   // North & Central America + Caribbean
-  USA:'ארצות הברית', CAN:'קנדה', MEX:'מקסיקו',
-  HON:'הונדורס', GTM:'גואטמלה', CRC:'קוסטה ריקה',
-  PAN:'פנמה', JAM:'ג׳מייקה', TRI:'טרינידד וטובגו',
-  HAI:'האיטי', CUB:'קובה', SLV:'אל סלבדור', NCA:'ניקרגואה',
+  USA: 'ארצות הברית', CAN: 'קנדה', MEX: 'מקסיקו',
+  HON: 'הונדורס', GTM: 'גואטמלה', CRC: 'קוסטה ריקה',
+  PAN: 'פנמה', JAM: 'ג׳מייקה', TRI: 'טרינידד וטובגו',
+  HAI: 'האיטי', CUB: 'קובה', SLV: 'אל סלבדור', NCA: 'ניקרגואה',
   // South America
-  BRA:'ברזיל', ARG:'ארגנטינה', URU:'אורוגוואי', COL:'קולומביה',
-  ECU:'אקוודור', CHI:'צ׳ילה', PAR:'פרגוואי', PER:'פרו',
-  VEN:'ונצואלה', BOL:'בוליביה',
+  BRA: 'ברזיל', ARG: 'ארגנטינה', URU: 'אורוגוואי', COL: 'קולומביה',
+  ECU: 'אקוודור', CHI: 'צ׳ילה', PAR: 'פרגוואי', PER: 'פרו',
+  VEN: 'ונצואלה', BOL: 'בוליביה',
   // Europe
-  ESP:'ספרד', FRA:'צרפת', ENG:'אנגליה', GER:'גרמניה',
-  POR:'פורטוגל', NED:'הולנד', ITA:'איטליה', BEL:'בלגיה',
-  CRO:'קרואטיה', SUI:'שווייץ', AUT:'אוסטריה', POL:'פולין',
-  SRB:'סרביה', DEN:'דנמרק', HUN:'הונגריה', UKR:'אוקראינה',
-  TUR:'טורקיה', ROU:'רומניה', SCO:'סקוטלנד', GRE:'יוון',
-  SVK:'סלובקיה', SVN:'סלובניה', NOR:'נורווגיה', SWE:'שוודיה',
-  FIN:'פינלנד', IRL:'אירלנד', ALB:'אלבניה', MKD:'מקדוניה הצפונית',
-  MNE:'מונטנגרו', GEO:'גאורגיה', CZE:'צ׳כיה', BIH:'בוסניה והרצגובינה',
+  ESP: 'ספרד', FRA: 'צרפת', ENG: 'אנגליה', GER: 'גרמניה',
+  POR: 'פורטוגל', NED: 'הולנד', ITA: 'איטליה', BEL: 'בלגיה',
+  CRO: 'קרואטיה', SUI: 'שווייץ', AUT: 'אוסטריה', POL: 'פולין',
+  SRB: 'סרביה', DEN: 'דנמרק', HUN: 'הונגריה', UKR: 'אוקראינה',
+  TUR: 'טורקיה', ROU: 'רומניה', SCO: 'סקוטלנד', GRE: 'יוון',
+  SVK: 'סלובקיה', SVN: 'סלובניה', NOR: 'נורווגיה', SWE: 'שוודיה',
+  FIN: 'פינלנד', IRL: 'אירלנד', ALB: 'אלבניה', MKD: 'מקדוניה הצפונית',
+  MNE: 'מונטנגרו', GEO: 'גאורגיה', CZE: 'צ׳כיה', BIH: 'בוסניה והרצגובינה',
   // Africa
-  MAR:'מרוקו', SEN:'סנגל', NGA:'ניגריה', CMR:'קמרון',
-  RSA:'דרום אפריקה', GHA:'גאנה', EGY:'מצרים', TUN:'תוניסיה',
-  CIV:'חוף השנהב', ALG:'אלג׳יריה', MAL:'מאלי', BFA:'בורקינה פאסו',
-  ZAM:'זמביה', UGA:'אוגנדה', COD:'קונגו (קינשסה)', CPV:'כף ורדה',
+  MAR: 'מרוקו', SEN: 'סנגל', NGA: 'ניגריה', CMR: 'קמרון',
+  RSA: 'דרום אפריקה', GHA: 'גאנה', EGY: 'מצרים', TUN: 'תוניסיה',
+  CIV: 'חוף השנהב', ALG: 'אלג׳יריה', MAL: 'מאלי', BFA: 'בורקינה פאסו',
+  ZAM: 'זמביה', UGA: 'אוגנדה', COD: 'קונגו (קינשסה)', CPV: 'כף ורדה',
   // Asia & Oceania
-  JPN:'יפן', KOR:'קוריאה הדרומית', IRN:'איראן', KSA:'ערב הסעודית',
-  AUS:'אוסטרליה', QAT:'קטאר', UAE:'איחוד האמירויות', JOR:'ירדן',
-  IRQ:'עיראק', ISR:'ישראל', UZB:'אוזבקיסטן', KAZ:'קזחסטן',
-  CHN:'סין', NZL:'ניו זילנד', VNM:'וייטנאם', THA:'תאילנד',
-  IDN:'אינדונזיה', MYS:'מלזיה', PHI:'פיליפינים',
+  JPN: 'יפן', KOR: 'קוריאה הדרומית', IRN: 'איראן', KSA: 'ערב הסעודית',
+  AUS: 'אוסטרליה', QAT: 'קטאר', UAE: 'איחוד האמירויות', JOR: 'ירדן',
+  IRQ: 'עיראק', ISR: 'ישראל', UZB: 'אוזבקיסטן', KAZ: 'קזחסטן',
+  CHN: 'סין', NZL: 'ניו זילנד', VNM: 'וייטנאם', THA: 'תאילנד',
+  IDN: 'אינדונזיה', MYS: 'מלזיה', PHI: 'פיליפינים',
   // Middle East (non-Asian slot)
-  LBN:'לבנון', PAL:'פלסטין', KWT:'כווית', BHR:'בחריין',
-  OMN:'עומאן', YEM:'תימן', SYR:'סוריה',
-  CUW:'קוראסאו',
+  LBN: 'לבנון', PAL: 'פלסטין', KWT: 'כווית', BHR: 'בחריין',
+  OMN: 'עומאן', YEM: 'תימן', SYR: 'סוריה',
+  CUW: 'קוראסאו',
 };
 
 const STAGE_LABEL = {
-  'First Stage':              'stageGroupStage',
-  'Round of 32':              'stageR32',
-  'Round of 16':              'stageR16',
-  'Quarter-final':            'stageQF',
-  'Semi-final':               'stageSF',
+  'First Stage': 'stageGroupStage',
+  'Round of 32': 'stageR32',
+  'Round of 16': 'stageR16',
+  'Quarter-final': 'stageQF',
+  'Semi-final': 'stageSF',
   'Play-off for third place': 'stage3rd',
-  'Final':                    'stageFinal',
+  'Final': 'stageFinal',
 };
 
 // chip data-stage value → IdStage (language-independent)
 const STAGE_ID = {
-  'First Stage':        '289273',
-  'Round of 32':        '289287',
-  'Round of 16':        '289288',
-  'Quarter-final':      '289289',
-  'Semi-final':         '289290',
-  'Final':              '289291',
+  'First Stage': '289273',
+  'Round of 32': '289287',
+  'Round of 16': '289288',
+  'Quarter-final': '289289',
+  'Semi-final': '289290',
+  'Final': '289291',
 };
 
 // MatchStatus: 0 = finished, 1 = upcoming, 3 = live (confirmed from API inspection)
 const STATUS_FINISHED = 0;
-const STATUS_LIVE     = 3;
+const STATUS_LIVE = 3;
 
 function countryToFlag(fifaCode) {
   if (!fifaCode) return '🏴';
@@ -407,7 +407,7 @@ function toggleCard(card, match) {
   activeCard = card;
 
   const isFinished = match.MatchStatus === STATUS_FINISHED;
-  const isLive     = match.MatchStatus === STATUS_LIVE;
+  const isLive = match.MatchStatus === STATUS_LIVE;
   const detail = document.createElement('div');
   detail.className = 'match-detail';
 
@@ -436,7 +436,7 @@ function buildChannelsRow(matchId) {
 
 function buildMatchCard(match) {
   const isFinished = match.MatchStatus === STATUS_FINISHED;
-  const isLive     = match.MatchStatus === STATUS_LIVE;
+  const isLive = match.MatchStatus === STATUS_LIVE;
   const homeName = teamSpan(getTeamName(match.Home) || match.PlaceHolderA || 'TBD', match.Home?.IdTeam);
   const awayName = teamSpan(getTeamName(match.Away) || match.PlaceHolderB || 'TBD', match.Away?.IdTeam);
   const homeFlag = match.Home ? countryToFlag(match.Home.IdCountry) : '🏳️';
@@ -535,7 +535,7 @@ function buildMatchCard(match) {
 }
 
 // ── Timeline fetch + parse ─────────────────────────────────────
-const TIMELINE_API  = 'https://api.fifa.com/api/v3/timelines/17/285023/{stage}/{match}?language=en-GB';
+const TIMELINE_API = 'https://api.fifa.com/api/v3/timelines/17/285023/{stage}/{match}?language=en-GB';
 const timelineCache = new Map();
 
 async function loadTimeline(match, detail) {
@@ -605,14 +605,14 @@ async function fetchEspnLiveStats(match) {
       return map;
     };
     return {
-      homeStats:   parseCompStats(home),
-      awayStats:   parseCompStats(away),
+      homeStats: parseCompStats(home),
+      awayStats: parseCompStats(away),
       homeLeaders: [],
       awayLeaders: [],
-      clock:       comp?.status?.displayClock || '',
-      period:      comp?.status?.type?.detail || '',
-      homeScore:   home?.score ?? '0',
-      awayScore:   away?.score ?? '0',
+      clock: comp?.status?.displayClock || '',
+      period: comp?.status?.type?.detail || '',
+      homeScore: home?.score ?? '0',
+      awayScore: away?.score ?? '0',
     };
   } catch { return null; }
 }
@@ -628,7 +628,7 @@ function renderLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detai
   const { goals, yellowCards, redCards, subs } = parseTimeline(events, homeId, awayId);
 
   // Live header: score + clock
-  const clock  = espnLive?.clock || match.MatchTime || '';
+  const clock = espnLive?.clock || match.MatchTime || '';
   const period = espnLive?.period || '';
   const homeScore = espnLive?.homeScore ?? match.HomeTeamScore ?? 0;
   const awayScore = espnLive?.awayScore ?? match.AwayTeamScore ?? 0;
@@ -662,15 +662,15 @@ function renderLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detai
 function buildLiveStatsBar(match, espnLive) {
   if (!espnLive?.homeStats || !espnLive?.awayStats) return '';
   const isRtl = currentLang === 'he' || currentLang === 'ar';
-  const leftStats  = isRtl ? espnLive.awayStats  : espnLive.homeStats;
-  const rightStats = isRtl ? espnLive.homeStats   : espnLive.awayStats;
+  const leftStats = isRtl ? espnLive.awayStats : espnLive.homeStats;
+  const rightStats = isRtl ? espnLive.homeStats : espnLive.awayStats;
 
-  const LIVE_STAT_KEYS = ['possessionPct','totalShots','shotsOnTarget','foulsCommitted','wonCorners','offsides','saves','yellowCards','redCards'];
+  const LIVE_STAT_KEYS = ['possessionPct', 'totalShots', 'shotsOnTarget', 'foulsCommitted', 'wonCorners', 'offsides', 'saves', 'yellowCards', 'redCards'];
   const LIVE_STAT_LABEL = {
     possessionPct: () => t('teamPossession'), totalShots: () => t('statShots'),
-    shotsOnTarget: () => t('statOnTarget'),   foulsCommitted: () => t('statFouls'),
-    wonCorners: () => t('mstatCorners'),      offsides: () => t('statOffsides'),
-    saves: () => t('statSaves'),              yellowCards: () => t('teamYellow'),
+    shotsOnTarget: () => t('statOnTarget'), foulsCommitted: () => t('statFouls'),
+    wonCorners: () => t('mstatCorners'), offsides: () => t('statOffsides'),
+    saves: () => t('statSaves'), yellowCards: () => t('teamYellow'),
     redCards: () => t('teamRed'),
   };
 
@@ -753,8 +753,8 @@ function patchLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detail
 
   // Patch score + clock
   if (espnLive) {
-    const scoreEl  = detail.querySelector('[data-live-score]');
-    const clockEl  = detail.querySelector('[data-live-clock]');
+    const scoreEl = detail.querySelector('[data-live-score]');
+    const clockEl = detail.querySelector('[data-live-clock]');
     const periodEl = detail.querySelector('[data-live-period]');
     const newScore = `${espnLive.homeScore} – ${espnLive.awayScore}`;
     if (scoreEl && scoreEl.textContent !== newScore) {
@@ -763,7 +763,7 @@ function patchLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detail
       void scoreEl.offsetWidth;
       scoreEl.classList.add('score-flash');
     }
-    if (clockEl)  clockEl.textContent  = espnLive.clock || '';
+    if (clockEl) clockEl.textContent = espnLive.clock || '';
     if (periodEl) periodEl.textContent = t('livePeriod', espnLive.period || '');
   }
 
@@ -776,7 +776,7 @@ function patchLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detail
 
   // Patch events
   const eventsEl = detail.querySelector('[data-live-events]');
-  const emptyEl  = detail.querySelector('[data-live-empty]');
+  const emptyEl = detail.querySelector('[data-live-empty]');
   const { goals, yellowCards, redCards, subs } = parseTimeline(events, homeId, awayId);
   const newEventsHTML = buildEventSections(goals, yellowCards, redCards, subs, homeFlag, awayFlag, events.length);
   if (eventsEl) {
@@ -814,18 +814,18 @@ async function fetchTimeline(match, detail, bypassCache = false) {
 }
 
 // ── Lineup fetch + parse ───────────────────────────────────────
-const LINEUP_API   = 'https://api.fifa.com/api/v3/live/football/17/285023/{stage}/{match}?language=en-GB';
-const lineupCache  = new Map(); // IdMatch → { home, away }
+const LINEUP_API = 'https://api.fifa.com/api/v3/live/football/17/285023/{stage}/{match}?language=en-GB';
+const lineupCache = new Map(); // IdMatch → { home, away }
 
 function parseLineupTeam(teamData) {
   if (!teamData) return null;
   const players = teamData.Players || [];
   const toPlayer = p => ({
-    id:       p.IdPlayer,
-    name:     p.PlayerName?.[0]?.Description || '',
-    shirt:    p.ShirtNumber,
+    id: p.IdPlayer,
+    name: p.PlayerName?.[0]?.Description || '',
+    shirt: p.ShirtNumber,
     position: p.Position, // 0=GK 1=DEF 2=MID 3=FWD
-    status:   p.Status,   // 1=starter 2=sub
+    status: p.Status,   // 1=starter 2=sub
     fieldStatus: p.FieldStatus, // 0=on pitch 1=subbed off 2=subbed on
   });
   const coach = teamData.Coaches?.[0]?.Name?.[0]?.Description || null;
@@ -833,7 +833,7 @@ function parseLineupTeam(teamData) {
     formation: teamData.Tactics || null,
     coach,
     starters: players.filter(p => p.Status === 1).map(toPlayer),
-    subs:     players.filter(p => p.Status === 2).map(toPlayer),
+    subs: players.filter(p => p.Status === 2).map(toPlayer),
   };
 }
 
@@ -859,8 +859,8 @@ async function fetchLineup(match, bypassCache = false) {
 }
 
 // ── ESPN lineup fetch + parse ──────────────────────────────────
-const ESPN_SUMMARY_API  = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event={espnId}';
-const espnLineupCache   = new Map(); // IdMatch → { home, away } | null
+const ESPN_SUMMARY_API = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event={espnId}';
+const espnLineupCache = new Map(); // IdMatch → { home, away } | null
 
 // Stats to show in the match stats bar, in display order
 const MATCH_STAT_KEYS = [
@@ -888,31 +888,31 @@ function parseEspnRoster(roster) {
 
   // Map ESPN abbreviated position → FIFA-style integer bucket for grouping
   const posMap = { G: 0, GK: 0 };
-  ['CB','CD','CD-L','CD-R','LB','RB','LWB','RWB','SW','D'].forEach(p => posMap[p] = 1);
-  ['CM','CM-L','CM-R','DM','AM','LM','RM','CAM','CDM','MF','M'].forEach(p => posMap[p] = 2);
-  ['CF','CF-L','CF-R','LW','RW','SS','FW','F','ST'].forEach(p => posMap[p] = 3);
+  ['CB', 'CD', 'CD-L', 'CD-R', 'LB', 'RB', 'LWB', 'RWB', 'SW', 'D'].forEach(p => posMap[p] = 1);
+  ['CM', 'CM-L', 'CM-R', 'DM', 'AM', 'LM', 'RM', 'CAM', 'CDM', 'MF', 'M'].forEach(p => posMap[p] = 2);
+  ['CF', 'CF-L', 'CF-R', 'LW', 'RW', 'SS', 'FW', 'F', 'ST'].forEach(p => posMap[p] = 3);
 
   const toPlayer = p => {
     const statsArr = p.stats || [];
     const statsMap = {};
     for (const s of statsArr) statsMap[s.name] = s.value ?? 0;
     return {
-      name:           p.athlete?.displayName || '',
-      shirt:          p.jersey || '',
-      posAbbr:        p.position?.abbreviation || '',
-      position:       posMap[p.position?.abbreviation] ?? 2,
+      name: p.athlete?.displayName || '',
+      shirt: p.jersey || '',
+      posAbbr: p.position?.abbreviation || '',
+      position: posMap[p.position?.abbreviation] ?? 2,
       formationPlace: p.formationPlace ?? null,
-      subbedOut:      p.subbedOut || false,
-      subbedIn:       p.subbedIn  || false,
-      stats:          statsMap,
+      subbedOut: p.subbedOut || false,
+      subbedIn: p.subbedIn || false,
+      stats: statsMap,
     };
   };
 
   return {
     formation: roster.formation || null,
-    coach:     null, // ESPN doesn't expose coach in this endpoint
-    starters:  players.filter(p =>  p.starter).sort((a, b) => (a.formationPlace ?? 99) - (b.formationPlace ?? 99)).map(toPlayer),
-    subs:      players.filter(p => !p.starter).map(toPlayer),
+    coach: null, // ESPN doesn't expose coach in this endpoint
+    starters: players.filter(p => p.starter).sort((a, b) => (a.formationPlace ?? 99) - (b.formationPlace ?? 99)).map(toPlayer),
+    subs: players.filter(p => !p.starter).map(toPlayer),
   };
 }
 
@@ -955,18 +955,18 @@ async function fetchEspnLineup(match) {
       });
       if (!entry) return [];
       return (entry.leaders || []).map(cat => ({
-        statName:    cat.name,
+        statName: cat.name,
         statDisplay: cat.displayName,
-        player:      cat.leaders?.[0]?.athlete?.shortName || null,
-        value:       cat.leaders?.[0]?.displayValue || null,
+        player: cat.leaders?.[0]?.athlete?.shortName || null,
+        value: cat.leaders?.[0]?.displayValue || null,
       })).filter(c => c.player && c.value);
     };
 
     const result = {
-      home:        parseEspnRoster(homeRoster),
-      away:        parseEspnRoster(awayRoster),
-      homeStats:   parseStats(homeBoxTeam),
-      awayStats:   parseStats(awayBoxTeam),
+      home: parseEspnRoster(homeRoster),
+      away: parseEspnRoster(awayRoster),
+      homeStats: parseStats(homeBoxTeam),
+      awayStats: parseStats(awayBoxTeam),
       homeLeaders: parseLeaders('home'),
       awayLeaders: parseLeaders('away'),
     };
@@ -1025,8 +1025,8 @@ function eventRow(minute, homeContent, awayContent) {
   // In RTL the teams are visually swapped: home is on the right, away on the left.
   // Mirror the columns so events always appear under the correct team.
   const isRtl = currentLang === 'he' || currentLang === 'ar';
-  const leftContent  = isRtl ? awayContent  : homeContent;
-  const rightContent = isRtl ? homeContent  : awayContent;
+  const leftContent = isRtl ? awayContent : homeContent;
+  const rightContent = isRtl ? homeContent : awayContent;
   const left = leftContent
     ? `<div class="detail-cell-home">${leftContent}</div>`
     : `<div class="detail-cell-empty"></div>`;
@@ -1110,41 +1110,41 @@ function renderMatchStats(match, espnLineup) {
   // In RTL the home team is displayed on the right, away on the left —
   // swap the data columns to match the visual layout, same as renderLineup does.
   const isRtl = currentLang === 'he' || currentLang === 'ar';
-  const leftStats   = isRtl ? espnLineup.awayStats   : espnLineup.homeStats;
-  const rightStats  = isRtl ? espnLineup.homeStats   : espnLineup.awayStats;
+  const leftStats = isRtl ? espnLineup.awayStats : espnLineup.homeStats;
+  const rightStats = isRtl ? espnLineup.homeStats : espnLineup.awayStats;
   const leftLeaders = isRtl ? espnLineup.awayLeaders : espnLineup.homeLeaders;
-  const rightLeaders= isRtl ? espnLineup.homeLeaders : espnLineup.awayLeaders;
-  const leftTeam    = isRtl ? match.Away : match.Home;
-  const rightTeam   = isRtl ? match.Home : match.Away;
+  const rightLeaders = isRtl ? espnLineup.homeLeaders : espnLineup.awayLeaders;
+  const leftTeam = isRtl ? match.Away : match.Home;
+  const rightTeam = isRtl ? match.Home : match.Away;
 
   const homeName = getTeamName(leftTeam) || '';
   const awayName = getTeamName(rightTeam) || '';
-  const homeFlag = leftTeam  ? countryToFlag(leftTeam.IdCountry)  : '';
+  const homeFlag = leftTeam ? countryToFlag(leftTeam.IdCountry) : '';
   const awayFlag = rightTeam ? countryToFlag(rightTeam.IdCountry) : '';
 
   // Alias back to generic names for the rest of the function
-  const homeStats   = leftStats;
-  const awayStats   = rightStats;
+  const homeStats = leftStats;
+  const awayStats = rightStats;
   const homeLeaders = leftLeaders;
   const awayLeaders = rightLeaders;
 
   const STAT_LABEL = {
-    possessionPct:      () => t('teamPossession'),
-    totalShots:         () => t('statShots'),
-    shotsOnTarget:      () => t('statOnTarget'),
-    totalPasses:        () => t('mstatPasses'),
-    passPct:            () => t('teamPassAcc'),
-    accurateCrosses:    () => t('mstatAccCrosses'),
-    totalLongBalls:     () => t('mstatLongBalls'),
-    effectiveTackles:   () => t('teamTackles'),
-    interceptions:      () => t('teamInterceptions'),
+    possessionPct: () => t('teamPossession'),
+    totalShots: () => t('statShots'),
+    shotsOnTarget: () => t('statOnTarget'),
+    totalPasses: () => t('mstatPasses'),
+    passPct: () => t('teamPassAcc'),
+    accurateCrosses: () => t('mstatAccCrosses'),
+    totalLongBalls: () => t('mstatLongBalls'),
+    effectiveTackles: () => t('teamTackles'),
+    interceptions: () => t('teamInterceptions'),
     effectiveClearance: () => t('mstatClearances'),
-    foulsCommitted:     () => t('statFouls'),
-    wonCorners:         () => t('mstatCorners'),
-    offsides:           () => t('statOffsides'),
-    saves:              () => t('statSaves'),
-    yellowCards:        () => t('teamYellow'),
-    redCards:           () => t('teamRed'),
+    foulsCommitted: () => t('statFouls'),
+    wonCorners: () => t('mstatCorners'),
+    offsides: () => t('statOffsides'),
+    saves: () => t('statSaves'),
+    yellowCards: () => t('teamYellow'),
+    redCards: () => t('teamRed'),
   };
 
   // Build stat bars — only include rows where both teams have a value
@@ -1167,7 +1167,7 @@ function renderMatchStats(match, espnLineup) {
 
       // Format display value: percentages stored as decimals (0.9 → "90%"), whole numbers as-is
       const fmt = (raw, key) => {
-        if (['passPct','shotPct','crossPct','longballPct','tacklePct'].includes(key)) {
+        if (['passPct', 'shotPct', 'crossPct', 'longballPct', 'tacklePct'].includes(key)) {
           return Math.round(parseFloat(raw) * 100) + '%';
         }
         if (key === 'possessionPct') return parseFloat(raw).toFixed(1) + '%';
@@ -1242,14 +1242,14 @@ function shortName(fullName) {
 function lateralOrder(posAbbr) {
   const p = (posAbbr || '').toUpperCase();
   switch (p) {
-    case 'LB':  case 'LWB': case 'LW':  case 'LM':  return 0; // far left
-    case 'CD-L': case 'CB-L':                         return 1; // left-centre
+    case 'LB': case 'LWB': case 'LW': case 'LM': return 0; // far left
+    case 'CD-L': case 'CB-L': return 1; // left-centre
     case 'G': case 'GK': case 'CD': case 'CB':
     case 'DM': case 'CDM': case 'CM': case 'CAM':
-    case 'F': case 'ST': case 'CF': case 'SS':        return 2; // centre
-    case 'CD-R': case 'CB-R':                         return 3; // right-centre
-    case 'RB':  case 'RWB': case 'RW':  case 'RM':  return 4; // far right
-    default:                                           return 2; // unknown → centre, let fp order decide
+    case 'F': case 'ST': case 'CF': case 'SS': return 2; // centre
+    case 'CD-R': case 'CB-R': return 3; // right-centre
+    case 'RB': case 'RWB': case 'RW': case 'RM': return 4; // far right
+    default: return 2; // unknown → centre, let fp order decide
   }
 }
 
@@ -1283,13 +1283,13 @@ function splitIntoRows(players, sizes, reverseOrder = false) {
 function pitchHalfHTML(teamData, isAway) {
   if (!teamData) return '';
   const shirtClass = isAway ? 'pitch-shirt--away' : '';
-  const formation  = teamData.formation || '';
+  const formation = teamData.formation || '';
 
   // Group players by position bucket — this is always correct
-  const gk   = teamData.starters.filter(p => p.position === 0);
-  const defs  = teamData.starters.filter(p => p.position === 1);
-  const mids  = teamData.starters.filter(p => p.position === 2);
-  const fwds  = teamData.starters.filter(p => p.position === 3);
+  const gk = teamData.starters.filter(p => p.position === 0);
+  const defs = teamData.starters.filter(p => p.position === 1);
+  const mids = teamData.starters.filter(p => p.position === 2);
+  const fwds = teamData.starters.filter(p => p.position === 3);
 
   let defRows = [lateralSort(defs)];
   let midRows = [lateralSort(mids)];
@@ -1336,8 +1336,8 @@ function pitchHalfHTML(teamData, isAway) {
     const chips = players.map(p => {
       // fieldStatus: 0=on pitch, 1=subbed off, 2=subbed on (FIFA live endpoint only)
       const fsClass = p.fieldStatus === 1 ? ' pitch-player--off'
-                    : p.fieldStatus === 2 ? ' pitch-player--on'
-                    : '';
+        : p.fieldStatus === 2 ? ' pitch-player--on'
+          : '';
       return `
       <div class="pitch-player${fsClass}">
         <div class="pitch-shirt ${shirtClass}">${p.shirt}</div>
@@ -1391,9 +1391,9 @@ function renderLineup(match, espnLineup, fifaLineup) {
 
   const isRtl = currentLang === 'he' || currentLang === 'ar';
   // In RTL the home team displays on the right — keep pitch columns consistent with match card
-  const leftTeam  = isRtl ? lineup.away : lineup.home;
+  const leftTeam = isRtl ? lineup.away : lineup.home;
   const rightTeam = isRtl ? lineup.home : lineup.away;
-  const leftIsAway  = isRtl; // left column is away team in RTL
+  const leftIsAway = isRtl; // left column is away team in RTL
   const rightIsAway = !isRtl;
 
   // All starters from both teams for the shared pitch
@@ -1513,10 +1513,10 @@ async function fetchIsraelChannels() {
     if (!israel) return;
     for (const m of (israel.Matches || [])) {
       const sources = m.Sources || [];
-      const hasKan11    = sources.some(s => s.Name === 'KAN 11');
-      const hasMakan33  = sources.some(s => s.Name === 'MAKAN 33');
+      const hasKan11 = sources.some(s => s.Name === 'KAN 11');
+      const hasMakan33 = sources.some(s => s.Name === 'MAKAN 33');
       israelChannels[m.IdMatch] = sources.filter(s => {
-        if (s.Name === 'KAN'   && hasKan11)   return false;
+        if (s.Name === 'KAN' && hasKan11) return false;
         if (s.Name === 'MAKAN' && hasMakan33) return false;
         return true;
       });
@@ -1543,14 +1543,14 @@ function normaliseName(name) {
 
 // Known name discrepancies between FIFA (en-GB) and ESPN
 const ESPN_NAME_MAP = {
-  'czechia':              'czechrepublic',
-  'türkiye':              'turkey',
-  'ivorycoast':           'cotedivoire',
-  'unitedstates':         'usa',
-  'korearepublic':        'southkorea',
+  'czechia': 'czechrepublic',
+  'türkiye': 'turkey',
+  'ivorycoast': 'cotedivoire',
+  'unitedstates': 'usa',
+  'korearepublic': 'southkorea',
   'bosniaandherzegovina': 'bosniaherzegovina',
-  'iriran':               'iran',
-  'caboverde':            'capeverde',
+  'iriran': 'iran',
+  'caboverde': 'capeverde',
 };
 
 function normTeam(name) {
@@ -1581,7 +1581,7 @@ async function fetchEspnIndex() {
       const date = m.Date?.slice(0, 10) || '';
       const home = normTeam(getTeamName(m.Home) || m.PlaceHolderA || '');
       const away = normTeam(getTeamName(m.Away) || m.PlaceHolderB || '');
-      const key  = `${date}_${[home, away].sort().join('_')}`;
+      const key = `${date}_${[home, away].sort().join('_')}`;
       if (espnByKey.has(key)) {
         fifaToEspn.set(m.IdMatch, espnByKey.get(key));
       }
@@ -1629,18 +1629,18 @@ let currentLang = localStorage.getItem('wc2026-lang') || 'en';
 
 function updateStaticStrings() {
   // Tabs
-  document.querySelector('.tab[data-tab="matches"]').textContent   = t('tabMatches');
+  document.querySelector('.tab[data-tab="matches"]').textContent = t('tabMatches');
   document.querySelector('.tab[data-tab="standings"]').textContent = t('tabStandings');
-  document.querySelector('.tab[data-tab="bracket"]').textContent   = t('tabBracket');
-  document.querySelector('.tab[data-tab="stats"]').textContent     = t('tabStats');
+  document.querySelector('.tab[data-tab="bracket"]').textContent = t('tabBracket');
+  document.querySelector('.tab[data-tab="stats"]').textContent = t('tabStats');
   // Filter chips
-  document.querySelector('.chip[data-stage="all"]').textContent           = t('chipAll');
-  document.querySelector('.chip[data-stage="First Stage"]').textContent   = t('chipGroups');
-  document.querySelector('.chip[data-stage="Round of 32"]').textContent   = t('chipR32');
-  document.querySelector('.chip[data-stage="Round of 16"]').textContent   = t('chipR16');
+  document.querySelector('.chip[data-stage="all"]').textContent = t('chipAll');
+  document.querySelector('.chip[data-stage="First Stage"]').textContent = t('chipGroups');
+  document.querySelector('.chip[data-stage="Round of 32"]').textContent = t('chipR32');
+  document.querySelector('.chip[data-stage="Round of 16"]').textContent = t('chipR16');
   document.querySelector('.chip[data-stage="Quarter-final"]').textContent = t('chipQF');
-  document.querySelector('.chip[data-stage="Semi-final"]').textContent    = t('chipSF');
-  document.querySelector('.chip[data-stage="Final"]').textContent         = t('chipFinal');
+  document.querySelector('.chip[data-stage="Semi-final"]').textContent = t('chipSF');
+  document.querySelector('.chip[data-stage="Final"]').textContent = t('chipFinal');
   // Search placeholder
   document.getElementById('team-search').placeholder = t('searchPlaceholder');
 }
@@ -1710,10 +1710,10 @@ let activePlayerSub = 'scorers';
 let activeTeamSub = 'goals-per-game';
 
 function renderActiveTab() {
-  if (activeTab === 'matches')   renderMatches(activeMatches());
+  if (activeTab === 'matches') renderMatches(activeMatches());
   else if (activeTab === 'standings') renderStandings(activeMatches());
-  else if (activeTab === 'bracket')   renderBracket(allMatches);
-  else if (activeTab === 'stats')     renderStats(activeMatches());
+  else if (activeTab === 'bracket') renderBracket(allMatches);
+  else if (activeTab === 'stats') renderStats(activeMatches());
 }
 
 // ── ESPN stats aggregation ─────────────────────────────────────
@@ -1731,7 +1731,7 @@ async function buildEspnStatsCache(matches) {
   // playerMap: espnAthleteId → { name, flag, teamName, goals, assists, shots, shotsOnTarget, saves, yellowCards, redCards, fouls, offsides, appearances }
   const playerMap = new Map();
   // teamMap: fifaTeamId → { name, flag, played, espnStats: { statName → total } }
-  const teamMap   = new Map();
+  const teamMap = new Map();
 
   for (const match of finishedMatches) {
     const espnData = espnLineupCache.get(match.IdMatch);
@@ -1739,7 +1739,7 @@ async function buildEspnStatsCache(matches) {
 
     // Accumulate team stats from boxscore
     for (const side of ['home', 'away']) {
-      const fifaTeam  = side === 'home' ? match.Home : match.Away;
+      const fifaTeam = side === 'home' ? match.Home : match.Away;
       const espnStats = side === 'home' ? espnData.homeStats : espnData.awayStats;
       if (!fifaTeam || !espnStats) continue;
       const id = fifaTeam.IdTeam;
@@ -1766,9 +1766,9 @@ async function buildEspnStatsCache(matches) {
     ] : [];
 
     for (const { roster, fifaTeam } of rosters) {
-      const flag     = fifaTeam ? countryToFlag(fifaTeam.IdCountry) : '🏳️';
+      const flag = fifaTeam ? countryToFlag(fifaTeam.IdCountry) : '🏳️';
       const teamName = fifaTeam ? (getTeamName(fifaTeam) || '') : '';
-      const teamId   = fifaTeam?.IdTeam || null;
+      const teamId = fifaTeam?.IdTeam || null;
       for (const p of [...(roster.starters || []), ...(roster.subs || [])]) {
         if (!p.name) continue;
         const id = p.name; // ESPN players don't have a stable ID in our parsed shape; key by name+team
@@ -1781,16 +1781,16 @@ async function buildEspnStatsCache(matches) {
         // We need to re-derive from raw; stash raw stats during parseEspnRoster instead.
         // For now accumulate what we stored on the player object.
         if (p.stats) {
-          e.appearances  += p.stats.appearances  || 0;
-          e.goals        += p.stats.totalGoals    || 0;
-          e.assists      += p.stats.goalAssists   || 0;
-          e.shots        += p.stats.totalShots    || 0;
-          e.shotsOnTarget+= p.stats.shotsOnTarget || 0;
-          e.saves        += p.stats.saves         || 0;
-          e.yellowCards  += p.stats.yellowCards   || 0;
-          e.redCards     += p.stats.redCards      || 0;
-          e.fouls        += p.stats.foulsCommitted|| 0;
-          e.offsides     += p.stats.offsides      || 0;
+          e.appearances += p.stats.appearances || 0;
+          e.goals += p.stats.totalGoals || 0;
+          e.assists += p.stats.goalAssists || 0;
+          e.shots += p.stats.totalShots || 0;
+          e.shotsOnTarget += p.stats.shotsOnTarget || 0;
+          e.saves += p.stats.saves || 0;
+          e.yellowCards += p.stats.yellowCards || 0;
+          e.redCards += p.stats.redCards || 0;
+          e.fouls += p.stats.foulsCommitted || 0;
+          e.offsides += p.stats.offsides || 0;
         }
       }
     }
@@ -1822,16 +1822,16 @@ function renderStats(matches) {
 }
 
 const PLAYER_SUBS = [
-  { key: 'scorers',       icon: '⚽', label: () => t('statGoals') },
-  { key: 'assists',       icon: '🎯', label: () => t('statAssists') },
-  { key: 'clean',         icon: '🧤', label: () => t('statClean') },
-  { key: 'shots',         icon: '🎯', label: () => t('statShots') },
+  { key: 'scorers', icon: '⚽', label: () => t('statGoals') },
+  { key: 'assists', icon: '🎯', label: () => t('statAssists') },
+  { key: 'clean', icon: '🧤', label: () => t('statClean') },
+  { key: 'shots', icon: '🎯', label: () => t('statShots') },
   { key: 'shotsOnTarget', icon: '🎯', label: () => t('statOnTarget') },
-  { key: 'saves',         icon: '🧤', label: () => t('statSaves') },
-  { key: 'fouls',         icon: '🚫', label: () => t('statFouls') },
-  { key: 'offsides',      icon: '🚩', label: () => t('statOffsides') },
-  { key: 'yellow',        icon: '🟨', label: () => t('statYellow') },
-  { key: 'red',           icon: '🟥', label: () => t('statRed') },
+  { key: 'saves', icon: '🧤', label: () => t('statSaves') },
+  { key: 'fouls', icon: '🚫', label: () => t('statFouls') },
+  { key: 'offsides', icon: '🚩', label: () => t('statOffsides') },
+  { key: 'yellow', icon: '🟨', label: () => t('statYellow') },
+  { key: 'red', icon: '🟥', label: () => t('statRed') },
 ];
 
 function renderPlayerStats(matches, container) {
@@ -1849,25 +1849,25 @@ function renderPlayerStats(matches, container) {
   });
 
   const inner = container.querySelector('#player-stats-content');
-  if      (activePlayerSub === 'scorers')       renderScorers(matches, inner);
-  else if (activePlayerSub === 'assists')       renderAssists(matches, inner);
-  else if (activePlayerSub === 'clean')         renderCleanSheets(matches, inner);
-  else                                          renderEspnPlayerLeaderboard(matches, inner, activePlayerSub);
+  if (activePlayerSub === 'scorers') renderScorers(matches, inner);
+  else if (activePlayerSub === 'assists') renderAssists(matches, inner);
+  else if (activePlayerSub === 'clean') renderCleanSheets(matches, inner);
+  else renderEspnPlayerLeaderboard(matches, inner, activePlayerSub);
 }
 
 const TEAM_SUBS = [
-  { key: 'goals-per-game',     icon: '⚽', label: () => t('teamGoalsGame'),       espnKey: null,               fifa: true },
-  { key: 'conceded-per-game',  icon: '🥅', label: () => t('teamConcededGame'),    espnKey: null,               fifa: true },
-  { key: 'clean-sheets',       icon: '🧤', label: () => t('teamClean'),           espnKey: null,               fifa: true },
-  { key: 'possession',         icon: '🔵', label: () => t('teamPossession'),      espnKey: 'possessionPct',    avg: true  },
-  { key: 'shots',              icon: '🎯', label: () => t('teamShots'),           espnKey: 'totalShots',       avg: true  },
-  { key: 'shots-on-target',    icon: '🎯', label: () => t('teamOnTarget'),        espnKey: 'shotsOnTarget',    avg: true  },
-  { key: 'passes',             icon: '📋', label: () => t('teamPasses'),          espnKey: 'totalPasses',      avg: true  },
-  { key: 'pass-accuracy',      icon: '📋', label: () => t('teamPassAcc'),         espnKey: 'passPct',          avg: true, pct: true },
-  { key: 'tackles',            icon: '💪', label: () => t('teamTackles'),         espnKey: 'effectiveTackles', avg: true  },
-  { key: 'interceptions',      icon: '✋', label: () => t('teamInterceptions'),   espnKey: 'interceptions',    avg: true  },
-  { key: 'yellow-cards',       icon: '🟨', label: () => t('teamYellow'),          espnKey: 'yellowCards'                 },
-  { key: 'red-cards',          icon: '🟥', label: () => t('teamRed'),             espnKey: 'redCards'                    },
+  { key: 'goals-per-game', icon: '⚽', label: () => t('teamGoalsGame'), espnKey: null, fifa: true },
+  { key: 'conceded-per-game', icon: '🥅', label: () => t('teamConcededGame'), espnKey: null, fifa: true },
+  { key: 'clean-sheets', icon: '🧤', label: () => t('teamClean'), espnKey: null, fifa: true },
+  { key: 'possession', icon: '🔵', label: () => t('teamPossession'), espnKey: 'possessionPct', avg: true },
+  { key: 'shots', icon: '🎯', label: () => t('teamShots'), espnKey: 'totalShots', avg: true },
+  { key: 'shots-on-target', icon: '🎯', label: () => t('teamOnTarget'), espnKey: 'shotsOnTarget', avg: true },
+  { key: 'passes', icon: '📋', label: () => t('teamPasses'), espnKey: 'totalPasses', avg: true },
+  { key: 'pass-accuracy', icon: '📋', label: () => t('teamPassAcc'), espnKey: 'passPct', avg: true, pct: true },
+  { key: 'tackles', icon: '💪', label: () => t('teamTackles'), espnKey: 'effectiveTackles', avg: true },
+  { key: 'interceptions', icon: '✋', label: () => t('teamInterceptions'), espnKey: 'interceptions', avg: true },
+  { key: 'yellow-cards', icon: '🟨', label: () => t('teamYellow'), espnKey: 'yellowCards' },
+  { key: 'red-cards', icon: '🟥', label: () => t('teamRed'), espnKey: 'redCards' },
 ];
 
 function renderTeamStats(matches, container) {
@@ -1915,11 +1915,11 @@ async function renderTeamLeaderboard(matches, container, type) {
       if (as === 0) home.cleanSheets++;
       if (hs === 0) away.cleanSheets++;
     }
-    const getValue = (t) => type === 'goals-per-game' ? (t.played ? +(t.scored/t.played).toFixed(2) : 0)
-                         : type === 'conceded-per-game' ? (t.played ? +(t.conceded/t.played).toFixed(2) : 0)
-                         : t.cleanSheets;
+    const getValue = (t) => type === 'goals-per-game' ? (t.played ? +(t.scored / t.played).toFixed(2) : 0)
+      : type === 'conceded-per-game' ? (t.played ? +(t.conceded / t.played).toFixed(2) : 0)
+        : t.cleanSheets;
     const label = sub.label();
-    const sorted = [...teamMap.values()].filter(tm => tm.played > 0).sort((a,b) => getValue(b)-getValue(a)).slice(0,20);
+    const sorted = [...teamMap.values()].filter(tm => tm.played > 0).sort((a, b) => getValue(b) - getValue(a)).slice(0, 20);
     return renderTeamRows(container, sorted, tm => getValue(tm), label);
   }
 
@@ -1939,7 +1939,7 @@ async function renderTeamLeaderboard(matches, container, type) {
     return sub.pct ? v.toFixed(1) + '%' : v;
   };
   const label = sub.label();
-  const sorted = [...teamMap.values()].filter(tm => tm.played > 0).sort((a,b) => getValue(b)-getValue(a)).slice(0,20);
+  const sorted = [...teamMap.values()].filter(tm => tm.played > 0).sort((a, b) => getValue(b) - getValue(a)).slice(0, 20);
   renderTeamRows(container, sorted, fmt, label);
 }
 
@@ -1972,12 +1972,12 @@ function renderTeamRows(container, sorted, getFmt, label) {
 
 // ── Bracket (Phase 12b) ───────────────────────────────────────
 const BRACKET_ROUNDS = [
-  { stageId: '289287', labelKey: 'stageR32',    matchCount: 16 },
-  { stageId: '289288', labelKey: 'stageR16',    matchCount: 8  },
-  { stageId: '289289', labelKey: 'stageQF',     matchCount: 4  },
-  { stageId: '289290', labelKey: 'stageSF',     matchCount: 2  },
-  { stageId: '289291', labelKey: 'stage3rd',    matchCount: 1  }, // M103 = 3rd place
-  { stageId: '289292', labelKey: 'stageFinal',  matchCount: 1  }, // M104 = Final
+  { stageId: '289287', labelKey: 'stageR32', matchCount: 16 },
+  { stageId: '289288', labelKey: 'stageR16', matchCount: 8 },
+  { stageId: '289289', labelKey: 'stageQF', matchCount: 4 },
+  { stageId: '289290', labelKey: 'stageSF', matchCount: 2 },
+  { stageId: '289291', labelKey: 'stage3rd', matchCount: 1 }, // M103 = 3rd place
+  { stageId: '289292', labelKey: 'stageFinal', matchCount: 1 }, // M104 = Final
 ];
 
 // Resolve a PlaceHolder string to a display name using known results
@@ -2053,7 +2053,7 @@ function resolvePlaceholderFlag(ph, allMatches) {
 
 function buildBracketCard(match, allMatches) {
   const isFinished = match.MatchStatus === STATUS_FINISHED;
-  const isLive     = match.MatchStatus === STATUS_LIVE;
+  const isLive = match.MatchStatus === STATUS_LIVE;
 
   // Resolve team names + flags
   let homeName, awayName, homeFlag, awayFlag;
@@ -2073,13 +2073,13 @@ function buildBracketCard(match, allMatches) {
   }
 
   const venue = match.Stadium?.Name?.[0]?.Description || '';
-  const city  = match.Stadium?.CityName?.[0]?.Description || '';
+  const city = match.Stadium?.CityName?.[0]?.Description || '';
   const venueStr = [venue, city].filter(Boolean).join(' · ');
 
   const card = document.createElement('article');
   card.className = 'match-card bracket-card' +
     (isFinished ? ' match-card--finished' : '') +
-    (isLive     ? ' match-card--live'     : '');
+    (isLive ? ' match-card--live' : '');
   card.dataset.matchId = match.IdMatch;
 
   if (isFinished) {
@@ -2210,136 +2210,122 @@ function renderBracketR32(matches, container) {
 }
 
 // ── Tab 2: Visual tree R16 → QF → SF → Final ─────────────────
-function bracketSlot(matchNum, matches, isHighlighted) {
+function bracketGameHTML(matchNum, matches) {
   const m = matches.find(x => x.MatchNumber === matchNum);
-  if (!m) return `<div class="bslot bslot--empty"></div>`;
+  if (!m) return `<div class="br-game br-game--empty" data-match="${matchNum}"><div class="br-team"><span class="br-name">${t('bracketTBD')}</span><span class="br-score">–</span></div><div class="br-team"><span class="br-name">${t('bracketTBD')}</span><span class="br-score">–</span></div></div>`;
 
   const isFinished = m.MatchStatus === STATUS_FINISHED;
-  const isLive     = m.MatchStatus === STATUS_LIVE;
+  const isLive = m.MatchStatus === STATUS_LIVE;
 
-  let homeStr, awayStr, homeFlag, awayFlag, scoreStr = '', statusClass = '';
-
+  let homeName, awayName, homeFlag, awayFlag;
   if (m.Home) {
-    homeStr  = getTeamName(m.Home) || m.PlaceHolderA || '';
+    homeName = getTeamName(m.Home) || m.PlaceHolderA || t('bracketTBD');
     homeFlag = countryToFlag(m.Home.IdCountry);
   } else {
-    // Use short placeholder label — "W89", "RU101" etc. — readable shorthand for the bracket
-    homeStr  = m.PlaceHolderA || '?';
-    homeFlag = '';
+    homeName = m.PlaceHolderA || t('bracketTBD');
+    homeFlag = resolvePlaceholderFlag(m.PlaceHolderA, matches);
   }
   if (m.Away) {
-    awayStr  = getTeamName(m.Away) || m.PlaceHolderB || '';
+    awayName = getTeamName(m.Away) || m.PlaceHolderB || t('bracketTBD');
     awayFlag = countryToFlag(m.Away.IdCountry);
   } else {
-    awayStr  = m.PlaceHolderB || '?';
-    awayFlag = '';
+    awayName = m.PlaceHolderB || t('bracketTBD');
+    awayFlag = resolvePlaceholderFlag(m.PlaceHolderB, matches);
   }
 
-  // Short date: "Jun 28" in current locale
-  const shortDate = new Date(m.Date).toLocaleDateString(dateLocale(), {
-    day: 'numeric', month: 'short', timeZone: 'Asia/Jerusalem'
-  });
-  const kickoffTime = formatKickoff(m.Date);
-
+  let homeScore = '–', awayScore = '–';
   let homeWon = false, awayWon = false;
+  let statusClass = 'br-game--upcoming';
+  let extraInfo = '';
+
   if (isFinished) {
     const hs = m.HomeTeamScore ?? 0, as = m.AwayTeamScore ?? 0;
     const hp = m.HomeTeamPenaltyScore ?? -1, ap = m.AwayTeamPenaltyScore ?? -1;
     homeWon = hs > as || (hs === as && hp > ap);
     awayWon = !homeWon;
-    scoreStr = `${hs}–${as}${hp >= 0 ? ` (${hp}–${ap} ${t('livePSO')})` : ''}`;
-    statusClass = 'bslot--done';
+    homeScore = `${hs}`;
+    awayScore = `${as}`;
+    statusClass = 'br-game--done';
+    if (hp >= 0) extraInfo = `<div class="br-pso">${hp}–${ap} ${t('livePSO')}</div>`;
   } else if (isLive) {
     const liveData = espnLiveData.get(m.IdMatch);
-    scoreStr = liveData?.score || `${m.HomeTeamScore ?? 0}–${m.AwayTeamScore ?? 0}`;
-    statusClass = 'bslot--live';
+    if (liveData) {
+      const parts = liveData.score.split('–');
+      homeScore = parts[0]?.trim() || '0';
+      awayScore = parts[1]?.trim() || '0';
+    } else {
+      homeScore = `${m.HomeTeamScore ?? 0}`;
+      awayScore = `${m.AwayTeamScore ?? 0}`;
+    }
+    statusClass = 'br-game--live';
+    const clock = liveData?.clock || m.MatchTime || '';
+    extraInfo = `<div class="br-live-info"><span class="br-live-dot">●</span>${clock}</div>`;
   } else {
-    scoreStr = kickoffTime;
-    statusClass = 'bslot--upcoming';
+    const kickoff = formatKickoff(m.Date);
+    const shortDate = new Date(m.Date).toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short', timeZone: 'Asia/Jerusalem' });
+    extraInfo = `<div class="br-date">${shortDate} · ${kickoff}</div>`;
   }
 
-  const liveIndicator = isLive ? `<span class="bslot-live-dot">🟢</span>` : '';
-
-  return `<div class="bslot ${statusClass}" data-match="${matchNum}">
-    <div class="bslot-team${homeWon ? ' bslot-winner' : ''}">
-      <span class="bslot-flag">${homeFlag}</span>
-      <span class="bslot-name">${homeStr}</span>
+  return `<div class="br-game ${statusClass}" data-match="${matchNum}">
+    <div class="br-team${homeWon ? ' br-team--won' : ''}${awayWon ? ' br-team--lost' : ''}">
+      <span class="br-flag">${homeFlag}</span>
+      <span class="br-name">${homeName}</span>
+      <span class="br-score">${homeScore}</span>
     </div>
-    <div class="bslot-score">
-      ${scoreStr}${liveIndicator}
-      <span class="bslot-date">${shortDate}</span>
+    <div class="br-team${awayWon ? ' br-team--won' : ''}${homeWon ? ' br-team--lost' : ''}">
+      <span class="br-flag">${awayFlag}</span>
+      <span class="br-name">${awayName}</span>
+      <span class="br-score">${awayScore}</span>
     </div>
-    <div class="bslot-team${awayWon ? ' bslot-winner' : ''}">
-      <span class="bslot-flag">${awayFlag}</span>
-      <span class="bslot-name">${awayStr}</span>
-    </div>
+    ${extraInfo}
   </div>`;
 }
 
 function renderBracketTree(matches, container) {
   const byNum = new Map(matches.map(m => [m.MatchNumber, m]));
 
-  // Each column is an independent grid with GRID_ROWS rows of GRID_ROW_H px.
-  // Slots use grid-row to align vertically so each round is centred between its feeders.
-  //
-  // Grid rows (1-based, exclusive end):
-  //   R16:  89→1-3, 90→3-5, 91→5-7, 92→7-9   (top 4, each 2 rows)
-  //         93→9-11, 94→11-13, 95→13-15, 96→15-17 (bot 4)
-  //   QF:   97→2-6  (mid of 89+90),  99→6-10  (mid of 91+92)
-  //         98→10-14 (mid of 93+94), 100→14-18 (mid of 95+96)
-  //   SF:   101→4-10 (mid of 97+99), 102→12-18 (mid of 98+100)
-  //   Final: 104→8-14 (centre between both SFs)
-  //   3rd:   103→15-19
+  // Build each round's games — ordered so visual connectors match actual bracket path:
+  // 89+90→QF97, 93+94→QF98, QF97+98→SF101 (top half)
+  // 91+92→QF99, 95+96→QF100, QF99+100→SF102 (bottom half)
+  const r16Games = [89, 90, 93, 94, 91, 92, 95, 96].map(n => bracketGameHTML(n, matches)).join('');
+  const qfGames = [97, 98, 99, 100].map(n => bracketGameHTML(n, matches)).join('');
+  const sfGames = [101, 102].map(n => bracketGameHTML(n, matches)).join('');
+  const finalGame = bracketGameHTML(104, matches);
+  const thirdGame = bracketGameHTML(103, matches);
 
-  function slotAt(matchNum, rowStart, rowEnd) {
-    const raw = bracketSlot(matchNum, matches);
-    // Replace only the opening <div class="bslot ..."> (first match only)
-    return raw.replace(/^<div class="bslot/, `<div style="grid-row:${rowStart}/${rowEnd}" class="bslot`);
-  }
-
-  const r16col = [
-    slotAt(89, 1,  3), slotAt(90, 3,  5), slotAt(91, 5,  7), slotAt(92, 7,  9),
-    slotAt(93, 9,  11), slotAt(94, 11, 13), slotAt(95, 13, 15), slotAt(96, 15, 17),
-  ].join('');
-
-  const qfcol = [
-    slotAt(97,  2,  6),
-    slotAt(99,  6,  10),
-    slotAt(98,  10, 14),
-    slotAt(100, 14, 18),
-  ].join('');
-
-  const sfcol = [
-    slotAt(101, 4,  10),
-    slotAt(102, 12, 18),
-  ].join('');
-
-  // Final column: label → Final slot → label → 3rd place slot
-  const finalcol = `
-    <div class="btree-final-header" style="grid-row:7/9">${t('stageFinal')} 🏆</div>
-    ${slotAt(104, 8, 14)}
-    <div class="btree-third-header" style="grid-row:14/16">🥉 ${t('stage3rd')}</div>
-    ${slotAt(103, 15, 19)}
-  `;
+  // Connector columns: each has N pairs where N = number of games in the next round
+  const conn4 = '<div class="br-conn-pair"></div>'.repeat(4);
+  const conn2 = '<div class="br-conn-pair"></div>'.repeat(2);
+  const conn1 = '<div class="br-conn-pair"></div>';
 
   container.innerHTML = `
-    <div class="btree-wrap">
-      <div class="btree-labels">
-        <div>${t('stageR16')}</div>
-        <div>${t('stageQF')}</div>
-        <div>${t('stageSF')}</div>
-        <div></div>
+    <div class="br-wrap">
+      <div class="br-round-labels">
+        <div class="br-label">${t('stageR16')}</div>
+        <div class="br-label-spacer"></div>
+        <div class="br-label">${t('stageQF')}</div>
+        <div class="br-label-spacer"></div>
+        <div class="br-label">${t('stageSF')}</div>
+        <div class="br-label-spacer"></div>
+        <div class="br-label">${t('stageFinal')}</div>
       </div>
-      <div class="btree">
-        <div class="btree-col btree-col--r16">${r16col}</div>
-        <div class="btree-col btree-col--qf">${qfcol}</div>
-        <div class="btree-col btree-col--sf">${sfcol}</div>
-        <div class="btree-col btree-col--final">${finalcol}</div>
+      <div class="br-bracket">
+        <div class="br-round br-round--r16">${r16Games}</div>
+        <div class="br-connector-col">${conn4}</div>
+        <div class="br-round br-round--qf">${qfGames}</div>
+        <div class="br-connector-col">${conn2}</div>
+        <div class="br-round br-round--sf">${sfGames}</div>
+        <div class="br-connector-col">${conn1}</div>
+        <div class="br-round br-round--final">${finalGame}</div>
+      </div>
+      <div class="br-third-section">
+        <div class="br-third-label">🥉 ${t('stage3rd')}</div>
+        ${thirdGame}
       </div>
     </div>`;
 
-  // Make finished/live slots clickable
-  container.querySelectorAll('.bslot[data-match]').forEach(el => {
+  // Make finished/live games clickable → navigate to match detail
+  container.querySelectorAll('.br-game[data-match]').forEach(el => {
     const m = byNum.get(parseInt(el.dataset.match, 10));
     if (!m) return;
     if (m.MatchStatus === STATUS_FINISHED || m.MatchStatus === STATUS_LIVE) {
@@ -2367,12 +2353,12 @@ function isGroupStage(match) {
 
 function standingSort(a, b) {
   const pts = (r) => r.w * 3 + r.d;
-  const gd  = (r) => r.gf - r.ga;
+  const gd = (r) => r.gf - r.ga;
   // pts → gd → gf → fair play (fewer cards = better) → group position fallback
   return pts(b) - pts(a)
-      || gd(b)  - gd(a)
-      || b.gf   - a.gf
-      || (a.yc + a.rc * 3) - (b.yc + b.rc * 3); // fewer card points = better
+    || gd(b) - gd(a)
+    || b.gf - a.gf
+    || (a.yc + a.rc * 3) - (b.yc + b.rc * 3); // fewer card points = better
 }
 
 function computeStandings(matches) {
@@ -2383,7 +2369,7 @@ function computeStandings(matches) {
   for (const m of matches) {
     if (!isGroupStage(m)) continue;
     const groupId = m.IdGroup || 'Unknown';
-    const label   = m.GroupName?.[0]?.Description || 'Unknown';
+    const label = m.GroupName?.[0]?.Description || 'Unknown';
     if (!groups.has(groupId)) groups.set(groupId, { label, table: new Map() });
     const { table } = groups.get(groupId);
 
@@ -2402,13 +2388,13 @@ function computeStandings(matches) {
     const espnData = espnLineupCache.get(m.IdMatch);
     if (espnData) {
       for (const side of ['home', 'away']) {
-        const team      = side === 'home' ? m.Home : m.Away;
+        const team = side === 'home' ? m.Home : m.Away;
         const espnStats = side === 'home' ? espnData.homeStats : espnData.awayStats;
         if (!team || !espnStats) continue;
         const entry = table.get(team.IdTeam);
         if (!entry) continue;
         entry.yc += parseFloat(espnStats.yellowCards) || 0;
-        entry.rc += parseFloat(espnStats.redCards)    || 0;
+        entry.rc += parseFloat(espnStats.redCards) || 0;
       }
     }
 
@@ -2421,9 +2407,9 @@ function computeStandings(matches) {
       home.p++; away.p++;
       home.gf += hs; home.ga += as;
       away.gf += as; away.ga += hs;
-      if (hs > as)      { home.w++; away.l++; }
+      if (hs > as) { home.w++; away.l++; }
       else if (hs < as) { away.w++; home.l++; }
-      else              { home.d++; away.d++; }
+      else { home.d++; away.d++; }
     }
 
     // Live matches — use live score from espnLiveData, flag teams as live
@@ -2440,9 +2426,9 @@ function computeStandings(matches) {
       home.p++; away.p++;
       home.gf += hs; home.ga += as;
       away.gf += as; away.ga += hs;
-      if (hs > as)      { home.w++; away.l++; }
+      if (hs > as) { home.w++; away.l++; }
       else if (hs < as) { away.w++; home.l++; }
-      else              { home.d++; away.d++; }
+      else { home.d++; away.d++; }
 
       home.live = true; away.live = true;
     }
@@ -2701,8 +2687,8 @@ async function renderCleanSheets(matches, container) {
     if (!lineup) continue;
 
     for (const side of ['home', 'away']) {
-      const team      = side === 'home' ? match.Home : match.Away;
-      const conceded  = side === 'home' ? awayScore  : homeScore;
+      const team = side === 'home' ? match.Home : match.Away;
+      const conceded = side === 'home' ? awayScore : homeScore;
       if (conceded !== 0) continue; // this side didn't keep a clean sheet
 
       const lineupSide = lineup[side];
@@ -2712,9 +2698,9 @@ async function renderCleanSheets(matches, container) {
       const gk = lineupSide.starters.find(p => p.position === 0);
       if (!gk || !gk.id) continue;
 
-      const flag     = team ? countryToFlag(team.IdCountry) : '🏳️';
+      const flag = team ? countryToFlag(team.IdCountry) : '🏳️';
       const teamName = team ? (getTeamName(team) || '') : '';
-      const teamId   = team?.IdTeam || null;
+      const teamId = team?.IdTeam || null;
 
       if (!gkMap.has(gk.id)) {
         gkMap.set(gk.id, { name: gk.name, flag, teamName, teamId, count: 0 });
@@ -2761,13 +2747,13 @@ async function renderEspnPlayerLeaderboard(matches, container, type) {
   const { playerMap } = await buildEspnStatsCache(matches);
 
   const CONFIG = {
-    shots:         { field: 'shots',         icon: '🎯', label: () => t('labelShots') },
-    shotsOnTarget: { field: 'shotsOnTarget',  icon: '🎯', label: () => t('labelOnTarget') },
-    saves:         { field: 'saves',          icon: '🧤', label: () => t('labelSaves') },
-    fouls:         { field: 'fouls',          icon: '🚫', label: () => t('labelFouls') },
-    offsides:      { field: 'offsides',       icon: '🚩', label: () => t('labelOffsides') },
-    yellow:        { field: 'yellowCards',    icon: '🟨', label: () => '🟨' },
-    red:           { field: 'redCards',       icon: '🟥', label: () => '🟥' },
+    shots: { field: 'shots', icon: '🎯', label: () => t('labelShots') },
+    shotsOnTarget: { field: 'shotsOnTarget', icon: '🎯', label: () => t('labelOnTarget') },
+    saves: { field: 'saves', icon: '🧤', label: () => t('labelSaves') },
+    fouls: { field: 'fouls', icon: '🚫', label: () => t('labelFouls') },
+    offsides: { field: 'offsides', icon: '🚩', label: () => t('labelOffsides') },
+    yellow: { field: 'yellowCards', icon: '🟨', label: () => '🟨' },
+    red: { field: 'redCards', icon: '🟥', label: () => '🟥' },
   };
 
   const cfg = CONFIG[type];
@@ -2878,8 +2864,8 @@ function buildPlayerProfile(playerName, matches) {
         const asSide = nextGoal ? (nextGoal.IdTeam === homeId ? 'home' : 'away') : side;
         const asTeamFlag = asSide === 'home' ? homeFlag : awayFlag;
         const asTeamName = asSide === 'home' ? homeName : awayName;
-        const asOppFlag  = asSide === 'home' ? awayFlag : homeFlag;
-        const asOppName  = asSide === 'home' ? awayName : homeName;
+        const asOppFlag = asSide === 'home' ? awayFlag : homeFlag;
+        const asOppName = asSide === 'home' ? awayName : homeName;
         if (!profile.flag) { profile.flag = asTeamFlag; profile.teamName = asTeamName; }
         profile.assists++;
         profile.events.push({ type: 'assist', minute, matchLabel, matchDate, ownGoal: false, opponentFlag: asOppFlag, opponentName: asOppName });
@@ -2916,7 +2902,7 @@ function openPlayerProfile(playerName, matches) {
 
   const statsHtml = `
     <div class="profile-stats-row">
-      ${profile.goals   > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.goals}</span><span class="profile-stat-label">⚽ ${t('profileGoals')}</span></div>` : ''}
+      ${profile.goals > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.goals}</span><span class="profile-stat-label">⚽ ${t('profileGoals')}</span></div>` : ''}
       ${profile.assists > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.assists}</span><span class="profile-stat-label">🎯 ${t('profileAssists')}</span></div>` : ''}
       ${profile.yellowCards > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.yellowCards}</span><span class="profile-stat-label">🟨 ${t('profileYellow')}</span></div>` : ''}
       ${profile.redCards > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.redCards}</span><span class="profile-stat-label">🟥 ${t('profileRed')}</span></div>` : ''}
@@ -3114,8 +3100,8 @@ async function fetchLiveScores() {
       const comp = ev.competitions?.[0];
       if (!comp) continue;
       const status = comp.status;
-      const state  = status?.type?.state || 'pre'; // 'pre', 'in', 'post'
-      const clock  = status?.displayClock || '';
+      const state = status?.type?.state || 'pre'; // 'pre', 'in', 'post'
+      const clock = status?.displayClock || '';
       const period = status?.period || 0;
 
       // Build score string
@@ -3183,8 +3169,8 @@ function patchLiveCards() {
     if (!m) continue;
 
     // Match just ended or just kicked off — replace card entirely
-    const cardIsLive     = card.classList.contains('match-card--live');
-    const matchIsLive    = m.MatchStatus === STATUS_LIVE;
+    const cardIsLive = card.classList.contains('match-card--live');
+    const matchIsLive = m.MatchStatus === STATUS_LIVE;
     const matchIsFinished = m.MatchStatus === STATUS_FINISHED;
 
     if ((matchIsFinished && cardIsLive) || (matchIsLive && !cardIsLive)) {
