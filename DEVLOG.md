@@ -178,6 +178,8 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
 | Top Performers always empty | `leaders` is top-level (`data.leaders`), not `data.boxscore.leaders` |
 | Live lineup/subs not showing in live detail | `espnLive` (stats object) was passed as ESPN lineup — now `fetchEspnLineup` called separately |
 | Live match stayed as live card after match ended | ESPN `state: "post"` now flips `MatchStatus` back to `STATUS_FINISHED` and rebuilds card |
+| Penalty goals not shown in live details | FIFA timeline delays goal events by 5–15min; added ESPN scoreboard `details` fallback |
+| Penalty goal regex didn't match | FIFA uses "converts the penalty" — regex now matches `scores\|converts` |
 
 ---
 
@@ -251,3 +253,12 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
 - `bindTeamLinks(container)` attaches click handlers; called after every render that includes team names
 - `openTeamProfile(teamId, matches)` builds and displays the overlay
 - Wired in: match cards, standings table, Goals/Assists/Clean Sheets/ESPN leaderboard rows
+
+### Phase 16 — Live Goal Fallback (ESPN details) ✅ (2026-06-13)
+- **Problem:** FIFA timeline API delays publishing goal events during live matches (5–15 min lag), so goals don't appear in the live detail view even though the score updates.
+- **Solution:** ESPN scoreboard `competitions[0].details` has real-time events (goals, cards) within seconds.
+- **`fetchEspnLiveStats`** now also returns `details` array + `homeTeamId`/`awayTeamId` from ESPN scoreboard.
+- **`espnDetailsToEvents(espnLive)`** — new helper that converts ESPN details into the same `{ goals, yellowCards, redCards }` format as `parseTimeline`.
+- **Fallback logic:** Compare `goals.length` from FIFA against `expectedGoals` (sum of live score). If FIFA has fewer goals than expected → use ESPN goals. Once FIFA catches up, it takes over again (richer data with assists).
+- **Cards fallback:** If FIFA has no yellow/red cards yet, use ESPN's. Subs always come from FIFA (ESPN doesn't provide them in `details`).
+- **Penalty regex fix:** FIFA descriptions use `"converts the penalty"` — regex now matches both `scores` and `converts` across all parsing functions (parseTimeline, renderScorers, player profiles).

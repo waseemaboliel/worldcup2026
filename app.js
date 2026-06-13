@@ -613,8 +613,36 @@ async function fetchEspnLiveStats(match) {
       period: comp?.status?.type?.detail || '',
       homeScore: home?.score ?? '0',
       awayScore: away?.score ?? '0',
+      details: comp?.details || [],
+      homeTeamId: home?.team?.id || '',
+      awayTeamId: away?.team?.id || '',
     };
   } catch { return null; }
+}
+
+// Convert ESPN scoreboard details to the same event format as parseTimeline output
+function espnDetailsToEvents(espnLive) {
+  if (!espnLive?.details?.length) return { goals: [], yellowCards: [], redCards: [], subs: [] };
+  const goals = [], yellowCards = [], redCards = [];
+  for (const d of espnLive.details) {
+    const player = d.athletesInvolved?.[0]?.displayName || '';
+    const minute = d.clock?.displayValue || '';
+    const teamId = d.team?.id || d.athletesInvolved?.[0]?.team?.id || '';
+    const side = teamId === espnLive.homeTeamId ? 'home' : teamId === espnLive.awayTeamId ? 'away' : null;
+
+    if (d.scoringPlay && !d.ownGoal) {
+      const penalty = d.penaltyKick ? ' (pen)' : '';
+      goals.push({ minute, scorer: player + penalty, assist: null, side, ownGoal: false });
+    } else if (d.ownGoal) {
+      const ownSide = side === 'home' ? 'away' : side === 'away' ? 'home' : null;
+      goals.push({ minute, scorer: player, assist: null, side: ownSide, ownGoal: true });
+    } else if (d.yellowCard && !d.redCard) {
+      yellowCards.push({ minute, player, side });
+    } else if (d.redCard) {
+      redCards.push({ minute, player, side });
+    }
+  }
+  return { goals, yellowCards, redCards, subs: [] };
 }
 
 function renderLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detail) {
@@ -625,7 +653,16 @@ function renderLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detai
 
   const homeId = match.Home?.IdTeam;
   const awayId = match.Away?.IdTeam;
-  const { goals, yellowCards, redCards, subs } = parseTimeline(events, homeId, awayId);
+  let { goals, yellowCards, redCards, subs } = parseTimeline(events, homeId, awayId);
+
+  // Fallback: if FIFA timeline has fewer goals than the live score indicates, use ESPN details
+  const expectedGoals = (parseInt(espnLive?.homeScore) || 0) + (parseInt(espnLive?.awayScore) || 0);
+  if (espnLive?.details?.length) {
+    const espnEvents = espnDetailsToEvents(espnLive);
+    if (goals.length < expectedGoals) goals = espnEvents.goals;
+    if (yellowCards.length === 0) yellowCards = espnEvents.yellowCards;
+    if (redCards.length === 0) redCards = espnEvents.redCards;
+  }
 
   // Live header: score + clock
   const clock = espnLive?.clock || match.MatchTime || '';
@@ -777,7 +814,17 @@ function patchLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detail
   // Patch events
   const eventsEl = detail.querySelector('[data-live-events]');
   const emptyEl = detail.querySelector('[data-live-empty]');
-  const { goals, yellowCards, redCards, subs } = parseTimeline(events, homeId, awayId);
+  let { goals, yellowCards, redCards, subs } = parseTimeline(events, homeId, awayId);
+
+  // Fallback: if FIFA timeline has fewer goals than the live score indicates, use ESPN details
+  const expectedGoals = (parseInt(espnLive?.homeScore) || 0) + (parseInt(espnLive?.awayScore) || 0);
+  if (espnLive?.details?.length) {
+    const espnEvents = espnDetailsToEvents(espnLive);
+    if (goals.length < expectedGoals) goals = espnEvents.goals;
+    if (yellowCards.length === 0) yellowCards = espnEvents.yellowCards;
+    if (redCards.length === 0) redCards = espnEvents.redCards;
+  }
+
   const newEventsHTML = buildEventSections(goals, yellowCards, redCards, subs, homeFlag, awayFlag, events.length);
   if (eventsEl) {
     eventsEl.outerHTML = newEventsHTML;
@@ -998,13 +1045,13 @@ function parseTimeline(events, homeId, awayId) {
 
     if (ev.Type === 0) {
       // Regular goal — IdTeam is the scoring team
-      const m = desc.match(/^(.+?) \(.*?\) scores/) || desc.match(/^(.+?) scores/);
+      const m = desc.match(/^(.+?) \(.*?\) (?:scores|converts)/) || desc.match(/^(.+?) (?:scores|converts)/);
       goals.push({ minute, scorer: m ? m[1] : desc, assist: assistMap[ev.EventId] || null, side, ownGoal: false });
     } else if (ev.Type === 34) {
       // Own goal — IdTeam is the team that CONCEDED (the player's own team)
       // so the goal is credited to the OPPOSITE side
       const ownSide = side === 'home' ? 'away' : side === 'away' ? 'home' : null;
-      const m = desc.match(/^(.+?) \(.*?\) scores/) || desc.match(/^(.+?) scores/);
+      const m = desc.match(/^(.+?) \(.*?\) (?:scores|converts)/) || desc.match(/^(.+?) (?:scores|converts)/);
       goals.push({ minute, scorer: m ? m[1] : desc, assist: null, side: ownSide, ownGoal: true });
     } else if (ev.Type === 2) {
       const m = desc.match(/^(.+?) \(/);
@@ -2554,7 +2601,7 @@ async function renderScorers(matches, container) {
     for (const ev of events) {
       if (ev.Type !== 0 || !ev.IdPlayer) continue;
       const desc = ev.EventDescription?.[0]?.Description || '';
-      const m = desc.match(/^(.+?) \(.*?\) scores/) || desc.match(/^(.+?) scores/);
+      const m = desc.match(/^(.+?) \(.*?\) (?:scores|converts)/) || desc.match(/^(.+?) (?:scores|converts)/);
       const name = m ? m[1] : null;
       if (!name) continue;
 
@@ -2838,7 +2885,7 @@ function buildPlayerProfile(playerName, matches) {
       const matchLabel = `${homeFlag} ${homeName} ${match.HomeTeamScore}–${match.AwayTeamScore} ${awayFlag} ${awayName}`;
 
       const getName = () => {
-        const m2 = desc.match(/^(.+?) \(.*?\) scores/) || desc.match(/^(.+?) scores/) || desc.match(/^(.+?) \(/);
+        const m2 = desc.match(/^(.+?) \(.*?\) (?:scores|converts)/) || desc.match(/^(.+?) (?:scores|converts)/) || desc.match(/^(.+?) \(/);
         return m2 ? m2[1] : null;
       };
 
