@@ -175,11 +175,48 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
 
 ## Next Phases
 
-### Phase 12 — Knockout Bracket View
-- New tab showing the full tournament bracket from R32 onwards
-- Visual bracket: each round as a column, matches connect winners left-to-right
-- Completed matches show scores; upcoming show TBD with kickoff time
-- Clicking a match in the bracket opens the same detail panel as the Matches tab
+### Phase 12 — Knockout Bracket View + Standings Qualification Fix
+
+#### 12a — Fix standings qualification highlighting ✅ (2026-06-13)
+
+**How R32 qualification works:**
+- 48 teams, 12 groups of 4
+- 1st + 2nd from every group qualify automatically → 24 teams
+- The **8 best 3rd-place teams** across all 12 groups also qualify → 8 teams
+- Total: 32 teams in R32
+
+**3rd-place ranking tiebreakers (in order):**
+1. Points
+2. Goal difference
+3. Goals scored
+4. Fair play (fewest yellow/red cards)
+5. FIFA ranking (last resort)
+
+**What needs fixing in the standings:**
+- Currently top 2 rows are highlighted green — correct
+- 3rd place is never highlighted — incorrect once group stage is partially/fully done
+- Need to compute the best 8 thirds across all 12 groups and highlight those rows in a **different shade** (e.g. light blue/teal) to distinguish "qualified as best third" from "qualified as group winner/runner-up"
+- During the group stage this is live/provisional — show it updating in real time
+- Teams outside the best 8 thirds show no highlight (eliminated)
+
+**Implementation notes:**
+- After `computeStandings` builds all groups, extract all 3rd-place teams into a separate array
+- Sort them by the tiebreaker order above (pts → gd → gf → cards)
+- Top 8 of that array get a `qualifyThird: true` flag
+- Cards data for fair play comes from FIFA timeline (already fetched) or ESPN `boxscore.teams[].statistics.yellowCards` + `redCards`
+- In `renderStandings`, add a third CSS class `.qualify-third` for these rows (different colour from `.qualify`)
+- Works with live standings too — `espnLiveData` scores already feed into `computeStandings`
+
+#### 12b — Knockout Bracket View ✅ (2026-06-13)
+- New **Bracket** tab (between Standings and Stats) with two sub-tabs:
+  - **R32:** 16 match cards in list format, same card style as the Matches tab. TBD slots show readable resolved labels — "Group A Winner", "Best 3rd (A/B/C/D/F)" — fully translated in Hebrew/Arabic.
+  - **Bracket:** Visual 4-column tree — R16 → QF → SF → Final + 3rd Place (horizontally scrollable, always LTR regardless of app language direction).
+- **Visual bracket slots (`bslot`):** each shows both teams + flag, score (finished) or kickoff time (upcoming). Winner highlighted in gold. Live slots have green border + `🟢`. Upcoming slots dimmed.
+- **TBD slots in tree:** show short `W89`/`W90` labels until R32 finishes, then real team names + flags replace them automatically via `getTeamName`.
+- **Final column:** 3rd place and Final are grouped together with clear separation (`margin-top: 56px` between them) so they read as distinct matches.
+- Tapping a finished/live slot in the tree navigates to the Matches tab and opens that match's detail panel.
+- Match numbering chain hard-coded (FIFA API has no match-linkage field): R16 89–96 → QF 97–100 → SF 101–102 → Final 103 / 3rd 104.
+- All round labels (`stageR16`, `stageQF`, `stageSF`, `stageFinal`, `stage3rd`) use `t()` — translated in all 3 languages.
 
 ### Phase 13 — Player Profiles
 - Tap any player name in stats leaderboards or match detail to open a profile
