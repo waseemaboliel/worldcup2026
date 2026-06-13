@@ -262,3 +262,14 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
 - **Fallback logic:** Compare `goals.length` from FIFA against `expectedGoals` (sum of live score). If FIFA has fewer goals than expected → use ESPN goals. Once FIFA catches up, it takes over again (richer data with assists).
 - **Cards fallback:** If FIFA has no yellow/red cards yet, use ESPN's. Subs always come from FIFA (ESPN doesn't provide them in `details`).
 - **Penalty regex fix:** FIFA descriptions use `"converts the penalty"` — regex now matches both `scores` and `converts` across all parsing functions (parseTimeline, renderScorers, player profiles).
+
+### Phase 17 — Unified Player Profiles (FIFA + ESPN) ✅ (2026-06-14)
+- **Problem:** Player profiles only showed data from whichever API was already cached. Clicking a player from the Goals tab (FIFA) showed no ESPN stats; clicking from Offsides tab (ESPN) showed no match history.
+- **`openPlayerProfile` is now async** — fetches both ESPN stats cache and FIFA timelines on demand before building the profile.
+- **`resolvePlayerNames(playerName)`** — builds a Set of all name variants for a player using:
+  - Case-insensitive matching against ESPN stats cache
+  - Shirt number matching across ESPN/FIFA lineups (same team, same shirt → same player)
+  - Bidirectional: works whether input is ESPN name or FIFA name
+- **Case-insensitive timeline matching** — `matchesName()` helper lowercases all variants so `"Folarin BALOGUN"` (FIFA) matches `"Folarin Balogun"` (ESPN).
+- **Profile now shows ESPN-only stats:** shots, shots on target, saves, fouls, offsides — in addition to FIFA goals/assists/cards with per-match history.
+- **ESPN goals/assists fallback removed** — ESPN `totalGoals` means "goals conceded" for GKs, so only FIFA is authoritative for scoring stats.
