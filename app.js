@@ -2846,9 +2846,63 @@ async function renderEspnPlayerLeaderboard(matches, container, type) {
 // Build a profile for a player from timeline data across all cached matches.
 // Returns { name, flag, teamName, goals, assists, yellowCards, redCards, events[] }
 // Each event: { type:'goal'|'assist'|'yellow'|'red', minute, matchLabel, ownGoal }
-function buildPlayerProfile(playerName, matches) {
-  const profile = { name: playerName, flag: '', teamName: '', goals: 0, assists: 0, yellowCards: 0, redCards: 0, ownGoals: 0, events: [] };
+// Build a set of all name variants for a player, using:
+// 1) Shirt number matching across ESPN/FIFA lineups
+// 2) Case-insensitive matching in ESPN stats cache
+function resolvePlayerNames(playerName) {
+  const names = new Set([playerName]);
+  const lowerName = playerName.toLowerCase();
 
+  // Match by shirt number across ESPN ↔ FIFA lineups
+  for (const [matchId, espnData] of espnLineupCache.entries()) {
+    if (!espnData?.home || !espnData?.away) continue;
+    const fifaLineup = lineupCache.get(matchId);
+    if (!fifaLineup) continue;
+
+    for (const side of ['home', 'away']) {
+      const espnRoster = [...(espnData[side]?.starters || []), ...(espnData[side]?.subs || [])];
+      const fifaRoster = [...(fifaLineup[side]?.starters || []), ...(fifaLineup[side]?.subs || [])];
+      // Find the ESPN player by name (case-insensitive)
+      const espnPlayer = espnRoster.find(p => p.name === playerName || p.name.toLowerCase() === lowerName);
+      if (espnPlayer) {
+        names.add(espnPlayer.name); // Add ESPN's exact casing
+        if (espnPlayer.shirt) {
+          const fifaPlayer = fifaRoster.find(p => String(p.shirt) === String(espnPlayer.shirt));
+          if (fifaPlayer?.name) names.add(fifaPlayer.name);
+        }
+      }
+      // Also check if playerName is the FIFA name and find ESPN counterpart
+      const fifaPlayer = fifaRoster.find(p => p.name === playerName || p.name.toLowerCase() === lowerName);
+      if (fifaPlayer) {
+        names.add(fifaPlayer.name);
+        if (fifaPlayer.shirt) {
+          const espnMatch = espnRoster.find(p => String(p.shirt) === String(fifaPlayer.shirt));
+          if (espnMatch?.name) names.add(espnMatch.name);
+        }
+      }
+    }
+  }
+
+  // Also check ESPN stats cache for case-insensitive name match
+  if (espnStatsCache?.playerMap) {
+    for (const [key, p] of espnStatsCache.playerMap) {
+      if (p.name.toLowerCase() === lowerName) names.add(p.name);
+    }
+  }
+
+  return names;
+}
+
+function buildPlayerProfile(playerName, matches) {
+  const profile = { name: playerName, flag: '', teamName: '', goals: 0, assists: 0, yellowCards: 0, redCards: 0, ownGoals: 0, shots: 0, shotsOnTarget: 0, saves: 0, fouls: 0, offsides: 0, events: [] };
+
+  // Resolve all name variants for this player (ESPN name ↔ FIFA name via shirt number)
+  const nameVariants = resolvePlayerNames(playerName);
+  // Build lowercase set for case-insensitive matching against FIFA timeline descriptions
+  const nameVariantsLower = new Set([...nameVariants].map(n => n.toLowerCase()));
+  const matchesName = (n) => n && nameVariantsLower.has(n.toLowerCase());
+
+  // 1) Scan FIFA timeline cache for per-match event history
   for (const match of matches) {
     if (match.MatchStatus !== STATUS_FINISHED) continue;
     const events = timelineCache.get(match.IdMatch);
@@ -2891,24 +2945,22 @@ function buildPlayerProfile(playerName, matches) {
 
       if (ev.Type === 0) {
         const name = getName();
-        if (name !== playerName) continue;
+        if (!name || !matchesName(name)) continue;
         if (!profile.flag) { profile.flag = teamFlag; profile.teamName = teamName; }
         profile.goals++;
         profile.events.push({ type: 'goal', minute, matchLabel, matchDate, ownGoal: false, opponentFlag, opponentName });
       } else if (ev.Type === 34) {
         const name = getName();
-        if (name !== playerName) continue;
+        if (!name || !matchesName(name)) continue;
         if (!profile.flag) { profile.flag = teamFlag; profile.teamName = teamName; }
         profile.goals++;
         profile.ownGoals++;
-        // For OG, IdTeam is the conceding team, so side is "wrong" — opponent is actually who scored
         const ogOpponentFlag = side === 'home' ? homeFlag : awayFlag;
         const ogOpponentName = side === 'home' ? homeName : awayName;
         profile.events.push({ type: 'goal', minute, matchLabel, matchDate, ownGoal: true, opponentFlag: ogOpponentFlag, opponentName: ogOpponentName });
       } else if (ev.Type === 1) {
         const d = desc.match(/Assisted by (.+)\./);
-        if (!d || d[1] !== playerName) continue;
-        // Find the team from the following goal event
+        if (!d || !matchesName(d[1])) continue;
         const nextGoal = events[i + 1];
         const asSide = nextGoal ? (nextGoal.IdTeam === homeId ? 'home' : 'away') : side;
         const asTeamFlag = asSide === 'home' ? homeFlag : awayFlag;
@@ -2920,13 +2972,13 @@ function buildPlayerProfile(playerName, matches) {
         profile.events.push({ type: 'assist', minute, matchLabel, matchDate, ownGoal: false, opponentFlag: asOppFlag, opponentName: asOppName });
       } else if (ev.Type === 2) {
         const name = getName();
-        if (name !== playerName) continue;
+        if (!name || !matchesName(name)) continue;
         if (!profile.flag) { profile.flag = teamFlag; profile.teamName = teamName; }
         profile.yellowCards++;
         profile.events.push({ type: 'yellow', minute, matchLabel, matchDate, ownGoal: false, opponentFlag, opponentName });
       } else if (ev.Type === 3) {
         const name = getName();
-        if (name !== playerName) continue;
+        if (!name || !matchesName(name)) continue;
         if (!profile.flag) { profile.flag = teamFlag; profile.teamName = teamName; }
         profile.redCards++;
         profile.events.push({ type: 'red', minute, matchLabel, matchDate, ownGoal: false, opponentFlag, opponentName });
@@ -2934,12 +2986,45 @@ function buildPlayerProfile(playerName, matches) {
     }
   }
 
+  // 2) Supplement with ESPN stats cache (covers shots, saves, fouls, offsides, and fills gaps)
+  if (espnStatsCache?.playerMap) {
+    for (const [, p] of espnStatsCache.playerMap) {
+      if (!matchesName(p.name)) continue;
+      // Fill flag/team if FIFA didn't have this player
+      if (!profile.flag && p.flag) { profile.flag = p.flag; profile.teamName = p.teamName; }
+      // Use ESPN totals for stats that FIFA doesn't provide
+      profile.shots += p.shots || 0;
+      profile.shotsOnTarget += p.shotsOnTarget || 0;
+      profile.saves += p.saves || 0;
+      profile.fouls += p.fouls || 0;
+      profile.offsides += p.offsides || 0;
+      // ESPN goals/assists come from FIFA timelines (authoritative) — don't override
+      // ESPN "totalGoals" for GKs means goals conceded, not scored
+      if (profile.yellowCards === 0 && p.yellowCards > 0) profile.yellowCards = p.yellowCards;
+      if (profile.redCards === 0 && p.redCards > 0) profile.redCards = p.redCards;
+      break;
+    }
+  }
+
   return profile;
 }
 
-function openPlayerProfile(playerName, matches) {
+async function openPlayerProfile(playerName, matches) {
   // Remove any existing profile overlay
   document.getElementById('player-profile-overlay')?.remove();
+
+  // Ensure both data sources are available before building the profile
+  // 1) ESPN stats (shots, saves, fouls, offsides + rosters with shirt numbers)
+  await buildEspnStatsCache(matches);
+  // 2) FIFA timelines (goals, assists, cards per match)
+  const finishedMatches = matches.filter(m => m.MatchStatus === STATUS_FINISHED);
+  await Promise.allSettled(finishedMatches.map(m => {
+    if (timelineCache.has(m.IdMatch)) return Promise.resolve();
+    const url = TIMELINE_API.replace('{stage}', m.IdStage).replace('{match}', m.IdMatch);
+    return fetch(url).then(r => r.ok ? r.json() : null).then(data => {
+      if (data?.Event) timelineCache.set(m.IdMatch, data.Event);
+    }).catch(() => { });
+  }));
 
   const profile = buildPlayerProfile(playerName, matches);
 
@@ -2953,8 +3038,13 @@ function openPlayerProfile(playerName, matches) {
     <div class="profile-stats-row">
       ${profile.goals > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.goals}</span><span class="profile-stat-label">⚽ ${t('profileGoals')}</span></div>` : ''}
       ${profile.assists > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.assists}</span><span class="profile-stat-label">🎯 ${t('profileAssists')}</span></div>` : ''}
+      ${profile.shots > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.shots}</span><span class="profile-stat-label">🎯 ${t('statShots')}</span></div>` : ''}
+      ${profile.shotsOnTarget > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.shotsOnTarget}</span><span class="profile-stat-label">🎯 ${t('statOnTarget')}</span></div>` : ''}
+      ${profile.saves > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.saves}</span><span class="profile-stat-label">🧤 ${t('statSaves')}</span></div>` : ''}
       ${profile.yellowCards > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.yellowCards}</span><span class="profile-stat-label">🟨 ${t('profileYellow')}</span></div>` : ''}
       ${profile.redCards > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.redCards}</span><span class="profile-stat-label">🟥 ${t('profileRed')}</span></div>` : ''}
+      ${profile.fouls > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.fouls}</span><span class="profile-stat-label">🚫 ${t('statFouls')}</span></div>` : ''}
+      ${profile.offsides > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.offsides}</span><span class="profile-stat-label">🚩 ${t('statOffsides')}</span></div>` : ''}
     </div>`;
 
   const eventsHtml = profile.events.length === 0 ? '' : `
