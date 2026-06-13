@@ -117,6 +117,14 @@ Use this as the reference when resuming development in a future session.
 
 ## What's Built
 
+### Phase 14 — Author Credit + V2 Plan ✅ (2026-06-13)
+- Added `by Waseem Aboliel` credit line under the subtitle in the nav header
+- `.nav-credit` styled in gold at 60% opacity — subtle, not distracting
+- `sw.js` bumped to `wc2026-v18` so mobile users pick up the update
+- `V2-PLAN.md` added to repo — full Svelte migration roadmap
+
+---
+
 ### Phase 1–6 ✅ (2026-06-12)
 Core app: match list, match detail (goals/cards/subs), standings, stats, Israel TV channels, PWA, auto-scroll to today.
 

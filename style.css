@@ -86,6 +86,14 @@ body {
   letter-spacing: 0.8px;
 }
 
+.nav-credit {
+  font-size: 10px;
+  color: var(--gold);
+  font-weight: 400;
+  opacity: 0.6;
+  letter-spacing: 0.3px;
+}
+
 /* ── Language toggle ── */
 .lang-toggle {
   display: flex;
