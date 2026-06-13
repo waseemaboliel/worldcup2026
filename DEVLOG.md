@@ -215,7 +215,7 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
 - **TBD slots in tree:** show short `W89`/`W90` labels until R32 finishes, then real team names + flags replace them automatically via `getTeamName`.
 - **Final column:** 3rd place and Final are grouped together with clear separation (`margin-top: 56px` between them) so they read as distinct matches.
 - Tapping a finished/live slot in the tree navigates to the Matches tab and opens that match's detail panel.
-- Match numbering chain hard-coded (FIFA API has no match-linkage field): R16 89–96 → QF 97–100 → SF 101–102 → Final 103 / 3rd 104.
+- Match numbering chain hard-coded (FIFA API has no match-linkage field): R16 89–96 → QF 97–100 → SF 101–102 → 3rd place 103 (IdStage 289291) / Final 104 (IdStage 289292).
 - All round labels (`stageR16`, `stageQF`, `stageSF`, `stageFinal`, `stage3rd`) use `t()` — translated in all 3 languages.
 
 ### Phase 13 — Player Profiles

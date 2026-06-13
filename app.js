@@ -1946,7 +1946,8 @@ const BRACKET_ROUNDS = [
   { stageId: '289288', labelKey: 'stageR16',    matchCount: 8  },
   { stageId: '289289', labelKey: 'stageQF',     matchCount: 4  },
   { stageId: '289290', labelKey: 'stageSF',     matchCount: 2  },
-  { stageId: '289291', labelKey: 'stageFinal',  matchCount: 1  },
+  { stageId: '289291', labelKey: 'stage3rd',    matchCount: 1  }, // M103 = 3rd place
+  { stageId: '289292', labelKey: 'stageFinal',  matchCount: 1  }, // M104 = Final
 ];
 
 // Resolve a PlaceHolder string to a display name using known results
@@ -2258,12 +2259,14 @@ function bracketSlot(matchNum, matches, isHighlighted) {
       <span class="bslot-flag">${homeFlag}</span>
       <span class="bslot-name">${homeStr}</span>
     </div>
-    <div class="bslot-score">${scoreStr}${liveIndicator}</div>
+    <div class="bslot-score">
+      ${scoreStr}${liveIndicator}
+      <span class="bslot-date">${shortDate}</span>
+    </div>
     <div class="bslot-team${awayWon ? ' bslot-winner' : ''}">
       <span class="bslot-flag">${awayFlag}</span>
       <span class="bslot-name">${awayStr}</span>
     </div>
-    <div class="bslot-datetime">${shortDate}${!isFinished && !isLive ? ` · ${kickoffTime}` : ''}</div>
   </div>`;
 }
 
@@ -2284,8 +2287,8 @@ function renderBracketTree(matches, container) {
   const r16html  = r16nums.map(n  => bracketSlot(n, matches)).join('');
   const qfhtml   = qfnums.map(n   => bracketSlot(n, matches)).join('');
   const sfhtml   = sfnums.map(n   => bracketSlot(n, matches)).join('');
-  const finalhtml = bracketSlot(103, matches);
-  const thirdhtml = bracketSlot(104, matches);
+  const thirdhtml = bracketSlot(103, matches); // M103 = 3rd place (RU101 vs RU102)
+  const finalhtml = bracketSlot(104, matches); // M104 = Final (W101 vs W102)
 
   container.innerHTML = `
     <div class="btree-wrap">
