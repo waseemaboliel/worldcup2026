@@ -73,6 +73,14 @@ const STRINGS = {
     // Live match
     liveBadge: '🟢 LIVE', liveHT: 'HT', liveET: 'ET', livePSO: 'PSO', liveOG: 'OG',
     livePeriod: (s) => ({ 'First Half': '1st Half', 'Second Half': '2nd Half', 'Half Time': 'Half Time', 'Extra Time': 'ET', 'Penalty Shootout': 'PSO' }[s] || s),
+    // Player profile
+    profileGoals: 'Goals', profileAssists: 'Assists', profileYellow: 'Yellow Cards', profileRed: 'Red Cards',
+    profileTournamentStats: 'Tournament Stats', profileMatchHistory: 'Match History',
+    profileOG: 'Own Goal', profileClose: 'Close',
+    // Team profile
+    teamMatches: 'Matches', teamRecord: 'Record',
+    teamWon: 'W', teamDrawn: 'D', teamLost: 'L',
+    teamGF: 'GF', teamGA: 'GA',
   },
   he: {
     tabMatches: 'משחקים', tabStandings: 'טבלאות', tabBracket: 'סבב נוקאאוט', tabStats: 'סטטיסטיקה',
@@ -143,6 +151,14 @@ const STRINGS = {
     // Live match
     liveBadge: '🟢 חי', liveHT: 'הפ׳', liveET: 'הא׳', livePSO: 'פנ׳', liveOG: 'גול עצמי',
     livePeriod: (s) => ({ 'First Half': 'מחצית ראשונה', 'Second Half': 'מחצית שנייה', 'Half Time': 'הפסקה', 'Extra Time': 'הארכה', 'Penalty Shootout': 'פנדלים' }[s] || s),
+    // Player profile
+    profileGoals: 'שערים', profileAssists: 'בישולים', profileYellow: 'כרטיסים צהובים', profileRed: 'כרטיסים אדומים',
+    profileTournamentStats: 'סטטיסטיקת טורניר', profileMatchHistory: 'היסטוריית משחקים',
+    profileOG: 'גול עצמי', profileClose: 'סגור',
+    // Team profile
+    teamMatches: 'משחקים', teamRecord: 'תוצאות',
+    teamWon: 'נ', teamDrawn: 'ת', teamLost: 'ה',
+    teamGF: 'ש"כ', teamGA: 'ש"ס',
   },
   ar: {
     tabMatches: 'مباريات', tabStandings: 'ترتيب', tabBracket: 'الأدوار الإقصائية', tabStats: 'إحصاءات',
@@ -213,6 +229,14 @@ const STRINGS = {
     // Live match
     liveBadge: '🟢 مباشر', liveHT: 'ن.و', liveET: 'و.إ', livePSO: 'ر.ج', liveOG: 'هدف عكسي',
     livePeriod: (s) => ({ 'First Half': 'الشوط الأول', 'Second Half': 'الشوط الثاني', 'Half Time': 'استراحة', 'Extra Time': 'الوقت الإضافي', 'Penalty Shootout': 'ركلات الترجيح' }[s] || s),
+    // Player profile
+    profileGoals: 'أهداف', profileAssists: 'تمريرات حاسمة', profileYellow: 'بطاقات صفراء', profileRed: 'بطاقات حمراء',
+    profileTournamentStats: 'إحصاءات البطولة', profileMatchHistory: 'سجل المباريات',
+    profileOG: 'هدف عكسي', profileClose: 'إغلاق',
+    // Team profile
+    teamMatches: 'المباريات', teamRecord: 'السجل',
+    teamWon: 'ف', teamDrawn: 'ت', teamLost: 'خ',
+    teamGF: 'له', teamGA: 'عليه',
   }
 };
 
@@ -413,8 +437,8 @@ function buildChannelsRow(matchId) {
 function buildMatchCard(match) {
   const isFinished = match.MatchStatus === STATUS_FINISHED;
   const isLive     = match.MatchStatus === STATUS_LIVE;
-  const homeName = getTeamName(match.Home) || match.PlaceHolderA || 'TBD';
-  const awayName = getTeamName(match.Away) || match.PlaceHolderB || 'TBD';
+  const homeName = teamSpan(getTeamName(match.Home) || match.PlaceHolderA || 'TBD', match.Home?.IdTeam);
+  const awayName = teamSpan(getTeamName(match.Away) || match.PlaceHolderB || 'TBD', match.Away?.IdTeam);
   const homeFlag = match.Home ? countryToFlag(match.Home.IdCountry) : '🏳️';
   const awayFlag = match.Away ? countryToFlag(match.Away.IdCountry) : '🏳️';
   const venue = match.Stadium?.Name?.[0]?.Description || '';
@@ -506,6 +530,7 @@ function buildMatchCard(match) {
   }
 
   card.addEventListener('click', () => toggleCard(card, match));
+  bindTeamLinks(card);
   return card;
 }
 
@@ -626,6 +651,7 @@ function renderLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detai
   html += buildEventSections(goals, yellowCards, redCards, subs, homeFlag, awayFlag, events.length);
 
   detail.innerHTML = html;
+  bindPlayerLinks(detail, allMatches);
 
   // Lineup pitch: prefer ESPN lineup (has posAbbr/formationPlace), fall back to FIFA
   if (espnLineup || fifaLineup) {
@@ -684,30 +710,30 @@ function buildEventSections(goals, yellowCards, redCards, subs, homeFlag, awayFl
 
   if (goals.length) {
     const rows = goals.map(g => {
-      const assist = g.assist ? `<span class="detail-assist">↳ ${g.assist}</span>` : '';
+      const assist = g.assist ? `<span class="detail-assist">↳ ${playerSpan(g.assist)}</span>` : '';
       const og = g.ownGoal ? ` <span class="detail-og">${t('liveOG')}</span>` : '';
-      const cell = `${g.side === 'home' ? homeFlag : awayFlag} <span class="detail-name">⚽ ${g.scorer}${og}${assist}</span>`;
+      const cell = `${g.side === 'home' ? homeFlag : awayFlag} <span class="detail-name">⚽ ${playerSpan(g.scorer)}${og}${assist}</span>`;
       return eventRow(g.minute, g.side === 'home' ? cell : null, g.side === 'away' ? cell : null);
     }).join('');
     sections.push(`<div class="detail-section"><div class="detail-section-title">${t('detailGoals')}</div>${rows}</div>`);
   }
   if (yellowCards.length) {
     const rows = yellowCards.map(c => {
-      const cell = `${c.side === 'home' ? homeFlag : awayFlag} <span class="detail-name">🟨 ${c.player}</span>`;
+      const cell = `${c.side === 'home' ? homeFlag : awayFlag} <span class="detail-name">🟨 ${playerSpan(c.player)}</span>`;
       return eventRow(c.minute, c.side === 'home' ? cell : null, c.side === 'away' ? cell : null);
     }).join('');
     sections.push(`<div class="detail-section"><div class="detail-section-title">${t('detailYellow')}</div>${rows}</div>`);
   }
   if (redCards.length) {
     const rows = redCards.map(c => {
-      const cell = `${c.side === 'home' ? homeFlag : awayFlag} <span class="detail-name">🟥 ${c.player}</span>`;
+      const cell = `${c.side === 'home' ? homeFlag : awayFlag} <span class="detail-name">🟥 ${playerSpan(c.player)}</span>`;
       return eventRow(c.minute, c.side === 'home' ? cell : null, c.side === 'away' ? cell : null);
     }).join('');
     sections.push(`<div class="detail-section"><div class="detail-section-title">${t('detailRed')}</div>${rows}</div>`);
   }
   if (subs.length) {
     const rows = subs.map(s => {
-      const cell = `${s.side === 'home' ? homeFlag : awayFlag} <span class="detail-name">↑ ${s.playerIn}</span><span class="detail-sub-out">↓ ${s.playerOut}</span>`;
+      const cell = `${s.side === 'home' ? homeFlag : awayFlag} <span class="detail-name">↑ ${playerSpan(s.playerIn)}</span><span class="detail-sub-out">↓ ${playerSpan(s.playerOut)}</span>`;
       return eventRow(s.minute, s.side === 'home' ? cell : null, s.side === 'away' ? cell : null);
     }).join('');
     sections.push(`<div class="detail-section"><div class="detail-section-title">${t('detailSubs')}</div>${rows}</div>`);
@@ -758,6 +784,7 @@ function patchLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detail
   } else if (emptyEl) {
     emptyEl.outerHTML = newEventsHTML;
   }
+  bindPlayerLinks(detail, allMatches);
 
   // Patch lineup (field status changes every sub)
   const lineupSection = detail.querySelector('.lineup-section');
@@ -1023,9 +1050,9 @@ function renderTimeline(match, events, lineup, espnLineup, detail) {
 
   if (goals.length) {
     const rows = goals.map(g => {
-      const assist = g.assist ? `<span class="detail-assist">↳ ${g.assist}</span>` : '';
+      const assist = g.assist ? `<span class="detail-assist">↳ ${playerSpan(g.assist)}</span>` : '';
       const og = g.ownGoal ? ` <span class="detail-og">${t('liveOG')}</span>` : '';
-      const content = `<span class="detail-name">⚽ ${g.scorer}${og}${assist}</span>`;
+      const content = `<span class="detail-name">⚽ ${playerSpan(g.scorer)}${og}${assist}</span>`;
       const flag = g.side === 'home' ? homeFlag : awayFlag;
       const cell = `${flag} ${content}`;
       return eventRow(g.minute, g.side === 'home' ? cell : null, g.side === 'away' ? cell : null);
@@ -1035,7 +1062,7 @@ function renderTimeline(match, events, lineup, espnLineup, detail) {
 
   if (yellowCards.length) {
     const rows = yellowCards.map(c => {
-      const content = `<span class="detail-name">🟨 ${c.player}</span>`;
+      const content = `<span class="detail-name">🟨 ${playerSpan(c.player)}</span>`;
       const flag = c.side === 'home' ? homeFlag : awayFlag;
       const cell = `${flag} ${content}`;
       return eventRow(c.minute, c.side === 'home' ? cell : null, c.side === 'away' ? cell : null);
@@ -1045,7 +1072,7 @@ function renderTimeline(match, events, lineup, espnLineup, detail) {
 
   if (redCards.length) {
     const rows = redCards.map(c => {
-      const content = `<span class="detail-name">🟥 ${c.player}</span>`;
+      const content = `<span class="detail-name">🟥 ${playerSpan(c.player)}</span>`;
       const flag = c.side === 'home' ? homeFlag : awayFlag;
       const cell = `${flag} ${content}`;
       return eventRow(c.minute, c.side === 'home' ? cell : null, c.side === 'away' ? cell : null);
@@ -1055,7 +1082,7 @@ function renderTimeline(match, events, lineup, espnLineup, detail) {
 
   if (subs.length) {
     const rows = subs.map(s => {
-      const content = `<span class="detail-name">↑ ${s.playerIn}</span><span class="detail-sub-out">↓ ${s.playerOut}</span>`;
+      const content = `<span class="detail-name">↑ ${playerSpan(s.playerIn)}</span><span class="detail-sub-out">↓ ${playerSpan(s.playerOut)}</span>`;
       const flag = s.side === 'home' ? homeFlag : awayFlag;
       const cell = `${flag} ${content}`;
       return eventRow(s.minute, s.side === 'home' ? cell : null, s.side === 'away' ? cell : null);
@@ -1066,6 +1093,8 @@ function renderTimeline(match, events, lineup, espnLineup, detail) {
   detail.innerHTML = attendance + (sections.length
     ? sections.join('')
     : `<p class="detail-empty">${t('detailNoEvents')}</p>`);
+
+  bindPlayerLinks(detail, allMatches);
 
   const statsSection = renderMatchStats(match, espnLineup);
   if (statsSection) detail.appendChild(statsSection);
@@ -1739,12 +1768,13 @@ async function buildEspnStatsCache(matches) {
     for (const { roster, fifaTeam } of rosters) {
       const flag     = fifaTeam ? countryToFlag(fifaTeam.IdCountry) : '🏳️';
       const teamName = fifaTeam ? (getTeamName(fifaTeam) || '') : '';
+      const teamId   = fifaTeam?.IdTeam || null;
       for (const p of [...(roster.starters || []), ...(roster.subs || [])]) {
         if (!p.name) continue;
         const id = p.name; // ESPN players don't have a stable ID in our parsed shape; key by name+team
         const key = `${p.name}|${teamName}`;
         if (!playerMap.has(key)) {
-          playerMap.set(key, { name: p.name, flag, teamName, goals: 0, assists: 0, shots: 0, shotsOnTarget: 0, saves: 0, yellowCards: 0, redCards: 0, fouls: 0, offsides: 0, appearances: 0 });
+          playerMap.set(key, { name: p.name, flag, teamName, teamId, goals: 0, assists: 0, shots: 0, shotsOnTarget: 0, saves: 0, yellowCards: 0, redCards: 0, fouls: 0, offsides: 0, appearances: 0 });
         }
         const e = playerMap.get(key);
         // stats is an array on the raw ESPN roster — but in our parsed shape it's not stored.
@@ -2483,7 +2513,7 @@ function renderStandings(matches) {
       const liveBadge = row.live ? '<span class="standings-live-badge">🟢</span>' : '';
       tr.innerHTML = `
         <td><span class="standings-pos">${i + 1}</span></td>
-        <td><div class="standings-team"><span>${row.flag}</span><span>${row.name}</span>${liveBadge}</div></td>
+        <td><div class="standings-team"><span>${row.flag}</span><span>${teamSpan(row.name, row.id)}</span>${liveBadge}</div></td>
         <td>${row.p}</td><td>${row.w}</td><td>${row.d}</td><td>${row.l}</td>
         <td>${row.gf}</td><td>${row.ga}</td><td>${gd > 0 ? '+' : ''}${gd}</td>
         <td class="standings-pts">${pts}</td>`;
@@ -2493,6 +2523,7 @@ function renderStandings(matches) {
     table.appendChild(tbody);
     section.appendChild(table);
     main.appendChild(section);
+    bindTeamLinks(section);
   }
 
   // Auto-refresh standings while live matches are ongoing
@@ -2542,9 +2573,10 @@ async function renderScorers(matches, container) {
       const team = ev.IdTeam === match.Home?.IdTeam ? match.Home : match.Away;
       const flag = team ? countryToFlag(team.IdCountry) : '🏳️';
       const teamName = team ? (getTeamName(team) || '') : '';
+      const teamId = team?.IdTeam || null;
 
       if (!scorerMap.has(ev.IdPlayer)) {
-        scorerMap.set(ev.IdPlayer, { name, flag, teamName, goals: 0 });
+        scorerMap.set(ev.IdPlayer, { name, flag, teamName, teamId, goals: 0 });
       }
       scorerMap.get(ev.IdPlayer).goals++;
     }
@@ -2568,8 +2600,8 @@ async function renderScorers(matches, container) {
       <div class="scorer-rank">${i + 1}</div>
       <span class="scorer-flag">${s.flag}</span>
       <div class="scorer-info">
-        <div class="scorer-name">${s.name}</div>
-        <div class="scorer-team">${s.teamName}</div>
+        <div class="scorer-name">${playerSpan(s.name)}</div>
+        <div class="scorer-team">${teamSpan(s.teamName, s.teamId)}</div>
       </div>
       <div>
         <div class="scorer-goals">${s.goals}</div>
@@ -2578,6 +2610,8 @@ async function renderScorers(matches, container) {
     list.appendChild(row);
   });
 
+  bindPlayerLinks(list, activeMatches());
+  bindTeamLinks(list);
   main.appendChild(list);
 }
 
@@ -2612,7 +2646,8 @@ async function renderAssists(matches, container) {
       const team = ev.IdTeam === match.Home?.IdTeam ? match.Home : match.Away;
       const flag = team ? countryToFlag(team.IdCountry) : '🏳️';
       const teamName = team ? (getTeamName(team) || '') : '';
-      if (!playerMap.has(ev.IdPlayer)) playerMap.set(ev.IdPlayer, { name, flag, teamName, count: 0 });
+      const teamId = team?.IdTeam || null;
+      if (!playerMap.has(ev.IdPlayer)) playerMap.set(ev.IdPlayer, { name, flag, teamName, teamId, count: 0 });
       playerMap.get(ev.IdPlayer).count++;
     }
   }
@@ -2634,8 +2669,8 @@ async function renderAssists(matches, container) {
       <div class="scorer-rank">${i + 1}</div>
       <span class="scorer-flag">${s.flag}</span>
       <div class="scorer-info">
-        <div class="scorer-name">${s.name}</div>
-        <div class="scorer-team">${s.teamName}</div>
+        <div class="scorer-name">${playerSpan(s.name)}</div>
+        <div class="scorer-team">${teamSpan(s.teamName, s.teamId)}</div>
       </div>
       <div>
         <div class="scorer-goals">${s.count}</div>
@@ -2643,6 +2678,8 @@ async function renderAssists(matches, container) {
       </div>`;
     list.appendChild(row);
   });
+  bindPlayerLinks(list, activeMatches());
+  bindTeamLinks(list);
   container.appendChild(list);
 }
 
@@ -2677,9 +2714,10 @@ async function renderCleanSheets(matches, container) {
 
       const flag     = team ? countryToFlag(team.IdCountry) : '🏳️';
       const teamName = team ? (getTeamName(team) || '') : '';
+      const teamId   = team?.IdTeam || null;
 
       if (!gkMap.has(gk.id)) {
-        gkMap.set(gk.id, { name: gk.name, flag, teamName, count: 0 });
+        gkMap.set(gk.id, { name: gk.name, flag, teamName, teamId, count: 0 });
       }
       gkMap.get(gk.id).count++;
     }
@@ -2702,8 +2740,8 @@ async function renderCleanSheets(matches, container) {
       <div class="scorer-rank">${i + 1}</div>
       <span class="scorer-flag">${s.flag}</span>
       <div class="scorer-info">
-        <div class="scorer-name">${s.name}</div>
-        <div class="scorer-team">${s.teamName}</div>
+        <div class="scorer-name">${playerSpan(s.name)}</div>
+        <div class="scorer-team">${teamSpan(s.teamName, s.teamId)}</div>
       </div>
       <div>
         <div class="scorer-goals">${s.count}</div>
@@ -2711,6 +2749,8 @@ async function renderCleanSheets(matches, container) {
       </div>`;
     list.appendChild(row);
   });
+  bindPlayerLinks(list, activeMatches());
+  bindTeamLinks(list);
   container.appendChild(list);
 }
 
@@ -2753,8 +2793,8 @@ async function renderEspnPlayerLeaderboard(matches, container, type) {
       <div class="scorer-rank">${i + 1}</div>
       <span class="scorer-flag">${s.flag}</span>
       <div class="scorer-info">
-        <div class="scorer-name">${s.name}</div>
-        <div class="scorer-team">${s.teamName}</div>
+        <div class="scorer-name">${playerSpan(s.name)}</div>
+        <div class="scorer-team">${teamSpan(s.teamName, s.teamId)}</div>
       </div>
       <div>
         <div class="scorer-goals">${s[cfg.field]}</div>
@@ -2762,7 +2802,296 @@ async function renderEspnPlayerLeaderboard(matches, container, type) {
       </div>`;
     list.appendChild(row);
   });
+  bindPlayerLinks(list, activeMatches());
+  bindTeamLinks(list);
   container.appendChild(list);
+}
+
+// ── Phase 13: Player Profiles ─────────────────────────────────
+// Build a profile for a player from timeline data across all cached matches.
+// Returns { name, flag, teamName, goals, assists, yellowCards, redCards, events[] }
+// Each event: { type:'goal'|'assist'|'yellow'|'red', minute, matchLabel, ownGoal }
+function buildPlayerProfile(playerName, matches) {
+  const profile = { name: playerName, flag: '', teamName: '', goals: 0, assists: 0, yellowCards: 0, redCards: 0, ownGoals: 0, events: [] };
+
+  for (const match of matches) {
+    if (match.MatchStatus !== STATUS_FINISHED) continue;
+    const events = timelineCache.get(match.IdMatch);
+    if (!events) continue;
+
+    const homeId = match.Home?.IdTeam;
+    const awayId = match.Away?.IdTeam;
+    const homeName = getTeamName(match.Home) || '';
+    const awayName = getTeamName(match.Away) || '';
+    const homeFlag = match.Home ? countryToFlag(match.Home.IdCountry) : '';
+    const awayFlag = match.Away ? countryToFlag(match.Away.IdCountry) : '';
+
+    const matchDate = new Date(match.Date).toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short', timeZone: 'Asia/Jerusalem' });
+
+    // Build assist map for this match
+    const assistMap = {};
+    for (let i = 0; i < events.length; i++) {
+      if (events[i].Type === 1 && i + 1 < events.length && events[i + 1].Type === 0) {
+        const d = events[i].EventDescription?.[0]?.Description || '';
+        const m = d.match(/Assisted by (.+)\./);
+        if (m) assistMap[events[i + 1].EventId] = { assistName: m[1], eventId: events[i].EventId };
+      }
+    }
+
+    for (let i = 0; i < events.length; i++) {
+      const ev = events[i];
+      const desc = ev.EventDescription?.[0]?.Description || '';
+      const minute = ev.MatchMinute || '';
+      const side = ev.IdTeam === homeId ? 'home' : ev.IdTeam === awayId ? 'away' : null;
+      const teamFlag = side === 'home' ? homeFlag : awayFlag;
+      const teamName = side === 'home' ? homeName : awayName;
+      const opponentName = side === 'home' ? awayName : homeName;
+      const opponentFlag = side === 'home' ? awayFlag : homeFlag;
+      const matchLabel = `${homeFlag} ${homeName} ${match.HomeTeamScore}–${match.AwayTeamScore} ${awayFlag} ${awayName}`;
+
+      const getName = () => {
+        const m2 = desc.match(/^(.+?) \(.*?\) scores/) || desc.match(/^(.+?) scores/) || desc.match(/^(.+?) \(/);
+        return m2 ? m2[1] : null;
+      };
+
+      if (ev.Type === 0) {
+        const name = getName();
+        if (name !== playerName) continue;
+        if (!profile.flag) { profile.flag = teamFlag; profile.teamName = teamName; }
+        profile.goals++;
+        profile.events.push({ type: 'goal', minute, matchLabel, matchDate, ownGoal: false, opponentFlag, opponentName });
+      } else if (ev.Type === 34) {
+        const name = getName();
+        if (name !== playerName) continue;
+        if (!profile.flag) { profile.flag = teamFlag; profile.teamName = teamName; }
+        profile.goals++;
+        profile.ownGoals++;
+        // For OG, IdTeam is the conceding team, so side is "wrong" — opponent is actually who scored
+        const ogOpponentFlag = side === 'home' ? homeFlag : awayFlag;
+        const ogOpponentName = side === 'home' ? homeName : awayName;
+        profile.events.push({ type: 'goal', minute, matchLabel, matchDate, ownGoal: true, opponentFlag: ogOpponentFlag, opponentName: ogOpponentName });
+      } else if (ev.Type === 1) {
+        const d = desc.match(/Assisted by (.+)\./);
+        if (!d || d[1] !== playerName) continue;
+        // Find the team from the following goal event
+        const nextGoal = events[i + 1];
+        const asSide = nextGoal ? (nextGoal.IdTeam === homeId ? 'home' : 'away') : side;
+        const asTeamFlag = asSide === 'home' ? homeFlag : awayFlag;
+        const asTeamName = asSide === 'home' ? homeName : awayName;
+        const asOppFlag  = asSide === 'home' ? awayFlag : homeFlag;
+        const asOppName  = asSide === 'home' ? awayName : homeName;
+        if (!profile.flag) { profile.flag = asTeamFlag; profile.teamName = asTeamName; }
+        profile.assists++;
+        profile.events.push({ type: 'assist', minute, matchLabel, matchDate, ownGoal: false, opponentFlag: asOppFlag, opponentName: asOppName });
+      } else if (ev.Type === 2) {
+        const name = getName();
+        if (name !== playerName) continue;
+        if (!profile.flag) { profile.flag = teamFlag; profile.teamName = teamName; }
+        profile.yellowCards++;
+        profile.events.push({ type: 'yellow', minute, matchLabel, matchDate, ownGoal: false, opponentFlag, opponentName });
+      } else if (ev.Type === 3) {
+        const name = getName();
+        if (name !== playerName) continue;
+        if (!profile.flag) { profile.flag = teamFlag; profile.teamName = teamName; }
+        profile.redCards++;
+        profile.events.push({ type: 'red', minute, matchLabel, matchDate, ownGoal: false, opponentFlag, opponentName });
+      }
+    }
+  }
+
+  return profile;
+}
+
+function openPlayerProfile(playerName, matches) {
+  // Remove any existing profile overlay
+  document.getElementById('player-profile-overlay')?.remove();
+
+  const profile = buildPlayerProfile(playerName, matches);
+
+  const overlay = document.createElement('div');
+  overlay.id = 'player-profile-overlay';
+  overlay.className = 'profile-overlay';
+
+  const EVENT_ICONS = { goal: '⚽', assist: '🎯', yellow: '🟨', red: '🟥' };
+
+  const statsHtml = `
+    <div class="profile-stats-row">
+      ${profile.goals   > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.goals}</span><span class="profile-stat-label">⚽ ${t('profileGoals')}</span></div>` : ''}
+      ${profile.assists > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.assists}</span><span class="profile-stat-label">🎯 ${t('profileAssists')}</span></div>` : ''}
+      ${profile.yellowCards > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.yellowCards}</span><span class="profile-stat-label">🟨 ${t('profileYellow')}</span></div>` : ''}
+      ${profile.redCards > 0 ? `<div class="profile-stat"><span class="profile-stat-val">${profile.redCards}</span><span class="profile-stat-label">🟥 ${t('profileRed')}</span></div>` : ''}
+    </div>`;
+
+  const eventsHtml = profile.events.length === 0 ? '' : `
+    <div class="profile-section-title">${t('profileMatchHistory')}</div>
+    <div class="profile-events">
+      ${profile.events.map(ev => `
+        <div class="profile-event">
+          <span class="profile-event-icon">${EVENT_ICONS[ev.type]}${ev.ownGoal ? ` <span class="profile-og-badge">${t('profileOG')}</span>` : ''}</span>
+          <div class="profile-event-detail">
+            <span class="profile-event-minute">${ev.minute}'</span>
+            <span class="profile-event-match">${ev.matchLabel}</span>
+            <span class="profile-event-date">${ev.matchDate}</span>
+          </div>
+        </div>`).join('')}
+    </div>`;
+
+  overlay.innerHTML = `
+    <div class="profile-backdrop"></div>
+    <div class="profile-card">
+      <button class="profile-close" aria-label="${t('profileClose')}">✕</button>
+      <div class="profile-header">
+        <span class="profile-flag">${profile.flag}</span>
+        <div class="profile-identity">
+          <div class="profile-name">${profile.name}</div>
+          <div class="profile-team">${profile.teamName}</div>
+        </div>
+      </div>
+      ${statsHtml}
+      ${eventsHtml}
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.querySelector('.profile-close').addEventListener('click', close);
+  overlay.querySelector('.profile-backdrop').addEventListener('click', close);
+  // Swipe down to dismiss on mobile
+  let touchStartY = 0;
+  overlay.querySelector('.profile-card').addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
+  overlay.querySelector('.profile-card').addEventListener('touchend', e => { if (e.changedTouches[0].clientY - touchStartY > 80) close(); }, { passive: true });
+}
+
+// Wrap a plain player name string in a tappable span
+function playerSpan(name) {
+  return `<span class="player-link" data-player="${name.replace(/"/g, '&quot;')}">${name}</span>`;
+}
+
+// Attach click handlers to all .player-link elements inside a container
+function bindPlayerLinks(container, matches) {
+  container.querySelectorAll('.player-link').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      openPlayerProfile(el.dataset.player, matches);
+    });
+  });
+}
+
+// ── Team Profiles ─────────────────────────────────────────────
+function teamSpan(name, teamId) {
+  if (!teamId) return name;
+  return `<span class="team-link" data-team-id="${teamId}">${name}</span>`;
+}
+
+function bindTeamLinks(container) {
+  container.querySelectorAll('.team-link').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      openTeamProfile(el.dataset.teamId, allMatches);
+    });
+  });
+}
+
+function openTeamProfile(teamId, matches) {
+  document.getElementById('team-profile-overlay')?.remove();
+
+  // Find all matches involving this team
+  const teamMatches = matches.filter(m =>
+    m.Home?.IdTeam === teamId || m.Away?.IdTeam === teamId
+  ).sort((a, b) => new Date(a.Date) - new Date(b.Date));
+
+  if (teamMatches.length === 0) return;
+
+  // Derive team identity from first match that has this team
+  const ref = teamMatches[0];
+  const teamObj = ref.Home?.IdTeam === teamId ? ref.Home : ref.Away;
+  const teamFlag = countryToFlag(teamObj.IdCountry);
+  const teamName = getTeamName(teamObj) || '?';
+
+  // Compute record across finished matches
+  let w = 0, d = 0, l = 0, gf = 0, ga = 0;
+  for (const m of teamMatches) {
+    if (m.MatchStatus !== STATUS_FINISHED) continue;
+    const isHome = m.Home?.IdTeam === teamId;
+    const tf = isHome ? (m.HomeTeamScore ?? 0) : (m.AwayTeamScore ?? 0);
+    const ta = isHome ? (m.AwayTeamScore ?? 0) : (m.HomeTeamScore ?? 0);
+    gf += tf; ga += ta;
+    if (tf > ta) w++;
+    else if (tf === ta) d++;
+    else l++;
+  }
+
+  const recordHtml = (w + d + l) > 0 ? `
+    <div class="profile-stats-row">
+      <div class="profile-stat"><span class="profile-stat-val">${w}</span><span class="profile-stat-label">${t('teamWon')}</span></div>
+      <div class="profile-stat"><span class="profile-stat-val">${d}</span><span class="profile-stat-label">${t('teamDrawn')}</span></div>
+      <div class="profile-stat"><span class="profile-stat-val">${l}</span><span class="profile-stat-label">${t('teamLost')}</span></div>
+      <div class="profile-stat"><span class="profile-stat-val">${gf}</span><span class="profile-stat-label">${t('teamGF')}</span></div>
+      <div class="profile-stat"><span class="profile-stat-val">${ga}</span><span class="profile-stat-label">${t('teamGA')}</span></div>
+    </div>` : '';
+
+  const matchRows = teamMatches.map(m => {
+    const isHome = m.Home?.IdTeam === teamId;
+    const opp = isHome ? m.Away : m.Home;
+    const oppFlag = opp ? countryToFlag(opp.IdCountry) : '🏳️';
+    const oppName = opp ? (getTeamName(opp) || '?') : '?';
+    const date = new Date(m.Date).toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short', timeZone: 'Asia/Jerusalem' });
+
+    let scoreStr = '', resultClass = '';
+    if (m.MatchStatus === STATUS_FINISHED) {
+      const tf = isHome ? m.HomeTeamScore : m.AwayTeamScore;
+      const ta = isHome ? m.AwayTeamScore : m.HomeTeamScore;
+      scoreStr = `${tf}–${ta}`;
+      resultClass = tf > ta ? 'team-match-w' : tf === ta ? 'team-match-d' : 'team-match-l';
+    } else if (m.MatchStatus === STATUS_LIVE) {
+      const liveData = espnLiveData.get(m.IdMatch);
+      const [hs, as] = liveData ? liveData.score.split('–').map(s => parseInt(s.trim(), 10) || 0) : [0, 0];
+      const tf = isHome ? hs : as;
+      const ta = isHome ? as : hs;
+      scoreStr = `${tf}–${ta} 🟢`;
+      resultClass = 'team-match-live';
+    } else {
+      scoreStr = formatKickoff(m.Date);
+    }
+
+    const stageKey = STAGE_LABEL[m.StageName?.[0]?.Description || ''];
+    const stageBadge = stageKey ? t(stageKey) : (m.GroupName?.[0]?.Description || '');
+
+    return `<div class="team-match-row">
+      <div class="team-match-opp">${oppFlag} <span>${oppName}</span></div>
+      <div class="team-match-right">
+        <span class="team-match-score ${resultClass}">${scoreStr}</span>
+        <span class="team-match-stage">${stageBadge} · ${date}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const overlay = document.createElement('div');
+  overlay.id = 'team-profile-overlay';
+  overlay.className = 'profile-overlay';
+  overlay.innerHTML = `
+    <div class="profile-backdrop"></div>
+    <div class="profile-card">
+      <button class="profile-close" aria-label="${t('profileClose')}">✕</button>
+      <div class="profile-header">
+        <span class="profile-flag">${teamFlag}</span>
+        <div class="profile-identity">
+          <div class="profile-name">${teamName}</div>
+        </div>
+      </div>
+      ${recordHtml}
+      <div class="profile-section-title">${t('teamMatches')}</div>
+      <div class="profile-events">${matchRows}</div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.querySelector('.profile-close').addEventListener('click', close);
+  overlay.querySelector('.profile-backdrop').addEventListener('click', close);
+  let touchStartY = 0;
+  overlay.querySelector('.profile-card').addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
+  overlay.querySelector('.profile-card').addEventListener('touchend', e => { if (e.changedTouches[0].clientY - touchStartY > 80) close(); }, { passive: true });
 }
 
 // ── Live polling (Phase 11a) ───────────────────────────────────

@@ -219,13 +219,22 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
 - Match numbering chain hard-coded: R16 89–96 → QF 97–100 → SF 101–102 → 3rd place 103 / Final 104.
 - All round labels use `t()` — translated in all 3 languages.
 
-### Phase 13 — Player Profiles
-- Tap any player name in stats leaderboards or match detail to open a profile
-- Shows: flag, name, team, all goals/assists/cards across the tournament with match and minute
-- Data already available in `timelineCache` — no new API needed
+### Phase 13 — Player Profiles ✅ (2026-06-13)
+- Tap any player name in stats leaderboards or match detail events to open a bottom-sheet profile
+- Shows: flag, name, team, stat pills (goals / assists / yellow / red), then full match-by-match event history (minute + match scoreline + date)
+- Data sourced entirely from `timelineCache` — no new API needed
+- `playerSpan(name)` wraps any name in a tappable `.player-link` span
+- `bindPlayerLinks(container, matches)` attaches click handlers after any HTML render
+- `buildPlayerProfile(name, matches)` scans all cached timelines and returns structured profile data
+- Profile overlay slides up from bottom; close by ✕ button, backdrop tap, or swipe down
+- RTL-aware: close button flips side, header padding mirrors, section titles lose uppercase
 
-### Phase 14 — Push Notifications (PWA)
-- Alert users when a match they care about is about to kick off
-- Use the Web Push API via the service worker
-- Options: notify for all matches, or only bookmarked teams
-- Requires a small backend (push subscription storage) — not purely static
+### Phase 13b — Team Profiles ✅ (2026-06-13)
+- Tap any team name anywhere in the app to open a bottom-sheet team profile
+- Shows: flag, team name, W/D/L/GF/GA record (from finished matches), then all tournament matches in order
+- Each match row shows: opponent flag + name, score (green=win / grey=draw / red=loss), stage, date
+- Live matches show live score with 🟢
+- `teamSpan(name, teamId)` wraps team names in `.team-link` spans
+- `bindTeamLinks(container)` attaches click handlers; called after every render that includes team names
+- `openTeamProfile(teamId, matches)` builds and displays the overlay
+- Wired in: match cards, standings table, Goals/Assists/Clean Sheets/ESPN leaderboard rows
