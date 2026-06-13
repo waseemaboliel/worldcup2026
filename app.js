@@ -2365,11 +2365,24 @@ async function fetchLiveScores() {
       espnLiveData.set(fifaId, { score, clock: displayClock, state });
       if (state === 'in') anyLive = true;
 
-      // Update allMatches MatchStatus so the card reflects reality
       const m = allMatches.find(m => m.IdMatch === fifaId);
       if (m) {
-        if (state === 'in') m.MatchStatus = STATUS_LIVE;
-        // Don't flip back to finished here — FIFA API is authoritative for that
+        if (state === 'in') {
+          m.MatchStatus = STATUS_LIVE;
+        } else if (state === 'post' && m.MatchStatus === STATUS_LIVE) {
+          // Match just ended — flip back to finished and apply final score
+          m.MatchStatus = STATUS_FINISHED;
+          const [hs, as] = score.split('–').map(s => parseInt(s.trim(), 10) || 0);
+          m.HomeTeamScore = hs;
+          m.AwayTeamScore = as;
+          // Stop the live detail poller if this match is currently open
+          if (activeCard?.dataset?.matchId === fifaId) {
+            stopLiveDetailPoller();
+            // Re-render the detail as a finished match
+            const detail = activeCard.querySelector('.match-detail');
+            if (detail) loadTimeline(m, detail);
+          }
+        }
       }
     }
 
@@ -2391,24 +2404,28 @@ function patchLiveCards() {
     const card = document.querySelector(`.match-card[data-match-id="${fifaId}"]`);
     if (!card) continue;
 
-    // Upgrade a pre-match card to live if the match just kicked off
-    if (!card.classList.contains('match-card--live')) {
-      const m = allMatches.find(m => m.IdMatch === fifaId);
-      if (m) {
-        // Replace card in place
-        const newCard = buildMatchCard(m);
-        card.replaceWith(newCard);
-        continue;
-      }
+    const m = allMatches.find(m => m.IdMatch === fifaId);
+    if (!m) continue;
+
+    // Match just ended or just kicked off — replace card entirely
+    const cardIsLive     = card.classList.contains('match-card--live');
+    const matchIsLive    = m.MatchStatus === STATUS_LIVE;
+    const matchIsFinished = m.MatchStatus === STATUS_FINISHED;
+
+    if ((matchIsFinished && cardIsLive) || (matchIsLive && !cardIsLive)) {
+      const newCard = buildMatchCard(m);
+      card.replaceWith(newCard);
+      continue;
     }
+
+    if (!cardIsLive) continue; // pre-match and not yet live, nothing to patch
 
     // Patch score
     const scoreEl = card.querySelector(`.match-score--live[data-match-id="${fifaId}"]`);
     if (scoreEl && scoreEl.textContent !== live.score) {
       scoreEl.textContent = live.score;
-      // Flash animation on score change
       scoreEl.classList.remove('score-flash');
-      void scoreEl.offsetWidth; // force reflow
+      void scoreEl.offsetWidth;
       scoreEl.classList.add('score-flash');
     }
 
