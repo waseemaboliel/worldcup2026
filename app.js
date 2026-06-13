@@ -541,15 +541,16 @@ const timelineCache = new Map();
 async function loadTimeline(match, detail) {
   const cacheKey = match.IdMatch;
 
-  // Fetch timeline, FIFA lineup, and ESPN lineup in parallel
-  const [events, lineup, espnLineup] = await Promise.all([
+  // Fetch timeline, FIFA lineup, ESPN lineup, and ESPN scoreboard details in parallel
+  const [events, lineup, espnLineup, espnLive] = await Promise.all([
     fetchTimeline(match, detail),
     fetchLineup(match),
     fetchEspnLineup(match),
+    fetchEspnLiveStats(match),
   ]);
 
   if (events === null) return; // fetchTimeline already rendered the error
-  renderTimeline(match, events, lineup, espnLineup, detail);
+  renderTimeline(match, events, lineup, espnLineup, espnLive, detail);
 }
 
 // ── Live detail (Phase 11b) ────────────────────────────────────
@@ -1083,7 +1084,7 @@ function eventRow(minute, homeContent, awayContent) {
   return `<div class="detail-row">${left}<span class="detail-minute">${minute}</span>${right}</div>`;
 }
 
-function renderTimeline(match, events, lineup, espnLineup, detail) {
+function renderTimeline(match, events, lineup, espnLineup, espnLive, detail) {
   const homeId = match.Home?.IdTeam;
   const awayId = match.Away?.IdTeam;
   const attendance = match.Attendance
@@ -1091,7 +1092,16 @@ function renderTimeline(match, events, lineup, espnLineup, detail) {
     : '';
   const homeFlag = match.Home ? countryToFlag(match.Home.IdCountry) : '';
   const awayFlag = match.Away ? countryToFlag(match.Away.IdCountry) : '';
-  const { goals, yellowCards, redCards, subs } = parseTimeline(events, homeId, awayId);
+  let { goals, yellowCards, redCards, subs } = parseTimeline(events, homeId, awayId);
+
+  // Fallback: if FIFA timeline has fewer goals than the score indicates, use ESPN details
+  const expectedGoals = (match.HomeTeamScore ?? 0) + (match.AwayTeamScore ?? 0);
+  if (espnLive?.details?.length) {
+    const espnEvents = espnDetailsToEvents(espnLive);
+    if (goals.length < expectedGoals) goals = espnEvents.goals;
+    if (yellowCards.length === 0) yellowCards = espnEvents.yellowCards;
+    if (redCards.length === 0) redCards = espnEvents.redCards;
+  }
 
   const sections = [];
 
@@ -2998,8 +3008,9 @@ function buildPlayerProfile(playerName, matches) {
       profile.saves += p.saves || 0;
       profile.fouls += p.fouls || 0;
       profile.offsides += p.offsides || 0;
-      // ESPN goals/assists come from FIFA timelines (authoritative) — don't override
-      // ESPN "totalGoals" for GKs means goals conceded, not scored
+      // If FIFA had no goals/assists/cards for this player, use ESPN aggregates
+      if (profile.goals === 0 && p.goals > 0) profile.goals = p.goals;
+      if (profile.assists === 0 && p.assists > 0) profile.assists = p.assists;
       if (profile.yellowCards === 0 && p.yellowCards > 0) profile.yellowCards = p.yellowCards;
       if (profile.redCards === 0 && p.redCards > 0) profile.redCards = p.redCards;
       break;
