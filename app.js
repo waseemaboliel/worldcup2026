@@ -63,6 +63,9 @@ const STRINGS = {
     mstatPasses: 'Passes', mstatAccCrosses: 'Accurate Crosses',
     mstatLongBalls: 'Long Balls', mstatClearances: 'Clearances', mstatCorners: 'Corners',
     matchStatsTitle: '📊 Match Stats', topPerformersTitle: '⭐ Top Performers',
+    // Live match
+    liveBadge: '🟢 LIVE', liveHT: 'HT', liveET: 'ET', livePSO: 'PSO', liveOG: 'OG',
+    livePeriod: (s) => ({ 'First Half': '1st Half', 'Second Half': '2nd Half', 'Half Time': 'Half Time', 'Extra Time': 'ET', 'Penalty Shootout': 'PSO' }[s] || s),
   },
   he: {
     tabMatches: 'משחקים', tabStandings: 'טבלאות', tabStats: 'סטטיסטיקה',
@@ -123,6 +126,9 @@ const STRINGS = {
     mstatPasses: 'מסירות', mstatAccCrosses: 'מסירות רוחביות מדויקות',
     mstatLongBalls: 'כדורים ארוכים', mstatClearances: 'פינויים', mstatCorners: 'קרנות',
     matchStatsTitle: '📊 סטטיסטיקת משחק', topPerformersTitle: '⭐ שחקנים בולטים',
+    // Live match
+    liveBadge: '🟢 חי', liveHT: 'הפ׳', liveET: 'הא׳', livePSO: 'פנ׳', liveOG: 'גול עצמי',
+    livePeriod: (s) => ({ 'First Half': 'מחצית ראשונה', 'Second Half': 'מחצית שנייה', 'Half Time': 'הפסקה', 'Extra Time': 'הארכה', 'Penalty Shootout': 'פנדלים' }[s] || s),
   },
   ar: {
     tabMatches: 'مباريات', tabStandings: 'ترتيب', tabStats: 'إحصاءات',
@@ -183,6 +189,9 @@ const STRINGS = {
     mstatPasses: 'التمريرات', mstatAccCrosses: 'العرضيات الدقيقة',
     mstatLongBalls: 'الكرات الطويلة', mstatClearances: 'التكتيشات', mstatCorners: 'الركنيات',
     matchStatsTitle: '📊 إحصاءات المباراة', topPerformersTitle: '⭐ أبرز اللاعبين',
+    // Live match
+    liveBadge: '🟢 مباشر', liveHT: 'ن.و', liveET: 'و.إ', livePSO: 'ر.ج', liveOG: 'هدف عكسي',
+    livePeriod: (s) => ({ 'First Half': 'الشوط الأول', 'Second Half': 'الشوط الثاني', 'Half Time': 'استراحة', 'Extra Time': 'الوقت الإضافي', 'Penalty Shootout': 'ركلات الترجيح' }[s] || s),
   }
 };
 
@@ -448,7 +457,7 @@ function buildMatchCard(match) {
       </div>
       <div class="match-meta">
         <span class="match-venue">${venueStr}</span>
-        <span class="match-status match-status--live">🟢 LIVE</span>
+        <span class="match-status match-status--live">${t('liveBadge')}</span>
       </div>
       ${buildChannelsRow(match.IdMatch)}`;
   } else {
@@ -586,9 +595,9 @@ function renderLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detai
         <span class="live-team live-team--right">${awayFlag} ${awayName}</span>
       </div>
       <div class="live-clock-row">
-        <span class="live-badge">🟢 LIVE</span>
+        <span class="live-badge">${t('liveBadge')}</span>
         <span class="live-clock" data-live-clock>${clock}</span>
-        <span class="live-period" data-live-period>${period}</span>
+        <span class="live-period" data-live-period>${t('livePeriod', period)}</span>
       </div>
     </div>`;
 
@@ -655,7 +664,7 @@ function buildEventSections(goals, yellowCards, redCards, subs, homeFlag, awayFl
   if (goals.length) {
     const rows = goals.map(g => {
       const assist = g.assist ? `<span class="detail-assist">↳ ${g.assist}</span>` : '';
-      const og = g.ownGoal ? ` <span class="detail-og">OG</span>` : '';
+      const og = g.ownGoal ? ` <span class="detail-og">${t('liveOG')}</span>` : '';
       const cell = `${g.side === 'home' ? homeFlag : awayFlag} <span class="detail-name">⚽ ${g.scorer}${og}${assist}</span>`;
       return eventRow(g.minute, g.side === 'home' ? cell : null, g.side === 'away' ? cell : null);
     }).join('');
@@ -707,8 +716,8 @@ function patchLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detail
       void scoreEl.offsetWidth;
       scoreEl.classList.add('score-flash');
     }
-    if (clockEl)  clockEl.textContent  = espnLive.clock  || '';
-    if (periodEl) periodEl.textContent = espnLive.period || '';
+    if (clockEl)  clockEl.textContent  = espnLive.clock || '';
+    if (periodEl) periodEl.textContent = t('livePeriod', espnLive.period || '');
   }
 
   // Patch live stats bar
@@ -994,7 +1003,7 @@ function renderTimeline(match, events, lineup, espnLineup, detail) {
   if (goals.length) {
     const rows = goals.map(g => {
       const assist = g.assist ? `<span class="detail-assist">↳ ${g.assist}</span>` : '';
-      const og = g.ownGoal ? ` <span class="detail-og">OG</span>` : '';
+      const og = g.ownGoal ? ` <span class="detail-og">${t('liveOG')}</span>` : '';
       const content = `<span class="detail-name">⚽ ${g.scorer}${og}${assist}</span>`;
       const flag = g.side === 'home' ? homeFlag : awayFlag;
       const cell = `${flag} ${content}`;
@@ -1614,6 +1623,8 @@ function initTabs() {
       tab.classList.add('tab--active');
       activeTab = tab.dataset.tab;
       showMatchesUI(activeTab === 'matches');
+      // Stop tab-specific pollers when switching away
+      if (activeTab !== 'standings') stopLiveStandingsPoller();
       renderActiveTab();
       // Resume poller when returning to Matches tab; it self-stops when nothing is live
       if (activeTab === 'matches' && hasLiveMatches()) startLivePoller();
@@ -1914,6 +1925,8 @@ function isGroupStage(match) {
 
 function computeStandings(matches) {
   const groups = new Map();
+  // Track which team IDs are currently in a live match
+  const liveTeamIds = new Set();
 
   for (const m of matches) {
     if (!isGroupStage(m)) continue;
@@ -1926,26 +1939,50 @@ function computeStandings(matches) {
       const id = team.IdTeam;
       if (!table.has(id)) table.set(id, {
         id, name: getTeamName(team) || '?', flag: countryToFlag(team.IdCountry),
-        p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0
+        p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, live: false,
       });
     };
     addTeam(m.Home);
     addTeam(m.Away);
 
-    if (m.MatchStatus !== STATUS_FINISHED || m.HomeTeamScore == null) continue;
+    // Finished matches — use official scores
+    if (m.MatchStatus === STATUS_FINISHED && m.HomeTeamScore != null) {
+      const hs = m.HomeTeamScore, as = m.AwayTeamScore;
+      const home = table.get(m.Home?.IdTeam);
+      const away = table.get(m.Away?.IdTeam);
+      if (!home || !away) continue;
+      home.p++; away.p++;
+      home.gf += hs; home.ga += as;
+      away.gf += as; away.ga += hs;
+      if (hs > as)      { home.w++; away.l++; }
+      else if (hs < as) { away.w++; home.l++; }
+      else              { home.d++; away.d++; }
+    }
 
-    const hs = m.HomeTeamScore, as = m.AwayTeamScore;
-    const home = table.get(m.Home?.IdTeam);
-    const away = table.get(m.Away?.IdTeam);
-    if (!home || !away) continue;
+    // Live matches — use live score from espnLiveData, flag teams as live
+    if (m.MatchStatus === STATUS_LIVE) {
+      const liveData = espnLiveData.get(m.IdMatch);
+      // Parse score string "1 – 0" → [1, 0]
+      const [hs, as] = liveData
+        ? liveData.score.split('–').map(s => parseInt(s.trim(), 10) || 0)
+        : [m.HomeTeamScore ?? 0, m.AwayTeamScore ?? 0];
 
-    home.p++; away.p++;
-    home.gf += hs; home.ga += as;
-    away.gf += as; away.ga += hs;
+      const home = table.get(m.Home?.IdTeam);
+      const away = table.get(m.Away?.IdTeam);
+      if (!home || !away) continue;
 
-    if (hs > as)      { home.w++; away.l++; }
-    else if (hs < as) { away.w++; home.l++; }
-    else              { home.d++; away.d++; }
+      home.p++; away.p++;
+      home.gf += hs; home.ga += as;
+      away.gf += as; away.ga += hs;
+      if (hs > as)      { home.w++; away.l++; }
+      else if (hs < as) { away.w++; home.l++; }
+      else              { home.d++; away.d++; }
+
+      // Mark these teams as live
+      home.live = true; away.live = true;
+      if (m.Home?.IdTeam) liveTeamIds.add(m.Home.IdTeam);
+      if (m.Away?.IdTeam) liveTeamIds.add(m.Away.IdTeam);
+    }
   }
 
   // Sort each group
@@ -1959,6 +1996,12 @@ function computeStandings(matches) {
     sorted.set(group, rows);
   }
   return sorted;
+}
+
+let liveStandingsPoller = null;
+
+function stopLiveStandingsPoller() {
+  if (liveStandingsPoller) { clearInterval(liveStandingsPoller); liveStandingsPoller = null; }
 }
 
 function renderStandings(matches) {
@@ -1990,9 +2033,11 @@ function renderStandings(matches) {
       const gd = row.gf - row.ga;
       const tr = document.createElement('tr');
       if (i < 2) tr.classList.add('qualify');
+      if (row.live) tr.classList.add('standings-row--live');
+      const liveBadge = row.live ? '<span class="standings-live-badge">🟢</span>' : '';
       tr.innerHTML = `
         <td><span class="standings-pos">${i + 1}</span></td>
-        <td><div class="standings-team"><span>${row.flag}</span><span>${row.name}</span></div></td>
+        <td><div class="standings-team"><span>${row.flag}</span><span>${row.name}</span>${liveBadge}</div></td>
         <td>${row.p}</td><td>${row.w}</td><td>${row.d}</td><td>${row.l}</td>
         <td>${row.gf}</td><td>${row.ga}</td><td>${gd > 0 ? '+' : ''}${gd}</td>
         <td class="standings-pts">${pts}</td>`;
@@ -2002,6 +2047,16 @@ function renderStandings(matches) {
     table.appendChild(tbody);
     section.appendChild(table);
     main.appendChild(section);
+  }
+
+  // Auto-refresh standings while live matches are ongoing
+  stopLiveStandingsPoller();
+  if (hasLiveMatches()) {
+    liveStandingsPoller = setInterval(() => {
+      if (activeTab !== 'standings') { stopLiveStandingsPoller(); return; }
+      if (!hasLiveMatches()) { stopLiveStandingsPoller(); return; }
+      renderStandings(activeMatches());
+    }, 15000);
   }
 }
 
@@ -2300,13 +2355,12 @@ async function fetchLiveScores() {
       if (!fifaId) continue;
 
       // Format clock: show period prefix for HT / ET / penalties
-      let displayClock = clock;
       const detail = status?.type?.detail || '';
-      if (detail === 'Half Time') displayClock = 'HT';
-      else if (detail === 'Full Time') displayClock = 'FT';
-      else if (period === 3) displayClock = `ET ${clock}`;
-      else if (period === 4) displayClock = `ET ${clock}`;
-      else if (period === 5) displayClock = 'PSO';
+      let displayClock = clock;
+      if (detail === 'Half Time') displayClock = t('liveHT');
+      else if (detail === 'Full Time') displayClock = t('matchFT');
+      else if (period === 3 || period === 4) displayClock = `${t('liveET')} ${clock}`;
+      else if (period === 5) displayClock = t('livePSO');
 
       espnLiveData.set(fifaId, { score, clock: displayClock, state });
       if (state === 'in') anyLive = true;

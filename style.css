@@ -207,6 +207,14 @@ body {
 }
 .standings-table tr.qualify td { background: #0d1a0d; }
 .standings-table tr.qualify-2 td { background: #0a1510; }
+.standings-live-badge {
+  font-size: 9px;
+  margin-left: 4px;
+  vertical-align: middle;
+  animation: pulse 1.5s ease-in-out infinite;
+  display: inline-block;
+}
+[dir="rtl"] .standings-live-badge { margin-left: 0; margin-right: 4px; }
 
 /* ── Team search ── */
 .team-search-wrap {

@@ -222,6 +222,12 @@ Use this as the reference when resuming development in a future session.
 - `fieldStatus` already stored on each player from FIFA live endpoint; re-fetched every 15s
 - Also fixed: **own goals** (FIFA Type 34) were completely missing — now shown on the correct team's side with a red `OG` badge. IdTeam on Type 34 is the conceding team, so goal is credited to the opposite side.
 
+#### Phase 11d — Live standings ✅ (2026-06-13)
+- `computeStandings` now includes live matches using real-time scores from `espnLiveData` map (updated every 15s by the main poller)
+- Teams in live matches get `live: true` flag — shown with a pulsing `🟢` badge next to their name in the table
+- Standings auto-refresh every 15s while on the Standings tab and a live match is ongoing (`liveStandingsPoller`)
+- Poller stops automatically when no live matches remain or the tab is changed
+
 ---
 
 ### Phase 12 — Knockout Bracket View
