@@ -166,6 +166,7 @@ Use this as the reference when resuming development in a future session.
 | Service worker error on `file://` | Guard `location.hostname !== ''` before SW registration |
 | Manifest CORS error on `file://` | Inject `<link rel="manifest">` via JS only when `location.hostname` is truthy |
 | GK clean sheet name showed as "[Team] GK" | Use FIFA lineup API; starter with `Position=0` is always the correct GK |
+| Own goals not shown in match detail or live detail | FIFA uses Type 34 (not Type 0) for own goals. IdTeam is the conceding team — goal credited to opposite side. Fixed in `parseTimeline`. |
 | Match stats panel disappeared after translation work | `t =>` lambda parameters in `fetchEspnLineup` shadowed the global `t()` function, causing the fetch to throw and cache `null`. Renamed to `bt =>` and `tm =>`. |
 | Top Performers section always empty | `data.boxscore.leaders` does not exist — `leaders` is a top-level key (`data.leaders`). Fixed path in `fetchEspnLineup`. |
 
@@ -194,7 +195,36 @@ Use this as the reference when resuming development in a future session.
 
 ---
 
-### Phase 11 — Live Match Updates
+### Phase 11 — Live Match Updates ✅ (2026-06-13)
+
+**Data sources:**
+- ESPN scoreboard (`ESPN_INDEX_API`) — live clock (`displayClock`), score, possession, shots, fouls. Updates every ~15–30s.
+- FIFA timeline — live goals, cards, subs. Poll every 20s.
+- FIFA live/lineup endpoint — player `FieldStatus` (on pitch / subbed off / subbed on).
+
+**Sub-phases:**
+
+#### Phase 11a — Live badges + live score on match cards ✅ (2026-06-13)
+- Poll ESPN scoreboard every 15s when at least one match is live and Matches tab is active
+- `MatchStatus === 3` = live (FIFA). ESPN `status.state === 'in'` also used for clock.
+- Show `🟢 LIVE · 23'` badge on card replacing the FT badge
+- Update score in place without full re-render (patch only the affected cards)
+- Stop polling when no live matches remain
+
+#### Phase 11b — Live match detail (expanded card) ✅ (2026-06-13)
+- When a live match card is open: auto-refresh timeline every 20s (goals/cards/subs append in real time)
+- Show live clock and live possession + shots bar from ESPN scoreboard inside the detail panel
+- Re-render only the stats bar and append new events — don't destroy and re-create the whole detail
+
+#### Phase 11c — Live lineup field status ✅ (2026-06-13)
+- Subbed-off players: greyed out on the pitch (`.pitch-player--off`)
+- Subbed-on players: green glow border on shirt, green name + ↑ indicator (`.pitch-player--on`)
+- `fieldStatus` already stored on each player from FIFA live endpoint; re-fetched every 15s
+- Also fixed: **own goals** (FIFA Type 34) were completely missing — now shown on the correct team's side with a red `OG` badge. IdTeam on Type 34 is the conceding team, so goal is credited to the opposite side.
+
+---
+
+### Phase 12 — Knockout Bracket View
 - Auto-refresh scores for in-progress matches (poll the matches API every ~60 seconds)
 - Show a 🟢 LIVE badge on match cards when a match is in progress
 - Update score and minute in real time without a full page reload

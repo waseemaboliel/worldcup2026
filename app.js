@@ -264,8 +264,9 @@ const STAGE_ID = {
   'Final':              '289291',
 };
 
-// MatchStatus: 0 = finished, 1 = upcoming (confirmed from API inspection)
+// MatchStatus: 0 = finished, 1 = upcoming, 3 = live (confirmed from API inspection)
 const STATUS_FINISHED = 0;
+const STATUS_LIVE     = 3;
 
 function countryToFlag(fifaCode) {
   if (!fifaCode) return '🏴';
@@ -325,17 +326,25 @@ function groupByDate(matches) {
 // ── Expand / collapse ──────────────────────────────────────────
 let activeCard = null;
 
+let liveDetailPoller = null;
+
+function stopLiveDetailPoller() {
+  if (liveDetailPoller) { clearInterval(liveDetailPoller); liveDetailPoller = null; }
+}
+
 function toggleCard(card, match) {
   const isOpen = card.classList.contains('match-card--open');
 
   if (activeCard && activeCard !== card) {
     activeCard.classList.remove('match-card--open');
     activeCard.querySelector('.match-detail')?.remove();
+    stopLiveDetailPoller();
   }
 
   if (isOpen) {
     card.classList.remove('match-card--open');
     card.querySelector('.match-detail')?.remove();
+    stopLiveDetailPoller();
     activeCard = null;
     return;
   }
@@ -344,10 +353,11 @@ function toggleCard(card, match) {
   activeCard = card;
 
   const isFinished = match.MatchStatus === STATUS_FINISHED;
+  const isLive     = match.MatchStatus === STATUS_LIVE;
   const detail = document.createElement('div');
   detail.className = 'match-detail';
 
-  if (!isFinished) {
+  if (!isFinished && !isLive) {
     detail.innerHTML = `<p class="detail-empty">${t('detailNoDetails')}</p>`;
     card.appendChild(detail);
     return;
@@ -355,7 +365,12 @@ function toggleCard(card, match) {
 
   detail.innerHTML = `<div class="detail-loading"><div class="loading-spinner"></div></div>`;
   card.appendChild(detail);
-  loadTimeline(match, detail);
+
+  if (isLive) {
+    loadLiveDetail(match, detail, card);
+  } else {
+    loadTimeline(match, detail);
+  }
 }
 
 function buildChannelsRow(matchId) {
@@ -367,6 +382,7 @@ function buildChannelsRow(matchId) {
 
 function buildMatchCard(match) {
   const isFinished = match.MatchStatus === STATUS_FINISHED;
+  const isLive     = match.MatchStatus === STATUS_LIVE;
   const homeName = getTeamName(match.Home) || match.PlaceHolderA || 'TBD';
   const awayName = getTeamName(match.Away) || match.PlaceHolderB || 'TBD';
   const homeFlag = match.Home ? countryToFlag(match.Home.IdCountry) : '🏳️';
@@ -381,7 +397,7 @@ function buildMatchCard(match) {
   const groupText = group && isGroupStage(match) ? group : badgeText;
 
   const card = document.createElement('article');
-  card.className = 'match-card' + (isFinished ? ' match-card--finished' : '');
+  card.className = 'match-card' + (isFinished ? ' match-card--finished' : '') + (isLive ? ' match-card--live' : '');
   card.dataset.matchId = match.IdMatch;
   card.dataset.idStage = match.IdStage;
 
@@ -409,6 +425,30 @@ function buildMatchCard(match) {
       <div class="match-meta">
         <span class="match-venue">${venueStr}</span>
         <span class="match-status match-status--ft">${t('matchFT')}</span>
+      </div>
+      ${buildChannelsRow(match.IdMatch)}`;
+  } else if (isLive) {
+    const homeScore = match.HomeTeamScore ?? 0;
+    const awayScore = match.AwayTeamScore ?? 0;
+    const clock = match.MatchTime || '';
+    card.innerHTML = `
+      <div class="match-teams">
+        <div class="team">
+          <span class="flag">${homeFlag}</span>
+          <span class="team-name">${homeName}</span>
+        </div>
+        <div class="match-center">
+          <span class="match-score match-score--live" data-match-id="${match.IdMatch}">${homeScore} – ${awayScore}</span>
+          <span class="match-clock" data-match-id="${match.IdMatch}">${clock}</span>
+        </div>
+        <div class="team team--right">
+          <span class="flag">${awayFlag}</span>
+          <span class="team-name">${awayName}</span>
+        </div>
+      </div>
+      <div class="match-meta">
+        <span class="match-venue">${venueStr}</span>
+        <span class="match-status match-status--live">🟢 LIVE</span>
       </div>
       ${buildChannelsRow(match.IdMatch)}`;
   } else {
@@ -457,9 +497,249 @@ async function loadTimeline(match, detail) {
   renderTimeline(match, events, lineup, espnLineup, detail);
 }
 
-async function fetchTimeline(match, detail) {
+// ── Live detail (Phase 11b) ────────────────────────────────────
+async function loadLiveDetail(match, detail, card) {
+  // Initial load — fetch everything fresh in parallel
+  const [events, fifaLineup, espnLineup, espnLive] = await Promise.all([
+    fetchTimeline(match, null, true),
+    fetchLineup(match, true),
+    fetchEspnLineup(match),
+    fetchEspnLiveStats(match),
+  ]);
+
+  if (!card.classList.contains('match-card--open')) return; // card closed while fetching
+
+  renderLiveDetail(match, events || [], fifaLineup, espnLineup, espnLive, detail);
+
+  // Poll every 15s
+  stopLiveDetailPoller();
+  liveDetailPoller = setInterval(async () => {
+    if (!card.classList.contains('match-card--open')) { stopLiveDetailPoller(); return; }
+    if (match.MatchStatus !== STATUS_LIVE) { stopLiveDetailPoller(); return; }
+
+    const [freshEvents, freshFifaLineup, freshEspnLineup, freshEspnLive] = await Promise.all([
+      fetchTimeline(match, null, true),
+      fetchLineup(match, true),
+      fetchEspnLineup(match),
+      fetchEspnLiveStats(match),
+    ]);
+
+    if (!card.classList.contains('match-card--open')) return;
+    patchLiveDetail(match, freshEvents || [], freshFifaLineup, freshEspnLineup, freshEspnLive, detail);
+  }, 15000);
+}
+
+// Fetch ESPN live stats for one match (scoreboard gives us possession/shots live)
+async function fetchEspnLiveStats(match) {
+  const espnId = fifaToEspn.get(match.IdMatch);
+  if (!espnId) return null;
+  try {
+    const res = await fetch(ESPN_INDEX_API);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const ev = (data.events || []).find(e => e.id === espnId);
+    if (!ev) return null;
+    const comp = ev.competitions?.[0];
+    const boxTeams = comp?.competitors || [];
+    // Build stat map from scoreboard competition statistics
+    const home = boxTeams.find(c => c.homeAway === 'home');
+    const away = boxTeams.find(c => c.homeAway === 'away');
+    const parseCompStats = (competitor) => {
+      const map = {};
+      for (const s of (competitor?.statistics || [])) map[s.name] = s.displayValue;
+      return map;
+    };
+    return {
+      homeStats:   parseCompStats(home),
+      awayStats:   parseCompStats(away),
+      homeLeaders: [],
+      awayLeaders: [],
+      clock:       comp?.status?.displayClock || '',
+      period:      comp?.status?.type?.detail || '',
+      homeScore:   home?.score ?? '0',
+      awayScore:   away?.score ?? '0',
+    };
+  } catch { return null; }
+}
+
+function renderLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detail) {
+  const homeFlag = match.Home ? countryToFlag(match.Home.IdCountry) : '';
+  const awayFlag = match.Away ? countryToFlag(match.Away.IdCountry) : '';
+  const homeName = getTeamName(match.Home) || '';
+  const awayName = getTeamName(match.Away) || '';
+
+  const homeId = match.Home?.IdTeam;
+  const awayId = match.Away?.IdTeam;
+  const { goals, yellowCards, redCards, subs } = parseTimeline(events, homeId, awayId);
+
+  // Live header: score + clock
+  const clock  = espnLive?.clock || match.MatchTime || '';
+  const period = espnLive?.period || '';
+  const homeScore = espnLive?.homeScore ?? match.HomeTeamScore ?? 0;
+  const awayScore = espnLive?.awayScore ?? match.AwayTeamScore ?? 0;
+
+  let html = `
+    <div class="live-header" data-live-header>
+      <div class="live-score-row">
+        <span class="live-team">${homeFlag} ${homeName}</span>
+        <span class="live-score" data-live-score>${homeScore} – ${awayScore}</span>
+        <span class="live-team live-team--right">${awayFlag} ${awayName}</span>
+      </div>
+      <div class="live-clock-row">
+        <span class="live-badge">🟢 LIVE</span>
+        <span class="live-clock" data-live-clock>${clock}</span>
+        <span class="live-period" data-live-period>${period}</span>
+      </div>
+    </div>`;
+
+  html += buildLiveStatsBar(match, espnLive);
+  html += buildEventSections(goals, yellowCards, redCards, subs, homeFlag, awayFlag, events.length);
+
+  detail.innerHTML = html;
+
+  // Lineup pitch: prefer ESPN lineup (has posAbbr/formationPlace), fall back to FIFA
+  if (espnLineup || fifaLineup) {
+    detail.appendChild(renderLineup(match, espnLineup, fifaLineup));
+  }
+}
+
+function buildLiveStatsBar(match, espnLive) {
+  if (!espnLive?.homeStats || !espnLive?.awayStats) return '';
+  const isRtl = currentLang === 'he' || currentLang === 'ar';
+  const leftStats  = isRtl ? espnLive.awayStats  : espnLive.homeStats;
+  const rightStats = isRtl ? espnLive.homeStats   : espnLive.awayStats;
+
+  const LIVE_STAT_KEYS = ['possessionPct','totalShots','shotsOnTarget','foulsCommitted','wonCorners','offsides','saves','yellowCards','redCards'];
+  const LIVE_STAT_LABEL = {
+    possessionPct: () => t('teamPossession'), totalShots: () => t('statShots'),
+    shotsOnTarget: () => t('statOnTarget'),   foulsCommitted: () => t('statFouls'),
+    wonCorners: () => t('mstatCorners'),      offsides: () => t('statOffsides'),
+    saves: () => t('statSaves'),              yellowCards: () => t('teamYellow'),
+    redCards: () => t('teamRed'),
+  };
+
+  const rows = LIVE_STAT_KEYS
+    .filter(k => leftStats[k] != null && rightStats[k] != null)
+    .map(k => {
+      const hNum = parseFloat(leftStats[k]) || 0;
+      const aNum = parseFloat(rightStats[k]) || 0;
+      const total = hNum + aNum;
+      const hPct = total > 0 ? Math.round((hNum / total) * 100) : 50;
+      const label = LIVE_STAT_LABEL[k] ? LIVE_STAT_LABEL[k]() : k;
+      const hDisplay = k === 'possessionPct' ? parseFloat(leftStats[k]).toFixed(1) + '%' : leftStats[k];
+      const aDisplay = k === 'possessionPct' ? parseFloat(rightStats[k]).toFixed(1) + '%' : rightStats[k];
+      return `
+        <div class="mstat-row">
+          <span class="mstat-val mstat-val--home">${hDisplay}</span>
+          <div class="mstat-center">
+            <div class="mstat-label">${label}</div>
+            <div class="mstat-bar">
+              <div class="mstat-bar-home" style="width:${hPct}%"></div>
+              <div class="mstat-bar-away" style="width:${100 - hPct}%"></div>
+            </div>
+          </div>
+          <span class="mstat-val mstat-val--away">${aDisplay}</span>
+        </div>`;
+    }).join('');
+
+  if (!rows) return '';
+  return `<div class="detail-section live-stats-bar" data-live-stats>
+    <div class="detail-section-title">${t('matchStatsTitle')}</div>
+    ${rows}
+  </div>`;
+}
+
+function buildEventSections(goals, yellowCards, redCards, subs, homeFlag, awayFlag, totalEvents) {
+  const sections = [];
+
+  if (goals.length) {
+    const rows = goals.map(g => {
+      const assist = g.assist ? `<span class="detail-assist">↳ ${g.assist}</span>` : '';
+      const og = g.ownGoal ? ` <span class="detail-og">OG</span>` : '';
+      const cell = `${g.side === 'home' ? homeFlag : awayFlag} <span class="detail-name">⚽ ${g.scorer}${og}${assist}</span>`;
+      return eventRow(g.minute, g.side === 'home' ? cell : null, g.side === 'away' ? cell : null);
+    }).join('');
+    sections.push(`<div class="detail-section"><div class="detail-section-title">${t('detailGoals')}</div>${rows}</div>`);
+  }
+  if (yellowCards.length) {
+    const rows = yellowCards.map(c => {
+      const cell = `${c.side === 'home' ? homeFlag : awayFlag} <span class="detail-name">🟨 ${c.player}</span>`;
+      return eventRow(c.minute, c.side === 'home' ? cell : null, c.side === 'away' ? cell : null);
+    }).join('');
+    sections.push(`<div class="detail-section"><div class="detail-section-title">${t('detailYellow')}</div>${rows}</div>`);
+  }
+  if (redCards.length) {
+    const rows = redCards.map(c => {
+      const cell = `${c.side === 'home' ? homeFlag : awayFlag} <span class="detail-name">🟥 ${c.player}</span>`;
+      return eventRow(c.minute, c.side === 'home' ? cell : null, c.side === 'away' ? cell : null);
+    }).join('');
+    sections.push(`<div class="detail-section"><div class="detail-section-title">${t('detailRed')}</div>${rows}</div>`);
+  }
+  if (subs.length) {
+    const rows = subs.map(s => {
+      const cell = `${s.side === 'home' ? homeFlag : awayFlag} <span class="detail-name">↑ ${s.playerIn}</span><span class="detail-sub-out">↓ ${s.playerOut}</span>`;
+      return eventRow(s.minute, s.side === 'home' ? cell : null, s.side === 'away' ? cell : null);
+    }).join('');
+    sections.push(`<div class="detail-section"><div class="detail-section-title">${t('detailSubs')}</div>${rows}</div>`);
+  }
+
+  if (!sections.length) {
+    return `<p class="detail-empty" data-live-empty>${totalEvents === 0 ? t('detailNoEvents') : t('detailNoEvents')}</p>`;
+  }
+  return `<div data-live-events>${sections.join('')}</div>`;
+}
+
+function patchLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detail) {
+  const homeId = match.Home?.IdTeam;
+  const awayId = match.Away?.IdTeam;
+  const homeFlag = match.Home ? countryToFlag(match.Home.IdCountry) : '';
+  const awayFlag = match.Away ? countryToFlag(match.Away.IdCountry) : '';
+
+  // Patch score + clock
+  if (espnLive) {
+    const scoreEl  = detail.querySelector('[data-live-score]');
+    const clockEl  = detail.querySelector('[data-live-clock]');
+    const periodEl = detail.querySelector('[data-live-period]');
+    const newScore = `${espnLive.homeScore} – ${espnLive.awayScore}`;
+    if (scoreEl && scoreEl.textContent !== newScore) {
+      scoreEl.textContent = newScore;
+      scoreEl.classList.remove('score-flash');
+      void scoreEl.offsetWidth;
+      scoreEl.classList.add('score-flash');
+    }
+    if (clockEl)  clockEl.textContent  = espnLive.clock  || '';
+    if (periodEl) periodEl.textContent = espnLive.period || '';
+  }
+
+  // Patch live stats bar
+  const statsEl = detail.querySelector('[data-live-stats]');
+  const newStatsHTML = buildLiveStatsBar(match, espnLive);
+  if (statsEl && newStatsHTML) {
+    statsEl.outerHTML = newStatsHTML;
+  }
+
+  // Patch events
+  const eventsEl = detail.querySelector('[data-live-events]');
+  const emptyEl  = detail.querySelector('[data-live-empty]');
+  const { goals, yellowCards, redCards, subs } = parseTimeline(events, homeId, awayId);
+  const newEventsHTML = buildEventSections(goals, yellowCards, redCards, subs, homeFlag, awayFlag, events.length);
+  if (eventsEl) {
+    eventsEl.outerHTML = newEventsHTML;
+  } else if (emptyEl) {
+    emptyEl.outerHTML = newEventsHTML;
+  }
+
+  // Patch lineup (field status changes every sub)
+  const lineupSection = detail.querySelector('.lineup-section');
+  if (lineupSection && (espnLineup || fifaLineup)) {
+    const fresh = renderLineup(match, espnLineup, fifaLineup);
+    lineupSection.replaceWith(fresh);
+  }
+}
+
+async function fetchTimeline(match, detail, bypassCache = false) {
   const cacheKey = match.IdMatch;
-  if (timelineCache.has(cacheKey)) return timelineCache.get(cacheKey);
+  if (!bypassCache && timelineCache.has(cacheKey)) return timelineCache.get(cacheKey);
   try {
     const url = TIMELINE_API
       .replace('{stage}', match.IdStage)
@@ -471,7 +751,7 @@ async function fetchTimeline(match, detail) {
     timelineCache.set(cacheKey, events);
     return events;
   } catch {
-    detail.innerHTML = `<p class="detail-empty">${t('detailLoadError')}</p>`;
+    if (detail) detail.innerHTML = `<p class="detail-empty">${t('detailLoadError')}</p>`;
     return null;
   }
 }
@@ -500,9 +780,9 @@ function parseLineupTeam(teamData) {
   };
 }
 
-async function fetchLineup(match) {
+async function fetchLineup(match, bypassCache = false) {
   const cacheKey = match.IdMatch;
-  if (lineupCache.has(cacheKey)) return lineupCache.get(cacheKey);
+  if (!bypassCache && lineupCache.has(cacheKey)) return lineupCache.get(cacheKey);
   try {
     const url = LINEUP_API
       .replace('{stage}', match.IdStage)
@@ -660,8 +940,15 @@ function parseTimeline(events, homeId, awayId) {
     const side = ev.IdTeam === homeId ? 'home' : ev.IdTeam === awayId ? 'away' : null;
 
     if (ev.Type === 0) {
+      // Regular goal — IdTeam is the scoring team
       const m = desc.match(/^(.+?) \(.*?\) scores/) || desc.match(/^(.+?) scores/);
-      goals.push({ minute, scorer: m ? m[1] : desc, assist: assistMap[ev.EventId] || null, side });
+      goals.push({ minute, scorer: m ? m[1] : desc, assist: assistMap[ev.EventId] || null, side, ownGoal: false });
+    } else if (ev.Type === 34) {
+      // Own goal — IdTeam is the team that CONCEDED (the player's own team)
+      // so the goal is credited to the OPPOSITE side
+      const ownSide = side === 'home' ? 'away' : side === 'away' ? 'home' : null;
+      const m = desc.match(/^(.+?) \(.*?\) scores/) || desc.match(/^(.+?) scores/);
+      goals.push({ minute, scorer: m ? m[1] : desc, assist: null, side: ownSide, ownGoal: true });
     } else if (ev.Type === 2) {
       const m = desc.match(/^(.+?) \(/);
       yellowCards.push({ minute, player: m ? m[1] : desc, side });
@@ -707,7 +994,8 @@ function renderTimeline(match, events, lineup, espnLineup, detail) {
   if (goals.length) {
     const rows = goals.map(g => {
       const assist = g.assist ? `<span class="detail-assist">↳ ${g.assist}</span>` : '';
-      const content = `<span class="detail-name">⚽ ${g.scorer}${assist}</span>`;
+      const og = g.ownGoal ? ` <span class="detail-og">OG</span>` : '';
+      const content = `<span class="detail-name">⚽ ${g.scorer}${og}${assist}</span>`;
       const flag = g.side === 'home' ? homeFlag : awayFlag;
       const cell = `${flag} ${content}`;
       return eventRow(g.minute, g.side === 'home' ? cell : null, g.side === 'away' ? cell : null);
@@ -986,11 +1274,17 @@ function pitchHalfHTML(teamData, isAway) {
   const rows = [gk, ...defRows, ...midRows, ...fwdRows].filter(r => r.length);
 
   const rowHTMLs = rows.map(players => {
-    const chips = players.map(p => `
-      <div class="pitch-player">
+    const chips = players.map(p => {
+      // fieldStatus: 0=on pitch, 1=subbed off, 2=subbed on (FIFA live endpoint only)
+      const fsClass = p.fieldStatus === 1 ? ' pitch-player--off'
+                    : p.fieldStatus === 2 ? ' pitch-player--on'
+                    : '';
+      return `
+      <div class="pitch-player${fsClass}">
         <div class="pitch-shirt ${shirtClass}">${p.shirt}</div>
-        <div class="pitch-name">${shortName(p.name)}</div>
-      </div>`).join('');
+        <div class="pitch-name">${shortName(p.name)}${p.fieldStatus === 2 ? ' ↑' : p.fieldStatus === 1 ? ' ↓' : ''}</div>
+      </div>`;
+    }).join('');
     return `<div class="pitch-row">${chips}</div>`;
   });
 
@@ -1006,8 +1300,34 @@ function pitchHalfHTML(teamData, isAway) {
     : `<div class="pitch-half pitch-half--home">${rowHTMLs.join('')}${formationBadge}</div>`;
 }
 
+function mergeFieldStatus(espn, fifa) {
+  // ESPN has better positional data; FIFA has fieldStatus (live sub tracking).
+  // Merge fieldStatus from FIFA players into ESPN players by shirt number.
+  if (!espn || !fifa) return espn || fifa;
+  const merge = (espnTeam, fifaTeam) => {
+    if (!espnTeam || !fifaTeam) return espnTeam || fifaTeam;
+    const fifaByShirt = new Map();
+    for (const p of [...(fifaTeam.starters || []), ...(fifaTeam.subs || [])]) {
+      if (p.shirt != null) fifaByShirt.set(String(p.shirt), p.fieldStatus);
+    }
+    const applyFs = (players) => players.map(p => ({
+      ...p,
+      fieldStatus: fifaByShirt.get(String(p.shirt)) ?? p.fieldStatus,
+    }));
+    return { ...espnTeam, starters: applyFs(espnTeam.starters), subs: applyFs(espnTeam.subs) };
+  };
+  return {
+    ...espn,
+    home: merge(espn.home, fifa.home),
+    away: merge(espn.away, fifa.away),
+  };
+}
+
 function renderLineup(match, espnLineup, fifaLineup) {
-  const lineup = espnLineup || fifaLineup;
+  // Merge ESPN positional data with FIFA fieldStatus for live matches
+  const lineup = espnLineup && fifaLineup
+    ? mergeFieldStatus(espnLineup, fifaLineup)
+    : espnLineup || fifaLineup;
   if (!lineup) return document.createDocumentFragment();
 
   const isRtl = currentLang === 'he' || currentLang === 'ar';
@@ -1231,6 +1551,7 @@ async function init() {
     if (allMatches.length === 0) throw new Error('No matches returned from API');
     fetchEspnIndex(); // non-blocking — populates fifaToEspn in the background
     renderMatches(activeMatches(), true);
+    maybeStartPoller();
   } catch (err) {
     console.error(err);
     showError(t('errorMatches'));
@@ -1294,6 +1615,8 @@ function initTabs() {
       activeTab = tab.dataset.tab;
       showMatchesUI(activeTab === 'matches');
       renderActiveTab();
+      // Resume poller when returning to Matches tab; it self-stops when nothing is live
+      if (activeTab === 'matches' && hasLiveMatches()) startLivePoller();
     });
   });
 }
@@ -1939,6 +2262,132 @@ async function renderEspnPlayerLeaderboard(matches, container, type) {
     list.appendChild(row);
   });
   container.appendChild(list);
+}
+
+// ── Live polling (Phase 11a) ───────────────────────────────────
+let livePoller = null;
+const LIVE_POLL_MS = 15000; // 15 seconds
+
+// espnLiveData: IdMatch → { score: "0 – 0", clock: "23'", state: "in"|"post"|"pre" }
+const espnLiveData = new Map();
+
+async function fetchLiveScores() {
+  try {
+    const res = await fetch(ESPN_INDEX_API);
+    if (!res.ok) return;
+    const data = await res.json();
+    const events = data.events || [];
+
+    let anyLive = false;
+
+    for (const ev of events) {
+      const comp = ev.competitions?.[0];
+      if (!comp) continue;
+      const status = comp.status;
+      const state  = status?.type?.state || 'pre'; // 'pre', 'in', 'post'
+      const clock  = status?.displayClock || '';
+      const period = status?.period || 0;
+
+      // Build score string
+      const competitors = comp.competitors || [];
+      const home = competitors.find(c => c.homeAway === 'home');
+      const away = competitors.find(c => c.homeAway === 'away');
+      const score = `${home?.score ?? 0} – ${away?.score ?? 0}`;
+
+      // Map ESPN event back to FIFA IdMatch via fifaToEspn
+      // fifaToEspn is IdMatch→espnId; we need the reverse
+      const fifaId = [...fifaToEspn.entries()].find(([, espnId]) => espnId === ev.id)?.[0];
+      if (!fifaId) continue;
+
+      // Format clock: show period prefix for HT / ET / penalties
+      let displayClock = clock;
+      const detail = status?.type?.detail || '';
+      if (detail === 'Half Time') displayClock = 'HT';
+      else if (detail === 'Full Time') displayClock = 'FT';
+      else if (period === 3) displayClock = `ET ${clock}`;
+      else if (period === 4) displayClock = `ET ${clock}`;
+      else if (period === 5) displayClock = 'PSO';
+
+      espnLiveData.set(fifaId, { score, clock: displayClock, state });
+      if (state === 'in') anyLive = true;
+
+      // Update allMatches MatchStatus so the card reflects reality
+      const m = allMatches.find(m => m.IdMatch === fifaId);
+      if (m) {
+        if (state === 'in') m.MatchStatus = STATUS_LIVE;
+        // Don't flip back to finished here — FIFA API is authoritative for that
+      }
+    }
+
+    patchLiveCards();
+
+    // Stop polling if nothing is live anymore
+    if (!anyLive) stopLivePoller();
+
+  } catch { /* non-critical — silently skip */ }
+}
+
+function patchLiveCards() {
+  // Only patch while on the Matches tab — avoids touching hidden DOM
+  if (activeTab !== 'matches') return;
+
+  for (const [fifaId, live] of espnLiveData) {
+    if (live.state !== 'in') continue;
+
+    const card = document.querySelector(`.match-card[data-match-id="${fifaId}"]`);
+    if (!card) continue;
+
+    // Upgrade a pre-match card to live if the match just kicked off
+    if (!card.classList.contains('match-card--live')) {
+      const m = allMatches.find(m => m.IdMatch === fifaId);
+      if (m) {
+        // Replace card in place
+        const newCard = buildMatchCard(m);
+        card.replaceWith(newCard);
+        continue;
+      }
+    }
+
+    // Patch score
+    const scoreEl = card.querySelector(`.match-score--live[data-match-id="${fifaId}"]`);
+    if (scoreEl && scoreEl.textContent !== live.score) {
+      scoreEl.textContent = live.score;
+      // Flash animation on score change
+      scoreEl.classList.remove('score-flash');
+      void scoreEl.offsetWidth; // force reflow
+      scoreEl.classList.add('score-flash');
+    }
+
+    // Patch clock
+    const clockEl = card.querySelector(`.match-clock[data-match-id="${fifaId}"]`);
+    if (clockEl) clockEl.textContent = live.clock;
+  }
+}
+
+function startLivePoller() {
+  if (livePoller) return; // already running
+  fetchLiveScores(); // immediate first tick
+  livePoller = setInterval(fetchLiveScores, LIVE_POLL_MS);
+}
+
+function stopLivePoller() {
+  if (livePoller) { clearInterval(livePoller); livePoller = null; }
+}
+
+function hasLiveMatches() {
+  return allMatches.some(m => m.MatchStatus === STATUS_LIVE);
+}
+
+function maybeStartPoller() {
+  // Start if any match is live or starting within the next 2 hours
+  const now = Date.now();
+  const soonLive = allMatches.some(m => {
+    if (m.MatchStatus === STATUS_LIVE) return true;
+    if (m.MatchStatus === STATUS_FINISHED) return false;
+    const kickoff = new Date(m.Date).getTime();
+    return kickoff <= now + 2 * 60 * 60 * 1000 && kickoff >= now - 2 * 60 * 60 * 1000;
+  });
+  if (soonLive) startLivePoller();
 }
 
 document.addEventListener('DOMContentLoaded', init);

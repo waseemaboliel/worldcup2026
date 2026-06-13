@@ -478,6 +478,34 @@ body {
   50% { opacity: 0.5; }
 }
 
+/* ── Live card ── */
+.match-card--live {
+  border-left: 3px solid var(--green);
+}
+[dir="rtl"] .match-card--live {
+  border-left: none;
+  border-right: 3px solid var(--green);
+}
+.match-score--live {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+.match-clock {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 0.3px;
+}
+@keyframes scoreFlash {
+  0%   { color: var(--gold); transform: scale(1.15); }
+  100% { color: var(--text); transform: scale(1); }
+}
+.score-flash {
+  animation: scoreFlash 0.6s ease-out forwards;
+}
+
 /* ── TV Channels ── */
 .match-channels {
   display: flex;
@@ -607,6 +635,85 @@ body {
   font-size: 11px;
   color: var(--text-muted);
   display: block;
+}
+.detail-og {
+  font-size: 10px;
+  font-weight: 700;
+  color: #e05c5c;
+  background: #2a1010;
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* ── Pitch player live field status ── */
+.pitch-player--off .pitch-shirt {
+  opacity: 0.35;
+  border-color: rgba(255,255,255,0.2);
+}
+.pitch-player--off .pitch-name {
+  opacity: 0.45;
+}
+.pitch-player--on .pitch-shirt {
+  border-color: var(--green);
+  box-shadow: 0 0 6px rgba(61,220,132,0.5);
+}
+.pitch-player--on .pitch-name {
+  color: var(--green);
+}
+
+/* ── Live detail header ── */
+.live-header {
+  text-align: center;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.live-score-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  direction: ltr;
+  margin-bottom: 6px;
+}
+.live-score {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: -1px;
+}
+.live-team {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.live-team--right { text-align: right; }
+.live-clock-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.live-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.live-clock {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--green);
+}
+.live-period {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 /* ── Match Stats Panel ── */
