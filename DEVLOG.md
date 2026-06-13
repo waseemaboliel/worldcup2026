@@ -171,25 +171,79 @@ Use this as the reference when resuming development in a future session.
 
 ## Future Ideas
 
-### Phase 9 — Live Match Updates
+### Phase 9 — Match Stats Panel (ESPN) ✅ (2026-06-13)
+Add a possession/shots/passes stats bar inside each finished match's expanded detail panel.
+
+**What to show:** possession %, shots, shots on target, pass accuracy %, crosses, long balls, tackles, interceptions, clearances, fouls, yellow cards, red cards — all from `boxscore.teams[].statistics`.
+
+**How to implement:**
+- `fetchEspnLineup` already fetches `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event={espnId}` and the full response is available. Currently only `data.rosters` is used — also read `data.boxscore.teams` and store it alongside the lineup in `espnLineupCache` (add a `stats` field to the cached object, or cache separately as `espnStatsCache`).
+- In `renderTimeline`, after the goals/cards/subs sections and before the lineup, render a "Match Stats" section. For each stat, render a two-value bar: home value — bar — away value (similar to how TV broadcasts show it). A simple CSS flex row works: `[home value] [label] [away value]` with a gradient bar between them showing proportional split.
+- ESPN `statistics` entries have a `name` (machine key like `possessionPct`) and `displayValue` (already formatted string like `"54%"`). Use `displayValue` directly — no formatting needed.
+- Only render the section if `espnStats` is non-null. Falls back silently (same pattern as lineup).
+- Also read `boxscore.leaders` to add a "Top Performers" row: most shots, most passes, most saves — essentially a free mini man-of-the-match panel.
+
+**No new API call needed** — the data is already in the ESPN summary response that is fetched per match on expand.
+
+---
+
+### Phase 10 — ESPN-Powered Stats Tab (full rebuild) ✨ HIGH PRIORITY
+Replace the current stats tab (which painfully fetches 104 timelines and parses English regex) with ESPN structured data. ESPN's `boxscore` gives ready-to-use numbers per match for both players and teams.
+
+**Data available from ESPN `summary` endpoint per match:**
+
+| Source | Data |
+|---|---|
+| `boxscore.teams[].statistics` | possession %, shots, shots on target, passes, pass accuracy %, crosses, long balls, tackles, interceptions, clearances, fouls, yellow cards, red cards |
+| `boxscore.rosters[].stats` | per-player match stats (shots, passes, tackles, etc.) |
+| `boxscore.leaders` | top performer per category per match: totalShots, accuratePasses, defensiveInterventions, saves |
+
+**Player stat leaderboards to build (aggregate across all matches):**
+- Goals (keep from FIFA timeline — ESPN `leaders` doesn't aggregate goals cleanly)
+- Assists (keep from FIFA timeline)
+- Shots (total shots across tournament — from `rosters[].stats`)
+- Shots on target
+- Passes / pass accuracy
+- Tackles / interceptions
+- Saves (GK-specific)
+- Yellow cards, Red cards
+
+**Team stat leaderboards to build:**
+- Possession % average
+- Goals/game, Goals conceded/game (keep from FIFA match scores — already reliable)
+- Shots/game, Shots on target/game
+- Pass accuracy % average
+- Tackles/game, Interceptions/game
+- Clean sheets (keep from FIFA lineup API)
+- Yellow cards, Red cards total
+
+**How to implement:**
+- On Stats tab open, iterate all finished matches that have an ESPN ID in `fifaToEspn`. For each, call `fetchEspnLineup` (already cached after first expand) — this returns the full summary. Accumulate `boxscore.teams[].statistics` per team and `boxscore.rosters[].stats` per player across all matches.
+- For matches not yet expanded (no cache hit), fetch ESPN summary lazily — batch them with `Promise.allSettled` so one failure doesn't block the rest.
+- Keep goals and assists sourced from FIFA timelines (they are already reliable and ESPN's goal data lives in the rosters/plays which is harder to aggregate cleanly).
+- Replace the current 5 player sub-tabs and 5 team sub-tabs with the richer set above — or group them into "Attacking", "Defensive", "Discipline" sub-sections.
+
+---
+
+### Phase 11 — Live Match Updates
 - Auto-refresh scores for in-progress matches (poll the matches API every ~60 seconds)
 - Show a 🟢 LIVE badge on match cards when a match is in progress
 - Update score and minute in real time without a full page reload
 - Only poll when the Matches tab is active and at least one match is currently live
 
-### Phase 10 — Knockout Bracket View
+### Phase 12 — Knockout Bracket View
 - New tab or sub-view showing the full tournament bracket from R32 onwards
 - Visual bracket: each round as a column, matches connect winners left-to-right
 - Completed matches show scores; upcoming show TBD with kickoff time
 - Clicking a match in the bracket expands it (same detail panel as the Matches tab)
 
-### Phase 11 — Player Profiles
+### Phase 13 — Player Profiles
 - Tap any player name in the stats leaderboards or expanded match detail to open a profile
 - Profile shows: flag, name, team, all goals / assists / cards across the tournament with match and minute
 - Back button / close to return to previous view
 - Data already available in `timelineCache` — no new API needed
 
-### Phase 12 — Push Notifications (PWA)
+### Phase 14 — Push Notifications (PWA)
 - Alert users when a match they care about is about to kick off
 - Use the Web Push API via the service worker
 - Options: notify for all matches, or only bookmarked teams

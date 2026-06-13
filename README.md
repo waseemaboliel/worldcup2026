@@ -10,7 +10,8 @@ Always up to date from the live FIFA API. No login, no ads, no install required.
 ## Features
 
 - **Matches** — all 104 matches grouped by date, kickoff times in Israel timezone, live scores
-- **Expand any match** — goals, assists, yellow/red cards, substitutions, attendance
+- **Expand any match** — goals, assists, yellow/red cards, substitutions, attendance, lineups on a visual pitch
+- **Match Stats** — possession, shots, passes, tackles, and 12 more stat categories with proportional bars, plus top performers per match (from ESPN)
 - **Standings** — all 12 group tables, updated live from match results
 - **Player Stats** — top scorers, assists, clean sheets, yellow & red card leaders
 - **Team Stats** — goals per game, conceded per game, clean sheets, cards

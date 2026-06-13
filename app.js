@@ -480,6 +480,26 @@ async function fetchLineup(match) {
 const ESPN_SUMMARY_API  = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event={espnId}';
 const espnLineupCache   = new Map(); // IdMatch → { home, away } | null
 
+// Stats to show in the match stats bar, in display order
+const MATCH_STAT_KEYS = [
+  'possessionPct',
+  'totalShots',
+  'shotsOnTarget',
+  'totalPasses',
+  'passPct',
+  'accurateCrosses',
+  'totalLongBalls',
+  'effectiveTackles',
+  'interceptions',
+  'effectiveClearance',
+  'foulsCommitted',
+  'wonCorners',
+  'offsides',
+  'saves',
+  'yellowCards',
+  'redCards',
+];
+
 function parseEspnRoster(roster) {
   if (!roster) return null;
   const players = roster.roster || [];
@@ -524,12 +544,44 @@ async function fetchEspnLineup(match) {
     if (!res.ok) throw new Error(`${res.status}`);
     const data = await res.json();
     const rosters = data.rosters || [];
-    // ESPN marks home/away on each roster entry
     const homeRoster = rosters.find(r => r.homeAway === 'home');
     const awayRoster = rosters.find(r => r.homeAway === 'away');
+
+    // Parse team-level match stats from boxscore.teams
+    const boxTeams = data.boxscore?.teams || [];
+    const homeBoxTeam = boxTeams.find(t => t.homeAway === 'home');
+    const awayBoxTeam = boxTeams.find(t => t.homeAway === 'away');
+    const parseStats = (boxTeam) => {
+      if (!boxTeam) return null;
+      const map = {};
+      for (const s of (boxTeam.statistics || [])) map[s.name] = s.displayValue;
+      return map;
+    };
+
+    // Parse per-team leaders from boxscore.leaders (top performer per stat category)
+    const boxLeaders = data.boxscore?.leaders || [];
+    const parseLeaders = (homeAway) => {
+      const entry = boxLeaders.find(l => {
+        // leaders entries don't have homeAway — match by team id via boxTeams
+        const boxTeam = boxTeams.find(t => t.homeAway === homeAway);
+        return l.team?.id === boxTeam?.team?.id;
+      });
+      if (!entry) return [];
+      return (entry.leaders || []).map(cat => ({
+        statName:    cat.name,
+        statDisplay: cat.displayName,
+        player:      cat.leaders?.[0]?.athlete?.shortName || null,
+        value:       cat.leaders?.[0]?.displayValue || null,
+      })).filter(c => c.player && c.value);
+    };
+
     const result = {
-      home: parseEspnRoster(homeRoster),
-      away: parseEspnRoster(awayRoster),
+      home:        parseEspnRoster(homeRoster),
+      away:        parseEspnRoster(awayRoster),
+      homeStats:   parseStats(homeBoxTeam),
+      awayStats:   parseStats(awayBoxTeam),
+      homeLeaders: parseLeaders('home'),
+      awayLeaders: parseLeaders('away'),
     };
     espnLineupCache.set(cacheKey, result);
     return result;
@@ -647,9 +699,138 @@ function renderTimeline(match, events, lineup, espnLineup, detail) {
     ? sections.join('')
     : `<p class="detail-empty">${t('detailNoEvents')}</p>`);
 
+  const statsSection = renderMatchStats(match, espnLineup);
+  if (statsSection) detail.appendChild(statsSection);
+
   if (espnLineup || lineup) {
     detail.appendChild(renderLineup(match, espnLineup, lineup));
   }
+}
+
+function renderMatchStats(match, espnLineup) {
+  if (!espnLineup?.homeStats || !espnLineup?.awayStats) return null;
+
+  // In RTL the home team is displayed on the right, away on the left —
+  // swap the data columns to match the visual layout, same as renderLineup does.
+  const isRtl = currentLang === 'he' || currentLang === 'ar';
+  const leftStats   = isRtl ? espnLineup.awayStats   : espnLineup.homeStats;
+  const rightStats  = isRtl ? espnLineup.homeStats   : espnLineup.awayStats;
+  const leftLeaders = isRtl ? espnLineup.awayLeaders : espnLineup.homeLeaders;
+  const rightLeaders= isRtl ? espnLineup.homeLeaders : espnLineup.awayLeaders;
+  const leftTeam    = isRtl ? match.Away : match.Home;
+  const rightTeam   = isRtl ? match.Home : match.Away;
+
+  const homeName = getTeamName(leftTeam) || '';
+  const awayName = getTeamName(rightTeam) || '';
+  const homeFlag = leftTeam  ? countryToFlag(leftTeam.IdCountry)  : '';
+  const awayFlag = rightTeam ? countryToFlag(rightTeam.IdCountry) : '';
+
+  // Alias back to generic names for the rest of the function
+  const homeStats   = leftStats;
+  const awayStats   = rightStats;
+  const homeLeaders = leftLeaders;
+  const awayLeaders = rightLeaders;
+
+  // Stat label overrides (ESPN labels are already good but some are ALL CAPS)
+  const STAT_LABEL = {
+    possessionPct:      'Possession %',
+    totalShots:         'Shots',
+    shotsOnTarget:      'On Target',
+    totalPasses:        'Passes',
+    passPct:            'Pass Accuracy %',
+    accurateCrosses:    'Accurate Crosses',
+    totalLongBalls:     'Long Balls',
+    effectiveTackles:   'Effective Tackles',
+    interceptions:      'Interceptions',
+    effectiveClearance: 'Clearances',
+    foulsCommitted:     'Fouls',
+    wonCorners:         'Corners',
+    offsides:           'Offsides',
+    saves:              'Saves',
+    yellowCards:        'Yellow Cards',
+    redCards:           'Red Cards',
+  };
+
+  // Build stat bars — only include rows where both teams have a value
+  const rows = MATCH_STAT_KEYS
+    .filter(key => homeStats[key] != null && awayStats[key] != null)
+    .map(key => {
+      const hRaw = homeStats[key];
+      const aRaw = awayStats[key];
+      const label = STAT_LABEL[key] || key;
+
+      // Compute bar width percentages from numeric values
+      const hNum = parseFloat(hRaw) || 0;
+      const aNum = parseFloat(aRaw) || 0;
+      const total = hNum + aNum;
+      let hPct = 50, aPct = 50;
+      if (total > 0) {
+        hPct = Math.round((hNum / total) * 100);
+        aPct = 100 - hPct;
+      }
+
+      // Format display value: percentages stored as decimals (0.9 → "90%"), whole numbers as-is
+      const fmt = (raw, key) => {
+        if (['passPct','shotPct','crossPct','longballPct','tacklePct'].includes(key)) {
+          return Math.round(parseFloat(raw) * 100) + '%';
+        }
+        if (key === 'possessionPct') return parseFloat(raw).toFixed(1) + '%';
+        return raw;
+      };
+
+      const hDisplay = fmt(hRaw, key);
+      const aDisplay = fmt(aRaw, key);
+
+      return `
+        <div class="mstat-row">
+          <span class="mstat-val mstat-val--home">${hDisplay}</span>
+          <div class="mstat-center">
+            <div class="mstat-label">${label}</div>
+            <div class="mstat-bar">
+              <div class="mstat-bar-home" style="width:${hPct}%"></div>
+              <div class="mstat-bar-away" style="width:${aPct}%"></div>
+            </div>
+          </div>
+          <span class="mstat-val mstat-val--away">${aDisplay}</span>
+        </div>`;
+    }).join('');
+
+  if (!rows) return null;
+
+  // Top performers from leaders
+  const allLeaderCats = new Set([
+    ...(homeLeaders || []).map(l => l.statName),
+    ...(awayLeaders || []).map(l => l.statName),
+  ]);
+  const leaderRows = [...allLeaderCats].map(statName => {
+    const hl = homeLeaders?.find(l => l.statName === statName);
+    const al = awayLeaders?.find(l => l.statName === statName);
+    const label = hl?.statDisplay || al?.statDisplay || statName;
+    const hCell = hl ? `<span class="mstat-leader-name">${hl.player}</span><span class="mstat-leader-val">${hl.value}</span>` : '';
+    const aCell = al ? `<span class="mstat-leader-name">${al.player}</span><span class="mstat-leader-val">${al.value}</span>` : '';
+    return `
+      <div class="mstat-row mstat-row--leader">
+        <div class="mstat-leader-cell mstat-leader-cell--home">${hCell}</div>
+        <div class="mstat-center"><div class="mstat-label">${label}</div></div>
+        <div class="mstat-leader-cell mstat-leader-cell--away">${aCell}</div>
+      </div>`;
+  }).join('');
+
+  const section = document.createElement('div');
+  section.className = 'detail-section';
+  section.innerHTML = `
+    <div class="detail-section-title">📊 Match Stats</div>
+    <div class="mstat-header">
+      <span class="mstat-team-label">${homeFlag} ${homeName}</span>
+      <span></span>
+      <span class="mstat-team-label mstat-team-label--away">${awayFlag} ${awayName}</span>
+    </div>
+    ${rows}
+    ${leaderRows ? `
+      <div class="mstat-leaders-title">⭐ Top Performers</div>
+      ${leaderRows}
+    ` : ''}`;
+  return section;
 }
 
 function shortName(fullName) {
