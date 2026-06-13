@@ -218,14 +218,19 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
 #### 12b — Knockout Bracket View ✅ (2026-06-13, redesigned 2026-06-13)
 - New **Bracket** tab (between Standings and Stats) with two sub-tabs:
   - **R32:** 16 match cards in list format, same card style as the Matches tab. TBD slots show readable resolved labels — "Group A Winner", "Best 3rd (A/B/C/D/F)" — fully translated in Hebrew/Arabic.
-  - **Bracket:** Visual tournament bracket — top 4 and bottom 4 R16 matches converge through QF and SF to the Final in the centre-right column. 3rd place shown below Final.
-- **Layout:** Each round is a flex column with an internal CSS grid (`grid-template-rows: repeat(19, 26px)`). Each `bslot` is placed with `grid-row` so QF slots are vertically centred between their two R16 feeders, SF between QF pairs, and Final between both SFs.
-- **Visual bracket slots (`bslot`):** each shows both teams + flag, score (finished) or kickoff time (upcoming). Winner highlighted in gold. Live slots have green border + glow. Upcoming slots dimmed.
-- **TBD slots:** show short `W89`/`W90` labels until R32 finishes, then real team names + flags replace them automatically.
+  - **Bracket:** Visual tournament bracket — flexbox columns with CSS connector lines between rounds. R16 → QF → SF → Final converge left to right, 3rd place match shown separately below.
+- **Layout:** Each round is a flex column with `justify-content: space-around` so each round's games naturally centre between their feeder matches. Connector columns between rounds draw bracket lines via `::before` (bracket shape) and `::after` (horizontal line).
+- **Game cards (`br-game`):** two-row layout per match — each team row shows flag, name, score. Winner row gets gold highlight background, loser row dims. Final match gets special gold border with glow.
+- **TBD slots:** show raw FIFA placeholders (`W74`, `1A`, `2B`, `3ABCDF`) instead of recursively expanded labels. Real team names + flags replace them once matches are decided.
+- **R16/QF ordering:** `89+90→QF97`, `93+94→QF98`, `QF97+98→SF101` (top half); `91+92→QF99`, `95+96→QF100`, `QF99+100→SF102` (bottom half).
 - Always LTR regardless of app language direction.
-- Tapping a finished/live slot navigates to the Matches tab and opens that match's detail panel.
-- Match numbering chain hard-coded: R16 89–96 → QF 97–100 → SF 101–102 → 3rd place 103 / Final 104.
-- All round labels use `t()` — translated in all 3 languages.
+- Tapping a finished/live game navigates to the Matches tab and opens that match's detail panel.
+- `sw.js` bumped to `wc2026-v20`.
+
+### Phase 15 — Tab Scroll Behaviour ✅ (2026-06-13)
+- Switching to any tab now scrolls to the top instantly via `window.scrollTo({ top: 0, behavior: 'instant' })`
+- Returning to Matches tab auto-scrolls to today's matches (or next match day) every time
+- `renderActiveTab()` passes `scrollToToday = true` when rendering Matches tab
 
 ### Phase 13 — Player Profiles ✅ (2026-06-13)
 - Tap any player name in stats leaderboards or match detail events to open a bottom-sheet profile

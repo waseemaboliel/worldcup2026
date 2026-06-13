@@ -1676,6 +1676,8 @@ function initTabs() {
       showMatchesUI(activeTab === 'matches');
       // Stop tab-specific pollers when switching away
       if (activeTab !== 'standings') stopLiveStandingsPoller();
+      // Scroll to top when switching tabs; matches tab will auto-scroll to today
+      window.scrollTo({ top: 0, behavior: 'instant' });
       renderActiveTab();
       // Resume poller when returning to Matches tab; it self-stops when nothing is live
       if (activeTab === 'matches' && hasLiveMatches()) startLivePoller();
@@ -1710,7 +1712,7 @@ let activePlayerSub = 'scorers';
 let activeTeamSub = 'goals-per-game';
 
 function renderActiveTab() {
-  if (activeTab === 'matches') renderMatches(activeMatches());
+  if (activeTab === 'matches') renderMatches(activeMatches(), true);
   else if (activeTab === 'standings') renderStandings(activeMatches());
   else if (activeTab === 'bracket') renderBracket(allMatches);
   else if (activeTab === 'stats') renderStats(activeMatches());
