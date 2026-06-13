@@ -13,8 +13,8 @@ Always up to date from the live FIFA API. No login, no ads, no install required.
 - **Expand any match** — goals, assists, yellow/red cards, substitutions, attendance, lineups on a visual pitch
 - **Match Stats** — possession, shots, passes, tackles, and 12 more stat categories with proportional bars, plus top performers per match (from ESPN)
 - **Standings** — all 12 group tables, updated live from match results
-- **Player Stats** — top scorers, assists, clean sheets, yellow & red card leaders
-- **Team Stats** — goals per game, conceded per game, clean sheets, cards
+- **Player Stats** — goals, assists, clean sheets, shots, shots on target, saves, fouls, offsides, yellow & red cards (powered by ESPN)
+- **Team Stats** — goals/game, conceded/game, clean sheets, possession %, shots, passes, pass accuracy, tackles, interceptions, yellow & red cards (powered by ESPN)
 - **Israel TV channels** — shown on every match card (Kan Box, KAN 11, MAKAN 33, Sport 1, etc.)
 - **Filter by stage** — Groups, R32, R16, QF, SF, Final
 - **Search by team** — type any team name to filter matches

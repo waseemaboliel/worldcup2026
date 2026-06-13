@@ -48,6 +48,21 @@ const STRINGS = {
     lineupCoach: 'Coach',
     lineupSubs: 'Substitutes',
     posGK: 'GK', posDEF: 'DEF', posMID: 'MID', posFWD: 'FWD',
+    // Player stat tabs
+    statShots: 'Shots', statOnTarget: 'On Target', statSaves: 'Saves',
+    statFouls: 'Fouls', statOffsides: 'Offsides',
+    // Team stat tabs
+    teamPossession: 'Possession %', teamShots: 'Shots/Game',
+    teamOnTarget: 'On Target/Game', teamPasses: 'Passes/Game',
+    teamPassAcc: 'Pass Accuracy %', teamTackles: 'Tackles/Game',
+    teamInterceptions: 'Interceptions/Game',
+    // Leaderboard value labels
+    labelShots: 'shots', labelOnTarget: 'on target', labelSaves: 'saves',
+    labelFouls: 'fouls', labelOffsides: 'offsides',
+    // Match stats panel row labels
+    mstatPasses: 'Passes', mstatAccCrosses: 'Accurate Crosses',
+    mstatLongBalls: 'Long Balls', mstatClearances: 'Clearances', mstatCorners: 'Corners',
+    matchStatsTitle: '📊 Match Stats', topPerformersTitle: '⭐ Top Performers',
   },
   he: {
     tabMatches: 'משחקים', tabStandings: 'טבלאות', tabStats: 'סטטיסטיקה',
@@ -93,6 +108,21 @@ const STRINGS = {
     lineupCoach: 'מאמן',
     lineupSubs: 'שחקני חילוף',
     posGK: 'שוע', posDEF: 'הגנה', posMID: 'קשר', posFWD: 'התקפה',
+    // Player stat tabs
+    statShots: 'בעיטות', statOnTarget: 'על השער', statSaves: 'הצלות',
+    statFouls: 'עבירות', statOffsides: 'נבדלות',
+    // Team stat tabs
+    teamPossession: 'החזקת כדור %', teamShots: 'בעיטות/משחק',
+    teamOnTarget: 'על השער/משחק', teamPasses: 'מסירות/משחק',
+    teamPassAcc: 'דיוק מסירות %', teamTackles: 'חטיפות/משחק',
+    teamInterceptions: 'יירוטים/משחק',
+    // Leaderboard value labels
+    labelShots: 'בעיטות', labelOnTarget: 'על השער', labelSaves: 'הצלות',
+    labelFouls: 'עבירות', labelOffsides: 'נבדלות',
+    // Match stats panel row labels
+    mstatPasses: 'מסירות', mstatAccCrosses: 'מסירות רוחביות מדויקות',
+    mstatLongBalls: 'כדורים ארוכים', mstatClearances: 'פינויים', mstatCorners: 'קרנות',
+    matchStatsTitle: '📊 סטטיסטיקת משחק', topPerformersTitle: '⭐ שחקנים בולטים',
   },
   ar: {
     tabMatches: 'مباريات', tabStandings: 'ترتيب', tabStats: 'إحصاءات',
@@ -138,6 +168,21 @@ const STRINGS = {
     lineupCoach: 'المدرب',
     lineupSubs: 'الاحتياطيون',
     posGK: 'حارس', posDEF: 'دفاع', posMID: 'وسط', posFWD: 'هجوم',
+    // Player stat tabs
+    statShots: 'التسديدات', statOnTarget: 'على المرمى', statSaves: 'التصديات',
+    statFouls: 'المخالفات', statOffsides: 'التسلل',
+    // Team stat tabs
+    teamPossession: 'الاستحواذ %', teamShots: 'تسديدات/مباراة',
+    teamOnTarget: 'على المرمى/مباراة', teamPasses: 'تمريرات/مباراة',
+    teamPassAcc: 'دقة التمرير %', teamTackles: 'إيقاعات/مباراة',
+    teamInterceptions: 'اعتراضات/مباراة',
+    // Leaderboard value labels
+    labelShots: 'تسديدة', labelOnTarget: 'على المرمى', labelSaves: 'تصدٍّ',
+    labelFouls: 'مخالفة', labelOffsides: 'تسلل',
+    // Match stats panel row labels
+    mstatPasses: 'التمريرات', mstatAccCrosses: 'العرضيات الدقيقة',
+    mstatLongBalls: 'الكرات الطويلة', mstatClearances: 'التكتيشات', mstatCorners: 'الركنيات',
+    matchStatsTitle: '📊 إحصاءات المباراة', topPerformersTitle: '⭐ أبرز اللاعبين',
   }
 };
 
@@ -510,15 +555,21 @@ function parseEspnRoster(roster) {
   ['CM','CM-L','CM-R','DM','AM','LM','RM','CAM','CDM','MF','M'].forEach(p => posMap[p] = 2);
   ['CF','CF-L','CF-R','LW','RW','SS','FW','F','ST'].forEach(p => posMap[p] = 3);
 
-  const toPlayer = p => ({
-    name:           p.athlete?.displayName || '',
-    shirt:          p.jersey || '',           // normalised to 'shirt' like FIFA
-    posAbbr:        p.position?.abbreviation || '',
-    position:       posMap[p.position?.abbreviation] ?? 2, // fallback to MID
-    formationPlace: p.formationPlace ?? null,
-    subbedOut:      p.subbedOut || false,
-    subbedIn:       p.subbedIn  || false,
-  });
+  const toPlayer = p => {
+    const statsArr = p.stats || [];
+    const statsMap = {};
+    for (const s of statsArr) statsMap[s.name] = s.value ?? 0;
+    return {
+      name:           p.athlete?.displayName || '',
+      shirt:          p.jersey || '',
+      posAbbr:        p.position?.abbreviation || '',
+      position:       posMap[p.position?.abbreviation] ?? 2,
+      formationPlace: p.formationPlace ?? null,
+      subbedOut:      p.subbedOut || false,
+      subbedIn:       p.subbedIn  || false,
+      stats:          statsMap,
+    };
+  };
 
   return {
     formation: roster.formation || null,
@@ -549,8 +600,8 @@ async function fetchEspnLineup(match) {
 
     // Parse team-level match stats from boxscore.teams
     const boxTeams = data.boxscore?.teams || [];
-    const homeBoxTeam = boxTeams.find(t => t.homeAway === 'home');
-    const awayBoxTeam = boxTeams.find(t => t.homeAway === 'away');
+    const homeBoxTeam = boxTeams.find(bt => bt.homeAway === 'home');
+    const awayBoxTeam = boxTeams.find(bt => bt.homeAway === 'away');
     const parseStats = (boxTeam) => {
       if (!boxTeam) return null;
       const map = {};
@@ -558,12 +609,11 @@ async function fetchEspnLineup(match) {
       return map;
     };
 
-    // Parse per-team leaders from boxscore.leaders (top performer per stat category)
-    const boxLeaders = data.boxscore?.leaders || [];
+    // Parse per-team leaders — top-level key, NOT nested under boxscore
+    const boxLeaders = data.leaders || [];
     const parseLeaders = (homeAway) => {
       const entry = boxLeaders.find(l => {
-        // leaders entries don't have homeAway — match by team id via boxTeams
-        const boxTeam = boxTeams.find(t => t.homeAway === homeAway);
+        const boxTeam = boxTeams.find(bt => bt.homeAway === homeAway);
         return l.team?.id === boxTeam?.team?.id;
       });
       if (!entry) return [];
@@ -731,24 +781,23 @@ function renderMatchStats(match, espnLineup) {
   const homeLeaders = leftLeaders;
   const awayLeaders = rightLeaders;
 
-  // Stat label overrides (ESPN labels are already good but some are ALL CAPS)
   const STAT_LABEL = {
-    possessionPct:      'Possession %',
-    totalShots:         'Shots',
-    shotsOnTarget:      'On Target',
-    totalPasses:        'Passes',
-    passPct:            'Pass Accuracy %',
-    accurateCrosses:    'Accurate Crosses',
-    totalLongBalls:     'Long Balls',
-    effectiveTackles:   'Effective Tackles',
-    interceptions:      'Interceptions',
-    effectiveClearance: 'Clearances',
-    foulsCommitted:     'Fouls',
-    wonCorners:         'Corners',
-    offsides:           'Offsides',
-    saves:              'Saves',
-    yellowCards:        'Yellow Cards',
-    redCards:           'Red Cards',
+    possessionPct:      () => t('teamPossession'),
+    totalShots:         () => t('statShots'),
+    shotsOnTarget:      () => t('statOnTarget'),
+    totalPasses:        () => t('mstatPasses'),
+    passPct:            () => t('teamPassAcc'),
+    accurateCrosses:    () => t('mstatAccCrosses'),
+    totalLongBalls:     () => t('mstatLongBalls'),
+    effectiveTackles:   () => t('teamTackles'),
+    interceptions:      () => t('teamInterceptions'),
+    effectiveClearance: () => t('mstatClearances'),
+    foulsCommitted:     () => t('statFouls'),
+    wonCorners:         () => t('mstatCorners'),
+    offsides:           () => t('statOffsides'),
+    saves:              () => t('statSaves'),
+    yellowCards:        () => t('teamYellow'),
+    redCards:           () => t('teamRed'),
   };
 
   // Build stat bars — only include rows where both teams have a value
@@ -757,7 +806,7 @@ function renderMatchStats(match, espnLineup) {
     .map(key => {
       const hRaw = homeStats[key];
       const aRaw = awayStats[key];
-      const label = STAT_LABEL[key] || key;
+      const label = STAT_LABEL[key] ? STAT_LABEL[key]() : key;
 
       // Compute bar width percentages from numeric values
       const hNum = parseFloat(hRaw) || 0;
@@ -819,7 +868,7 @@ function renderMatchStats(match, espnLineup) {
   const section = document.createElement('div');
   section.className = 'detail-section';
   section.innerHTML = `
-    <div class="detail-section-title">📊 Match Stats</div>
+    <div class="detail-section-title">${t('matchStatsTitle')}</div>
     <div class="mstat-header">
       <span class="mstat-team-label">${homeFlag} ${homeName}</span>
       <span></span>
@@ -827,7 +876,7 @@ function renderMatchStats(match, espnLineup) {
     </div>
     ${rows}
     ${leaderRows ? `
-      <div class="mstat-leaders-title">⭐ Top Performers</div>
+      <div class="mstat-leaders-title">${t('topPerformersTitle')}</div>
       ${leaderRows}
     ` : ''}`;
   return section;
@@ -1223,6 +1272,7 @@ function applyLang(lang) {
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.classList.toggle('lang-btn--active', btn.dataset.lang === lang);
   });
+  espnStatsCache = null; // team names change per language — rebuild on next stats open
   updateStaticStrings();
   if (allMatches.length > 0) renderActiveTab();
 }
@@ -1239,7 +1289,7 @@ function initLangToggle() {
 function initTabs() {
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('tab--active'));
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('tab--active'));
       tab.classList.add('tab--active');
       activeTab = tab.dataset.tab;
       showMatchesUI(activeTab === 'matches');
@@ -1280,6 +1330,89 @@ function renderActiveTab() {
   else if (activeTab === 'stats') renderStats(activeMatches());
 }
 
+// ── ESPN stats aggregation ─────────────────────────────────────
+// espnStatsCache: null = not built yet, Map = ready
+let espnStatsCache = null;
+
+async function buildEspnStatsCache(matches) {
+  if (espnStatsCache) return espnStatsCache;
+
+  const finishedMatches = matches.filter(m => m.MatchStatus === STATUS_FINISHED && fifaToEspn.has(m.IdMatch));
+
+  // Fetch all ESPN summaries in parallel (uses espnLineupCache when already fetched)
+  await Promise.allSettled(finishedMatches.map(m => fetchEspnLineup(m)));
+
+  // playerMap: espnAthleteId → { name, flag, teamName, goals, assists, shots, shotsOnTarget, saves, yellowCards, redCards, fouls, offsides, appearances }
+  const playerMap = new Map();
+  // teamMap: fifaTeamId → { name, flag, played, espnStats: { statName → total } }
+  const teamMap   = new Map();
+
+  for (const match of finishedMatches) {
+    const espnData = espnLineupCache.get(match.IdMatch);
+    if (!espnData) continue;
+
+    // Accumulate team stats from boxscore
+    for (const side of ['home', 'away']) {
+      const fifaTeam  = side === 'home' ? match.Home : match.Away;
+      const espnStats = side === 'home' ? espnData.homeStats : espnData.awayStats;
+      if (!fifaTeam || !espnStats) continue;
+      const id = fifaTeam.IdTeam;
+      if (!teamMap.has(id)) {
+        teamMap.set(id, {
+          name: getTeamName(fifaTeam) || '?',
+          flag: countryToFlag(fifaTeam.IdCountry),
+          played: 0,
+          espnStats: {},
+        });
+      }
+      const entry = teamMap.get(id);
+      entry.played++;
+      for (const [k, v] of Object.entries(espnStats)) {
+        const num = parseFloat(v) || 0;
+        entry.espnStats[k] = (entry.espnStats[k] || 0) + num;
+      }
+    }
+
+    // Accumulate player stats from rosters
+    const rosters = espnData.home ? [
+      { roster: espnData.home, fifaTeam: match.Home },
+      { roster: espnData.away, fifaTeam: match.Away },
+    ] : [];
+
+    for (const { roster, fifaTeam } of rosters) {
+      const flag     = fifaTeam ? countryToFlag(fifaTeam.IdCountry) : '🏳️';
+      const teamName = fifaTeam ? (getTeamName(fifaTeam) || '') : '';
+      for (const p of [...(roster.starters || []), ...(roster.subs || [])]) {
+        if (!p.name) continue;
+        const id = p.name; // ESPN players don't have a stable ID in our parsed shape; key by name+team
+        const key = `${p.name}|${teamName}`;
+        if (!playerMap.has(key)) {
+          playerMap.set(key, { name: p.name, flag, teamName, goals: 0, assists: 0, shots: 0, shotsOnTarget: 0, saves: 0, yellowCards: 0, redCards: 0, fouls: 0, offsides: 0, appearances: 0 });
+        }
+        const e = playerMap.get(key);
+        // stats is an array on the raw ESPN roster — but in our parsed shape it's not stored.
+        // We need to re-derive from raw; stash raw stats during parseEspnRoster instead.
+        // For now accumulate what we stored on the player object.
+        if (p.stats) {
+          e.appearances  += p.stats.appearances  || 0;
+          e.goals        += p.stats.totalGoals    || 0;
+          e.assists      += p.stats.goalAssists   || 0;
+          e.shots        += p.stats.totalShots    || 0;
+          e.shotsOnTarget+= p.stats.shotsOnTarget || 0;
+          e.saves        += p.stats.saves         || 0;
+          e.yellowCards  += p.stats.yellowCards   || 0;
+          e.redCards     += p.stats.redCards      || 0;
+          e.fouls        += p.stats.foulsCommitted|| 0;
+          e.offsides     += p.stats.offsides      || 0;
+        }
+      }
+    }
+  }
+
+  espnStatsCache = { playerMap, teamMap };
+  return espnStatsCache;
+}
+
 function renderStats(matches) {
   const main = document.querySelector('.main');
   main.innerHTML = `
@@ -1301,14 +1434,23 @@ function renderStats(matches) {
   else renderTeamStats(matches, content);
 }
 
+const PLAYER_SUBS = [
+  { key: 'scorers',       icon: '⚽', label: () => t('statGoals') },
+  { key: 'assists',       icon: '🎯', label: () => t('statAssists') },
+  { key: 'clean',         icon: '🧤', label: () => t('statClean') },
+  { key: 'shots',         icon: '🎯', label: () => t('statShots') },
+  { key: 'shotsOnTarget', icon: '🎯', label: () => t('statOnTarget') },
+  { key: 'saves',         icon: '🧤', label: () => t('statSaves') },
+  { key: 'fouls',         icon: '🚫', label: () => t('statFouls') },
+  { key: 'offsides',      icon: '🚩', label: () => t('statOffsides') },
+  { key: 'yellow',        icon: '🟨', label: () => t('statYellow') },
+  { key: 'red',           icon: '🟥', label: () => t('statRed') },
+];
+
 function renderPlayerStats(matches, container) {
   container.innerHTML = `
     <div class="stats-tabs">
-      <button class="stats-tab ${activePlayerSub === 'scorers'   ? 'stats-tab--active' : ''}" data-sub="scorers">${t('statGoals')}</button>
-      <button class="stats-tab ${activePlayerSub === 'assists'   ? 'stats-tab--active' : ''}" data-sub="assists">${t('statAssists')}</button>
-      <button class="stats-tab ${activePlayerSub === 'clean'     ? 'stats-tab--active' : ''}" data-sub="clean">${t('statClean')}</button>
-      <button class="stats-tab ${activePlayerSub === 'yellow'    ? 'stats-tab--active' : ''}" data-sub="yellow">${t('statYellow')}</button>
-      <button class="stats-tab ${activePlayerSub === 'red'       ? 'stats-tab--active' : ''}" data-sub="red">${t('statRed')}</button>
+      ${PLAYER_SUBS.map(s => `<button class="stats-tab ${activePlayerSub === s.key ? 'stats-tab--active' : ''}" data-sub="${s.key}">${s.icon} ${s.label()}</button>`).join('')}
     </div>
     <div id="player-stats-content"></div>`;
 
@@ -1320,25 +1462,31 @@ function renderPlayerStats(matches, container) {
   });
 
   const inner = container.querySelector('#player-stats-content');
-  if      (activePlayerSub === 'scorers') renderScorers(matches, inner);
-  else if (activePlayerSub === 'assists') renderAssists(matches, inner);
-  else if (activePlayerSub === 'clean')   renderCleanSheets(matches, inner);
-  else if (activePlayerSub === 'yellow')  renderCardLeaders(matches, inner, 'yellow');
-  else if (activePlayerSub === 'red')     renderCardLeaders(matches, inner, 'red');
+  if      (activePlayerSub === 'scorers')       renderScorers(matches, inner);
+  else if (activePlayerSub === 'assists')       renderAssists(matches, inner);
+  else if (activePlayerSub === 'clean')         renderCleanSheets(matches, inner);
+  else                                          renderEspnPlayerLeaderboard(matches, inner, activePlayerSub);
 }
 
-function renderTeamStats(matches, container) {
-  const subs = [
-    { key: 'goals-per-game',     label: t('teamGoalsGame') },
-    { key: 'conceded-per-game',  label: t('teamConcededGame') },
-    { key: 'clean-sheets',       label: t('teamClean') },
-    { key: 'yellow-cards',       label: t('teamYellow') },
-    { key: 'red-cards',          label: t('teamRed') },
-  ];
+const TEAM_SUBS = [
+  { key: 'goals-per-game',     icon: '⚽', label: () => t('teamGoalsGame'),       espnKey: null,               fifa: true },
+  { key: 'conceded-per-game',  icon: '🥅', label: () => t('teamConcededGame'),    espnKey: null,               fifa: true },
+  { key: 'clean-sheets',       icon: '🧤', label: () => t('teamClean'),           espnKey: null,               fifa: true },
+  { key: 'possession',         icon: '🔵', label: () => t('teamPossession'),      espnKey: 'possessionPct',    avg: true  },
+  { key: 'shots',              icon: '🎯', label: () => t('teamShots'),           espnKey: 'totalShots',       avg: true  },
+  { key: 'shots-on-target',    icon: '🎯', label: () => t('teamOnTarget'),        espnKey: 'shotsOnTarget',    avg: true  },
+  { key: 'passes',             icon: '📋', label: () => t('teamPasses'),          espnKey: 'totalPasses',      avg: true  },
+  { key: 'pass-accuracy',      icon: '📋', label: () => t('teamPassAcc'),         espnKey: 'passPct',          avg: true, pct: true },
+  { key: 'tackles',            icon: '💪', label: () => t('teamTackles'),         espnKey: 'effectiveTackles', avg: true  },
+  { key: 'interceptions',      icon: '✋', label: () => t('teamInterceptions'),   espnKey: 'interceptions',    avg: true  },
+  { key: 'yellow-cards',       icon: '🟨', label: () => t('teamYellow'),          espnKey: 'yellowCards'                 },
+  { key: 'red-cards',          icon: '🟥', label: () => t('teamRed'),             espnKey: 'redCards'                    },
+];
 
+function renderTeamStats(matches, container) {
   container.innerHTML = `
     <div class="stats-tabs">
-      ${subs.map(s => `<button class="stats-tab ${activeTeamSub === s.key ? 'stats-tab--active' : ''}" data-sub="${s.key}">${s.label}</button>`).join('')}
+      ${TEAM_SUBS.map(s => `<button class="stats-tab ${activeTeamSub === s.key ? 'stats-tab--active' : ''}" data-sub="${s.key}">${s.icon} ${s.label()}</button>`).join('')}
     </div>
     <div id="team-stats-content"></div>`;
 
@@ -1357,100 +1505,66 @@ async function renderTeamLeaderboard(matches, container, type) {
   container.innerHTML = `<div class="loading"><div class="loading-spinner"></div>${t('loadingComputing')}</div>`;
 
   const finishedMatches = matches.filter(m => m.MatchStatus === STATUS_FINISHED);
-  const teamMap = new Map(); // teamId → { name, flag, played, scored, conceded, cleanSheets, yellow, red }
+  const sub = TEAM_SUBS.find(s => s.key === type);
 
-  const ensureTeam = (team) => {
-    if (!team) return;
-    if (!teamMap.has(team.IdTeam)) {
-      teamMap.set(team.IdTeam, {
-        id: team.IdTeam,
-        name: getTeamName(team) || '?',
-        flag: countryToFlag(team.IdCountry),
-        played: 0, scored: 0, conceded: 0, cleanSheets: 0, yellow: 0, red: 0
+  // FIFA-computed stats (goals, conceded, clean sheets)
+  if (sub?.fifa) {
+    const teamMap = new Map();
+    const ensure = (team) => {
+      if (!team) return null;
+      if (!teamMap.has(team.IdTeam)) teamMap.set(team.IdTeam, {
+        name: getTeamName(team) || '?', flag: countryToFlag(team.IdCountry),
+        played: 0, scored: 0, conceded: 0, cleanSheets: 0,
       });
+      return teamMap.get(team.IdTeam);
+    };
+    for (const m of finishedMatches) {
+      const home = ensure(m.Home), away = ensure(m.Away);
+      if (!home || !away) continue;
+      const hs = m.HomeTeamScore ?? 0, as = m.AwayTeamScore ?? 0;
+      home.played++; away.played++;
+      home.scored += hs; home.conceded += as;
+      away.scored += as; away.conceded += hs;
+      if (as === 0) home.cleanSheets++;
+      if (hs === 0) away.cleanSheets++;
     }
-    return teamMap.get(team.IdTeam);
-  };
-
-  // Compute match-based stats
-  for (const m of finishedMatches) {
-    const home = ensureTeam(m.Home);
-    const away = ensureTeam(m.Away);
-    if (!home || !away) continue;
-
-    const hs = m.HomeTeamScore ?? 0;
-    const as = m.AwayTeamScore ?? 0;
-
-    home.played++;  away.played++;
-    home.scored   += hs; home.conceded += as;
-    away.scored   += as; away.conceded += hs;
-    if (as === 0) home.cleanSheets++;
-    if (hs === 0) away.cleanSheets++;
+    const getValue = (t) => type === 'goals-per-game' ? (t.played ? +(t.scored/t.played).toFixed(2) : 0)
+                         : type === 'conceded-per-game' ? (t.played ? +(t.conceded/t.played).toFixed(2) : 0)
+                         : t.cleanSheets;
+    const label = sub.label();
+    const sorted = [...teamMap.values()].filter(tm => tm.played > 0).sort((a,b) => getValue(b)-getValue(a)).slice(0,20);
+    return renderTeamRows(container, sorted, tm => getValue(tm), label);
   }
 
-  // Compute card stats from timelines
-  if (type === 'yellow-cards' || type === 'red-cards') {
-    const cardType = type === 'yellow-cards' ? 2 : 3;
-    for (const match of finishedMatches) {
-      let events;
-      if (timelineCache.has(match.IdMatch)) {
-        events = timelineCache.get(match.IdMatch);
-      } else {
-        try {
-          const url = TIMELINE_API.replace('{stage}', match.IdStage).replace('{match}', match.IdMatch);
-          const res = await fetch(url);
-          if (!res.ok) continue;
-          const data = await res.json();
-          events = data.Event || [];
-          timelineCache.set(match.IdMatch, events);
-        } catch { continue; }
-      }
-      for (const ev of events) {
-        if (ev.Type !== cardType || !ev.IdTeam) continue;
-        const entry = teamMap.get(ev.IdTeam);
-        if (!entry) continue;
-        if (type === 'yellow-cards') entry.yellow++;
-        else entry.red++;
-      }
-    }
-  }
+  // ESPN-computed stats
+  const { teamMap } = await buildEspnStatsCache(matches);
+  const espnKey = sub?.espnKey;
+  if (!espnKey) { container.innerHTML = `<div class="error"><div class="error-icon">📊</div>${t('errorNoData')}</div>`; return; }
 
-  const getValue = (team, key) => {
-    switch (key) {
-      case 'goals-per-game':    return team.played ? +(team.scored   / team.played).toFixed(2) : 0;
-      case 'conceded-per-game': return team.played ? +(team.conceded / team.played).toFixed(2) : 0;
-      case 'clean-sheets':      return team.cleanSheets;
-      case 'yellow-cards':      return team.yellow;
-      case 'red-cards':         return team.red;
-    }
+  const getValue = (team) => {
+    const raw = team.espnStats[espnKey] || 0;
+    if (sub.pct) return team.played ? +((raw / team.played) * 100).toFixed(1) : 0;
+    if (sub.avg) return team.played ? +(raw / team.played).toFixed(2) : 0;
+    return raw;
   };
-
-  const getLabel = (key) => {
-    switch (key) {
-      case 'goals-per-game':    return t('teamGoalsGame');
-      case 'conceded-per-game': return t('teamConcededGame');
-      case 'clean-sheets':      return t('teamClean');
-      case 'yellow-cards':      return '🟨';
-      case 'red-cards':         return '🟥';
-    }
+  const fmt = (team) => {
+    const v = getValue(team);
+    return sub.pct ? v.toFixed(1) + '%' : v;
   };
+  const label = sub.label();
+  const sorted = [...teamMap.values()].filter(tm => tm.played > 0).sort((a,b) => getValue(b)-getValue(a)).slice(0,20);
+  renderTeamRows(container, sorted, fmt, label);
+}
 
-  const sorted = [...teamMap.values()]
-    .filter(team => team.played > 0)
-    .sort((a, b) => getValue(b, type) - getValue(a, type))
-    .slice(0, 20);
-
+function renderTeamRows(container, sorted, getFmt, label) {
   if (sorted.length === 0) {
     container.innerHTML = `<div class="error"><div class="error-icon">📊</div>${t('errorNoData')}</div>`;
     return;
   }
-
   container.innerHTML = '';
   const list = document.createElement('div');
   list.className = 'scorers-list';
   sorted.forEach((team, i) => {
-    const value = getValue(team, type);
-    const label = getLabel(type);
     const row = document.createElement('div');
     row.className = 'scorer-row';
     row.innerHTML = `
@@ -1461,7 +1575,7 @@ async function renderTeamLeaderboard(matches, container, type) {
         <div class="scorer-team">${t('gamesPlayed', team.played)}</div>
       </div>
       <div>
-        <div class="scorer-goals">${value}</div>
+        <div class="scorer-goals">${getFmt(team)}</div>
         <div class="scorer-goals-label">${label}</div>
       </div>`;
     list.appendChild(row);
@@ -1776,56 +1890,38 @@ async function renderCleanSheets(matches, container) {
   container.appendChild(list);
 }
 
-// ── Card leaders (computed from timelines) ─────────────────────
-async function renderCardLeaders(matches, container, type) {
+// ── ESPN player leaderboard (shots, saves, cards, fouls, offsides) ──
+async function renderEspnPlayerLeaderboard(matches, container, type) {
   container.innerHTML = `<div class="loading"><div class="loading-spinner"></div>${t('loadingComputing')}</div>`;
 
-  const finishedMatches = matches.filter(m => m.MatchStatus === STATUS_FINISHED);
-  const playerMap = new Map();
-  const eventType = type === 'yellow' ? 2 : 3;
-  const icon = type === 'yellow' ? '🟨' : '🟥';
-  const label = type === 'yellow' ? 'yellow' : 'red';
+  const { playerMap } = await buildEspnStatsCache(matches);
 
-  for (const match of finishedMatches) {
-    let events;
-    if (timelineCache.has(match.IdMatch)) {
-      events = timelineCache.get(match.IdMatch);
-    } else {
-      try {
-        const url = TIMELINE_API.replace('{stage}', match.IdStage).replace('{match}', match.IdMatch);
-        const res = await fetch(url);
-        if (!res.ok) continue;
-        const data = await res.json();
-        events = data.Event || [];
-        timelineCache.set(match.IdMatch, events);
-      } catch { continue; }
-    }
+  const CONFIG = {
+    shots:         { field: 'shots',         icon: '🎯', label: () => t('labelShots') },
+    shotsOnTarget: { field: 'shotsOnTarget',  icon: '🎯', label: () => t('labelOnTarget') },
+    saves:         { field: 'saves',          icon: '🧤', label: () => t('labelSaves') },
+    fouls:         { field: 'fouls',          icon: '🚫', label: () => t('labelFouls') },
+    offsides:      { field: 'offsides',       icon: '🚩', label: () => t('labelOffsides') },
+    yellow:        { field: 'yellowCards',    icon: '🟨', label: () => '🟨' },
+    red:           { field: 'redCards',       icon: '🟥', label: () => '🟥' },
+  };
 
-    for (const ev of events) {
-      if (ev.Type !== eventType || !ev.IdPlayer) continue;
-      const desc = ev.EventDescription?.[0]?.Description || '';
-      const m = desc.match(/^(.+?) \(/);
-      const name = m ? m[1] : null;
-      if (!name) continue;
-      const team = ev.IdTeam === match.Home?.IdTeam ? match.Home : match.Away;
-      const flag = team ? countryToFlag(team.IdCountry) : '🏳️';
-      const teamName = team ? (getTeamName(team) || '') : '';
-      if (!playerMap.has(ev.IdPlayer)) playerMap.set(ev.IdPlayer, { name, flag, teamName, count: 0 });
-      playerMap.get(ev.IdPlayer).count++;
-    }
-  }
+  const cfg = CONFIG[type];
+  if (!cfg) { container.innerHTML = `<div class="error"><div class="error-icon">📊</div>${t('errorNoData')}</div>`; return; }
 
-  const sorted = [...playerMap.values()].sort((a, b) => b.count - a.count).slice(0, 20);
+  const sorted = [...playerMap.values()]
+    .filter(p => p[cfg.field] > 0)
+    .sort((a, b) => b[cfg.field] - a[cfg.field])
+    .slice(0, 20);
 
   if (sorted.length === 0) {
-    container.innerHTML = `<div class="error"><div class="error-icon">${icon}</div>${t('errorNoCards', type)}</div>`;
+    container.innerHTML = `<div class="error"><div class="error-icon">${cfg.icon}</div>${t('errorNoData')}</div>`;
     return;
   }
 
   container.innerHTML = '';
   const list = document.createElement('div');
   list.className = 'scorers-list';
-
   sorted.forEach((s, i) => {
     const row = document.createElement('div');
     row.className = 'scorer-row';
@@ -1837,12 +1933,11 @@ async function renderCardLeaders(matches, container, type) {
         <div class="scorer-team">${s.teamName}</div>
       </div>
       <div>
-        <div class="scorer-goals">${s.count}</div>
-        <div class="scorer-goals-label">${icon}</div>
+        <div class="scorer-goals">${s[cfg.field]}</div>
+        <div class="scorer-goals-label">${cfg.label()}</div>
       </div>`;
     list.appendChild(row);
   });
-
   container.appendChild(list);
 }
 

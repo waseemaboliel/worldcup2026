@@ -166,62 +166,31 @@ Use this as the reference when resuming development in a future session.
 | Service worker error on `file://` | Guard `location.hostname !== ''` before SW registration |
 | Manifest CORS error on `file://` | Inject `<link rel="manifest">` via JS only when `location.hostname` is truthy |
 | GK clean sheet name showed as "[Team] GK" | Use FIFA lineup API; starter with `Position=0` is always the correct GK |
+| Match stats panel disappeared after translation work | `t =>` lambda parameters in `fetchEspnLineup` shadowed the global `t()` function, causing the fetch to throw and cache `null`. Renamed to `bt =>` and `tm =>`. |
+| Top Performers section always empty | `data.boxscore.leaders` does not exist — `leaders` is a top-level key (`data.leaders`). Fixed path in `fetchEspnLineup`. |
 
 ---
 
 ## Future Ideas
 
 ### Phase 9 — Match Stats Panel (ESPN) ✅ (2026-06-13)
-Add a possession/shots/passes stats bar inside each finished match's expanded detail panel.
 
-**What to show:** possession %, shots, shots on target, pass accuracy %, crosses, long balls, tackles, interceptions, clearances, fouls, yellow cards, red cards — all from `boxscore.teams[].statistics`.
-
-**How to implement:**
-- `fetchEspnLineup` already fetches `https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/summary?event={espnId}` and the full response is available. Currently only `data.rosters` is used — also read `data.boxscore.teams` and store it alongside the lineup in `espnLineupCache` (add a `stats` field to the cached object, or cache separately as `espnStatsCache`).
-- In `renderTimeline`, after the goals/cards/subs sections and before the lineup, render a "Match Stats" section. For each stat, render a two-value bar: home value — bar — away value (similar to how TV broadcasts show it). A simple CSS flex row works: `[home value] [label] [away value]` with a gradient bar between them showing proportional split.
-- ESPN `statistics` entries have a `name` (machine key like `possessionPct`) and `displayValue` (already formatted string like `"54%"`). Use `displayValue` directly — no formatting needed.
-- Only render the section if `espnStats` is non-null. Falls back silently (same pattern as lineup).
-- Also read `boxscore.leaders` to add a "Top Performers" row: most shots, most passes, most saves — essentially a free mini man-of-the-match panel.
-
-**No new API call needed** — the data is already in the ESPN summary response that is fetched per match on expand.
+- Inside each finished match's expanded detail panel, a **Match Stats** section appears between the events and the lineup
+- 16 stat categories with proportional bars: possession %, shots, on target, passes, pass accuracy, accurate crosses, long balls, effective tackles, interceptions, clearances, fouls, corners, offsides, saves, yellow cards, red cards — from `boxscore.teams[].statistics`
+- **Top Performers** strip below the bars: best player per stat category (most shots, most passes) — from `data.leaders` (top-level key, not `boxscore.leaders`)
+- RTL-aware: home/away columns swap in Hebrew and Arabic to match the visual team order
+- No extra API call — data is in the ESPN summary already fetched for the lineup
+- `parseEspnRoster` extended to store a `stats` map per player for use by Phase 10
 
 ---
 
-### Phase 10 — ESPN-Powered Stats Tab (full rebuild) ✨ HIGH PRIORITY
-Replace the current stats tab (which painfully fetches 104 timelines and parses English regex) with ESPN structured data. ESPN's `boxscore` gives ready-to-use numbers per match for both players and teams.
+### Phase 10 — ESPN-Powered Stats Tab (full rebuild) ✅ (2026-06-13)
 
-**Data available from ESPN `summary` endpoint per match:**
-
-| Source | Data |
-|---|---|
-| `boxscore.teams[].statistics` | possession %, shots, shots on target, passes, pass accuracy %, crosses, long balls, tackles, interceptions, clearances, fouls, yellow cards, red cards |
-| `boxscore.rosters[].stats` | per-player match stats (shots, passes, tackles, etc.) |
-| `boxscore.leaders` | top performer per category per match: totalShots, accuratePasses, defensiveInterventions, saves |
-
-**Player stat leaderboards to build (aggregate across all matches):**
-- Goals (keep from FIFA timeline — ESPN `leaders` doesn't aggregate goals cleanly)
-- Assists (keep from FIFA timeline)
-- Shots (total shots across tournament — from `rosters[].stats`)
-- Shots on target
-- Passes / pass accuracy
-- Tackles / interceptions
-- Saves (GK-specific)
-- Yellow cards, Red cards
-
-**Team stat leaderboards to build:**
-- Possession % average
-- Goals/game, Goals conceded/game (keep from FIFA match scores — already reliable)
-- Shots/game, Shots on target/game
-- Pass accuracy % average
-- Tackles/game, Interceptions/game
-- Clean sheets (keep from FIFA lineup API)
-- Yellow cards, Red cards total
-
-**How to implement:**
-- On Stats tab open, iterate all finished matches that have an ESPN ID in `fifaToEspn`. For each, call `fetchEspnLineup` (already cached after first expand) — this returns the full summary. Accumulate `boxscore.teams[].statistics` per team and `boxscore.rosters[].stats` per player across all matches.
-- For matches not yet expanded (no cache hit), fetch ESPN summary lazily — batch them with `Promise.allSettled` so one failure doesn't block the rest.
-- Keep goals and assists sourced from FIFA timelines (they are already reliable and ESPN's goal data lives in the rosters/plays which is harder to aggregate cleanly).
-- Replace the current 5 player sub-tabs and 5 team sub-tabs with the richer set above — or group them into "Attacking", "Defensive", "Discipline" sub-sections.
+- Stats tab completely rebuilt — no more parsing 104 FIFA timelines with English regex
+- `buildEspnStatsCache()` fetches all finished ESPN summaries in parallel (`Promise.allSettled`), uses `espnLineupCache` for already-expanded matches. Cache invalidated on language switch.
+- **Player Stats — 10 leaderboards:** Goals (FIFA timeline), Assists (FIFA timeline), Clean Sheets (FIFA lineup), Shots, On Target, Saves, Fouls, Offsides, Yellow, Red (all ESPN `rosters[].stats`)
+- **Team Stats — 12 leaderboards:** Goals/Game, Conceded/Game, Clean Sheets (FIFA match scores), Possession %, Shots/Game, On Target/Game, Passes/Game, Pass Accuracy %, Tackles/Game, Interceptions/Game, Yellow, Red (all ESPN `boxscore.teams[].statistics`)
+- All tab labels and leaderboard value labels fully translated into Hebrew and Arabic via `t()`
 
 ---
 
