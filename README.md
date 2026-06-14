@@ -73,3 +73,12 @@ Pure HTML / CSS / JavaScript — no frameworks, no build tools, no dependencies.
 | `manifest.json` | PWA config (name, icons, theme) |
 | `sw.js` | Service worker — caches app shell for offline/fast load |
 | `icons/` | App icons for home screen and browser tab |
+
+---
+
+## Documentation
+
+| File | Description |
+|---|---|
+| [DEVLOG.md](DEVLOG.md) | Full developer log — every feature built (Phases 1–20), API reference, known bugs and fixes, design decisions. The single source of truth for how the app works and what was done. |
+| [V2-MIGRATION.md](V2-MIGRATION.md) | V2 modularization plan and progress — splitting the monolithic `app.js` into ES modules. Contains the target file structure, 10-step migration strategy, architectural principles, and detailed completion notes for each step. |
