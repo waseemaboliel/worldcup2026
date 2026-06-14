@@ -1,4 +1,4 @@
-const CACHE = 'wc2026-v27';
+const CACHE = 'wc2026-v28';
 const SHELL = [
   '/worldcup2026/',
   '/worldcup2026/index.html',

@@ -72,6 +72,7 @@ const STRINGS = {
     matchStatsTitle: '📊 Match Stats', topPerformersTitle: '⭐ Top Performers',
     // Live match
     liveBadge: '🟢 LIVE', liveHT: 'HT', liveET: 'ET', livePSO: 'PSO', liveOG: 'OG',
+    liveStartingSoon: 'Starting Soon', liveMatchEnded: 'Match Ended',
     livePeriod: (s) => ({ 'First Half': '1st Half', 'Second Half': '2nd Half', 'Half Time': 'Half Time', 'Extra Time': 'ET', 'Penalty Shootout': 'PSO' }[s] || s),
     // Player profile
     profileGoals: 'Goals', profileAssists: 'Assists', profileYellow: 'Yellow Cards', profileRed: 'Red Cards',
@@ -150,6 +151,7 @@ const STRINGS = {
     matchStatsTitle: '📊 סטטיסטיקת משחק', topPerformersTitle: '⭐ שחקנים בולטים',
     // Live match
     liveBadge: '🟢 חי', liveHT: 'הפ׳', liveET: 'הא׳', livePSO: 'פנ׳', liveOG: 'גול עצמי',
+    liveStartingSoon: 'מתחיל בקרוב', liveMatchEnded: 'המשחק הסתיים',
     livePeriod: (s) => ({ 'First Half': 'מחצית ראשונה', 'Second Half': 'מחצית שנייה', 'Half Time': 'הפסקה', 'Extra Time': 'הארכה', 'Penalty Shootout': 'פנדלים' }[s] || s),
     // Player profile
     profileGoals: 'שערים', profileAssists: 'בישולים', profileYellow: 'כרטיסים צהובים', profileRed: 'כרטיסים אדומים',
@@ -228,6 +230,7 @@ const STRINGS = {
     matchStatsTitle: '📊 إحصاءات المباراة', topPerformersTitle: '⭐ أبرز اللاعبين',
     // Live match
     liveBadge: '🟢 مباشر', liveHT: 'ن.و', liveET: 'و.إ', livePSO: 'ر.ج', liveOG: 'هدف عكسي',
+    liveStartingSoon: 'يبدأ قريباً', liveMatchEnded: 'انتهت المباراة',
     livePeriod: (s) => ({ 'First Half': 'الشوط الأول', 'Second Half': 'الشوط الثاني', 'Half Time': 'استراحة', 'Extra Time': 'الوقت الإضافي', 'Penalty Shootout': 'ركلات الترجيح' }[s] || s),
     // Player profile
     profileGoals: 'أهداف', profileAssists: 'تمريرات حاسمة', profileYellow: 'بطاقات صفراء', profileRed: 'بطاقات حمراء',
@@ -567,7 +570,7 @@ async function loadLiveDetail(match, detail, card) {
 
   renderLiveDetail(match, events || [], fifaLineup, espnLineup, espnLive, detail);
 
-  // Poll every 15s
+  // Poll every 10s
   stopLiveDetailPoller();
   liveDetailPoller = setInterval(async () => {
     if (!card.classList.contains('match-card--open')) { stopLiveDetailPoller(); return; }
@@ -582,7 +585,7 @@ async function loadLiveDetail(match, detail, card) {
 
     if (!card.classList.contains('match-card--open')) return;
     patchLiveDetail(match, freshEvents || [], freshFifaLineup, freshEspnLineup, freshEspnLive, detail);
-  }, 15000);
+  }, LIVE_POLL_MS);
 }
 
 // Fetch ESPN live stats for one match (scoreboard gives us possession/shots live)
@@ -648,8 +651,6 @@ function espnDetailsToEvents(espnLive) {
 function renderLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detail) {
   const homeFlag = match.Home ? countryToFlag(match.Home.IdCountry) : '';
   const awayFlag = match.Away ? countryToFlag(match.Away.IdCountry) : '';
-  const homeName = getTeamName(match.Home) || '';
-  const awayName = getTeamName(match.Away) || '';
 
   const homeId = match.Home?.IdTeam;
   const awayId = match.Away?.IdTeam;
@@ -668,26 +669,7 @@ function renderLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detai
     redCards = fifaParsed.redCards;
   }
 
-  // Live header: score + clock
-  const clock = espnLive?.clock || match.MatchTime || '';
-  const period = espnLive?.period || '';
-  const homeScore = espnLive?.homeScore ?? match.HomeTeamScore ?? 0;
-  const awayScore = espnLive?.awayScore ?? match.AwayTeamScore ?? 0;
-
-  let html = `
-    <div class="live-header" data-live-header>
-      <div class="live-score-row">
-        <span class="live-team">${homeFlag} ${homeName}</span>
-        <span class="live-score" data-live-score>${homeScore} – ${awayScore}</span>
-        <span class="live-team live-team--right">${awayFlag} ${awayName}</span>
-      </div>
-      <div class="live-clock-row">
-        <span class="live-badge">${t('liveBadge')}</span>
-        <span class="live-clock" data-live-clock>${clock}</span>
-        <span class="live-period" data-live-period>${t('livePeriod', period)}</span>
-      </div>
-    </div>`;
-
+  let html = '';
   html += buildLiveStatsBar(match, espnLive);
   html += buildEventSections(goals, yellowCards, redCards, subs, homeFlag, awayFlag, events.length);
 
@@ -792,22 +774,6 @@ function patchLiveDetail(match, events, fifaLineup, espnLineup, espnLive, detail
   const awayId = match.Away?.IdTeam;
   const homeFlag = match.Home ? countryToFlag(match.Home.IdCountry) : '';
   const awayFlag = match.Away ? countryToFlag(match.Away.IdCountry) : '';
-
-  // Patch score + clock
-  if (espnLive) {
-    const scoreEl = detail.querySelector('[data-live-score]');
-    const clockEl = detail.querySelector('[data-live-clock]');
-    const periodEl = detail.querySelector('[data-live-period]');
-    const newScore = `${espnLive.homeScore} – ${espnLive.awayScore}`;
-    if (scoreEl && scoreEl.textContent !== newScore) {
-      scoreEl.textContent = newScore;
-      scoreEl.classList.remove('score-flash');
-      void scoreEl.offsetWidth;
-      scoreEl.classList.add('score-flash');
-    }
-    if (clockEl) clockEl.textContent = espnLive.clock || '';
-    if (periodEl) periodEl.textContent = t('livePeriod', espnLive.period || '');
-  }
 
   // Patch live stats bar
   const statsEl = detail.querySelector('[data-live-stats]');
@@ -3096,9 +3062,9 @@ function openTeamProfile(teamId, matches) {
 
 // ── Live polling (Phase 11a) ───────────────────────────────────
 let livePoller = null;
-const LIVE_POLL_MS = 15000; // 15 seconds
+const LIVE_POLL_MS = 10000; // 10 seconds
 
-// espnLiveData: IdMatch → { score: "0 – 0", clock: "23'", state: "in"|"post"|"pre" }
+// espnLiveData: IdMatch → { score, clock, state, startDate }
 const espnLiveData = new Map();
 
 async function fetchLiveScores() {
@@ -3132,12 +3098,13 @@ async function fetchLiveScores() {
       // Format clock: show period prefix for HT / ET / penalties
       const detail = status?.type?.detail || '';
       let displayClock = clock;
-      if (detail === 'Half Time') displayClock = t('liveHT');
-      else if (detail === 'Full Time') displayClock = t('matchFT');
+      if (/half\s*time/i.test(detail) || (period === 2 && clock === '0:00')) displayClock = t('liveHT');
+      else if (/full\s*time/i.test(detail)) displayClock = t('matchFT');
       else if (period === 3 || period === 4) displayClock = `${t('liveET')} ${clock}`;
       else if (period === 5) displayClock = t('livePSO');
 
-      espnLiveData.set(fifaId, { score, clock: displayClock, state });
+      const startDate = ev.date || comp.date || '';
+      espnLiveData.set(fifaId, { score, clock: displayClock, state, startDate });
       if (state === 'in') anyLive = true;
 
       const m = allMatches.find(m => m.IdMatch === fifaId);
@@ -3163,8 +3130,9 @@ async function fetchLiveScores() {
 
     patchLiveCards();
 
-    // Stop polling if nothing is live anymore
-    if (!anyLive) stopLivePoller();
+    // Stop polling only if nothing is live and nothing starting soon
+    const anySoon = [...espnLiveData.values()].some(l => l.state === 'pre');
+    if (!anyLive && !anySoon) stopLivePoller();
 
   } catch { /* non-critical — silently skip */ }
 }
@@ -3173,14 +3141,49 @@ function patchLiveCards() {
   // Only patch while on the Matches tab — avoids touching hidden DOM
   if (activeTab !== 'matches') return;
 
-  for (const [fifaId, live] of espnLiveData) {
-    if (live.state !== 'in') continue;
+  const now = Date.now();
 
+  for (const [fifaId, live] of espnLiveData) {
     const card = document.querySelector(`.match-card[data-match-id="${fifaId}"]`);
     if (!card) continue;
 
     const m = allMatches.find(m => m.IdMatch === fifaId);
     if (!m) continue;
+
+    // Pre-match: show "Starting Soon" on the clock area if within 10 min of kickoff
+    if (live.state === 'pre') {
+      const kickoff = live.startDate ? new Date(live.startDate).getTime() : new Date(m.Date).getTime();
+      const minUntil = (kickoff - now) / 60000;
+      if (minUntil <= 10 && minUntil > 0) {
+        const clockEl = card.querySelector('.match-clock') || card.querySelector('.match-time');
+        if (clockEl) clockEl.textContent = t('liveStartingSoon');
+      }
+      continue;
+    }
+
+    // Post-match: show "Match Ended" for 5 min after the match ends
+    if (live.state === 'post') {
+      const cardIsLive = card.classList.contains('match-card--live');
+      if (cardIsLive) {
+        // Rebuild as finished card
+        const newCard = buildMatchCard(m);
+        card.replaceWith(newCard);
+      } else {
+        // If already rebuilt as finished, show "Match Ended" briefly
+        const statusEl = card.querySelector('.match-status--ft');
+        if (statusEl) {
+          const kickoff = live.startDate ? new Date(live.startDate).getTime() : new Date(m.Date).getTime();
+          const endApprox = kickoff + 2 * 60 * 60 * 1000;
+          if ((now - endApprox) / 60000 <= 5) {
+            statusEl.textContent = t('liveMatchEnded');
+          }
+        }
+      }
+      continue;
+    }
+
+    // In-progress
+    if (live.state !== 'in') continue;
 
     // Match just ended or just kicked off — replace card entirely
     const cardIsLive = card.classList.contains('match-card--live');
@@ -3193,7 +3196,7 @@ function patchLiveCards() {
       continue;
     }
 
-    if (!cardIsLive) continue; // pre-match and not yet live, nothing to patch
+    if (!cardIsLive) continue;
 
     // Patch score
     const scoreEl = card.querySelector(`.match-score--live[data-match-id="${fifaId}"]`);

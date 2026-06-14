@@ -324,3 +324,24 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
 - **Halftime sub prefix** — FIFA descriptions like "Before the second half begins FABINHO (in)..." now strip the prefix, showing only "FABINHO" as clickable name; minute shows "HT"
 - **"Match History" renamed** — now "Tournament Events" / "אירועי טורניר" / "أحداث البطولة"
 - **FIFA `converts` penalty detection** — `parseTimeline` now sets `penalty: true` on goals matching "converts"
+
+---
+
+### Phase 19 — Live Match UX Improvements ✅ (2026-06-15)
+
+**Changes:**
+
+1. **Removed duplicate header in expanded live match** — When expanding a live match card, the detail view no longer repeats the teams/score/clock. The card itself already shows that; the expanded section now starts directly with stats and events.
+
+2. **Match clock states on card:**
+   - **Pre-match ("Starting Soon")** — When ESPN reports `state: 'pre'` and kickoff is ≤10 min away, the card's clock/time element shows "Starting Soon" (translated in EN/HE/AR)
+   - **Halftime ("HT")** — Detected via regex `/half\s*time/i` on ESPN's `status.type.detail` OR `period === 2 && clock === '0:00'`; card clock shows translated HT text
+   - **Post-match ("Match Ended")** — When ESPN reports `state: 'post'`, shown for ~5 min after match ends on the FT status badge
+
+3. **Faster polling** — Global poller and per-match detail poller reduced from 15s to 10s (`LIVE_POLL_MS = 10000`)
+
+4. **Poller stays alive for pre-match** — `stopLivePoller()` now also checks if any ESPN events are in `'pre'` state, keeping the poller running for "Starting Soon" detection
+
+5. **Translations added:** `liveStartingSoon` and `liveMatchEnded` in all 3 languages
+
+**Service worker:** bumped to `wc2026-v28`
