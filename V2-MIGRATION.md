@@ -190,10 +190,11 @@ Extracted the ~50 remaining render functions from `app.js` into 6 feature module
 - Optional: add esbuild/Vite build step for production bundling
 - Optional: move `activeMatches()` from `ui/shell.js` to `state.js` (more logical placement)
 
-### Step 8 — Document final architecture in README
-- Add a full file tree of the project to `README.md`
-- Include a brief explanation of each file/folder's purpose
-- Append at the end of the existing README content
+### Step 8 — Rebuild README with final architecture ✅
+- Completely rewrote `README.md` to reflect the modular architecture
+- Full file tree (all 40 source files), data flow diagram, DI explanation
+- Install instructions, run locally, deploy workflow, API sources
+- Links to DEVLOG.md and V2-MIGRATION.md
 
 ---
 
@@ -901,3 +902,37 @@ worldcup2026/
 
 **Total:** 40 source files (24 JS + 15 CSS + 1 HTML) replacing the original 2 monolithic files (`app.js` + `style.css`).
 No build step. No bundler. No framework. Pure browser-native ES modules + CSS imports.
+
+---
+
+## Step 8 — Completed ✅ (2026-06-15)
+
+### What Was Done
+
+Completely rebuilt `README.md` to reflect the final modular architecture. The old README documented the monolithic era (`app.js` + `style.css`). The new README documents the current state: 40 source files, ES modules, CSS `@import` partials, and the full project tree.
+
+#### New README Structure
+
+1. **Header** — app description, live link
+2. **Features** — full feature list (17 bullet points)
+3. **Install** — iPhone + Android instructions (condensed)
+4. **Architecture** — tech stack summary, full file tree (annotated), data flow diagram, DI explanation
+5. **Run Locally** — `python3` and `npx serve` commands
+6. **Deploy** — GitHub Pages workflow + SW cache bump reminder
+7. **APIs** — table of data sources (FIFA, ESPN, Israel TV)
+8. **Documentation** — links to DEVLOG.md and V2-MIGRATION.md
+
+### Migration Complete 🎉
+
+All 8 steps are done. The V2 migration is complete:
+
+| Step | Description | Status |
+|------|-------------|--------|
+| 1 | Folder structure + config + state + basic data/UI | ✅ |
+| 2 | Extract remaining data-fetching modules | ✅ |
+| 3 | Extract UI rendering helpers | ✅ |
+| 4 | Extract feature modules | ✅ |
+| 5 | Wire up entry point + switch over | ✅ |
+| 6 | Split CSS into partials | ✅ |
+| 7 | Verify & clean up | ✅ |
+| 8 | Rebuild README with final architecture | ✅ |
