@@ -45,7 +45,7 @@ Use this as the reference when resuming development in a future session.
 
 **Key facts:**
 - `MatchStatus`: `0` = finished, `1` = upcoming, `3` = live
-- `IdStage`: group stage = `289273`, R32 = `289287`, R16 = `289288`, QF = `289289`, SF = `289290`, Final = `289291`
+- `IdStage`: group stage = `289273`, R32 = `289287`, R16 = `289288`, QF = `289289`, SF = `289290`, 3rd place = `289291`, Final = `289292`
 - 12 groups (A–L), `IdGroup` from `289275` to `289286`
 - `BallPossession` field exists in match API but is always `null` — FIFA does not expose it
 - No dedicated standings or scorers API — computed from match/timeline data
@@ -272,7 +272,7 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
   - Bidirectional: works whether input is ESPN name or FIFA name
 - **Case-insensitive timeline matching** — `matchesName()` helper lowercases all variants so `"Folarin BALOGUN"` (FIFA) matches `"Folarin Balogun"` (ESPN).
 - **Profile now shows ESPN-only stats:** shots, shots on target, saves, fouls, offsides — in addition to FIFA goals/assists/cards with per-match history.
-- **ESPN goals/assists fallback removed** — ESPN `totalGoals` means "goals conceded" for GKs, so only FIFA is authoritative for scoring stats.
+- **ESPN goals/assists fallback removed** — ESPN `totalGoals` is always 0 for GKs (they have a separate `goalsConceded` field), so filtering by `position !== 0` is required in scorers leaderboard.
 
 ---
 
@@ -345,3 +345,213 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
 5. **Translations added:** `liveStartingSoon` and `liveMatchEnded` in all 3 languages
 
 **Service worker:** bumped to `wc2026-v28`
+
+---
+
+### Phase 20 — Code Cleanup ✅ (2026-06-15)
+
+- **Removed `BRACKET_ROUNDS`** — 8-line constant defined but never referenced (bracket uses inline logic)
+- **Fixed `STAGE_ID['Final']` bug** — Was `289291` (3rd-place match); corrected to `289292` (actual Final)
+- **Simplified redundant ternary** in `buildEventSections` — both branches produced the same `t('detailNoEvents')`
+- **Removed unused `tvLabel` translation key** — defined in all 3 languages but never called (📺 emoji is hardcoded in `buildChannelsRow`)
+- **Service worker:** bumped to `wc2026-v29`
+
+---
+---
+
+## V2 Plan — Code Splitting & Modularization
+
+### Problem
+
+The app currently lives in a single `app.js` (~3,200 lines) and a single `style.css` (~1,900 lines). This makes it:
+- Hard to navigate and find code
+- Impossible to tree-shake or lazy-load features
+- Difficult for multiple developers to work on simultaneously
+- Prone to merge conflicts
+
+### Goals
+
+1. **Split `app.js` into focused ES modules** — each file has one clear responsibility
+2. **Split `style.css` into component stylesheets** — each feature has its own CSS
+3. **Use native ES modules** (`<script type="module">`) — no bundler required for development
+4. **Optional bundler for production** — a simple build step (esbuild or Vite) to bundle for deployment
+5. **Zero functionality changes** — pure refactor, everything works exactly the same after
+
+---
+
+### Proposed File Structure
+
+```
+worldcup2026/
+├── index.html
+├── manifest.json
+├── sw.js
+├── favicon.ico
+├── icons/
+│
+├── src/
+│   ├── main.js                  ← Entry point: imports all modules, calls init()
+│   │
+│   ├── config/
+│   │   ├── api.js               ← API URLs, constants (MATCHES_API, ESPN_INDEX_API, etc.)
+│   │   ├── constants.js         ← STAGE_ID, STAGE_LABEL, STATUS_*, FIFA_TO_ALPHA2, ESPN_NAME_MAP
+│   │   └── strings.js           ← STRINGS object (en/he/ar), t() helper, currentLang
+│   │
+│   ├── data/
+│   │   ├── matches.js           ← fetchMatches, fetchMatchesAr, allMatches, allMatchesAr
+│   │   ├── timeline.js          ← fetchTimeline, parseTimeline, timelineCache
+│   │   ├── lineup.js            ← fetchLineup, parseLineupTeam, lineupCache
+│   │   ├── espn-index.js        ← fetchEspnIndex, fifaToEspn map, ESPN_NAME_MAP matching
+│   │   ├── espn-lineup.js       ← fetchEspnLineup, espnLineupCache
+│   │   ├── espn-stats.js        ← buildEspnStatsCache, espnStatsCache, espnMatchDetailsCache
+│   │   ├── espn-live.js         ← fetchEspnLiveStats, espnDetailsToEvents
+│   │   └── channels.js          ← fetchChannels, israelChannels map
+│   │
+│   ├── features/
+│   │   ├── matches/
+│   │   │   ├── match-card.js    ← buildMatchCard, buildChannelsRow
+│   │   │   ├── match-detail.js  ← loadTimeline, renderTimeline, eventRow, buildEventSections
+│   │   │   ├── match-stats.js   ← renderMatchStatsPanel, buildLiveStatsBar
+│   │   │   └── match-filter.js  ← stage filtering, team search, date grouping
+│   │   │
+│   │   ├── live/
+│   │   │   ├── live-poller.js   ← fetchLiveScores, patchLiveCards, startLivePoller, LIVE_POLL_MS
+│   │   │   ├── live-detail.js   ← loadLiveDetail, renderLiveDetail, patchLiveDetail
+│   │   │   └── live-standings.js← live standings poller, standings with espnLiveData
+│   │   │
+│   │   ├── standings/
+│   │   │   ├── standings.js     ← computeStandings, renderStandings
+│   │   │   └── qualify.js       ← best-third calculation, qualification highlighting
+│   │   │
+│   │   ├── bracket/
+│   │   │   ├── bracket-r32.js   ← renderBracketR32
+│   │   │   ├── bracket-tree.js  ← renderBracketTree, connector layout
+│   │   │   └── placeholder.js   ← resolvePlaceholder logic
+│   │   │
+│   │   ├── stats/
+│   │   │   ├── player-stats.js  ← renderScorers, renderAssists, renderCleanSheets, renderCards
+│   │   │   ├── team-stats.js    ← renderTeamLeaderboard
+│   │   │   └── espn-player.js   ← renderEspnPlayerLeaderboard (shots, saves, fouls, etc.)
+│   │   │
+│   │   └── profiles/
+│   │       ├── player-profile.js← buildPlayerProfile, openPlayerProfile, renderProfileOverlay
+│   │       └── team-profile.js  ← openTeamProfile, renderTeamOverlay
+│   │
+│   ├── ui/
+│   │   ├── tabs.js              ← tab switching, renderActiveTab
+│   │   ├── nav.js               ← language switcher, nav interactions
+│   │   ├── lineup-pitch.js      ← renderLineup, pitch grid, lateralSort, mergeFieldStatus
+│   │   └── helpers.js           ← countryToFlag, teamSpan, playerSpan, bindPlayerLinks, bindTeamLinks, shortName, formatKickoff, formatDateHeading
+│   │
+│   └── state.js                 ← Shared app state: activeTab, activeCard, activeStageFilter, currentLang, allMatches, etc.
+│
+├── styles/
+│   ├── main.css                 ← @import all partials
+│   ├── base/
+│   │   ├── reset.css            ← CSS reset / normalize
+│   │   ├── tokens.css           ← CSS custom properties (colors, spacing, fonts)
+│   │   └── typography.css       ← Font imports, base text styles
+│   │
+│   ├── layout/
+│   │   ├── shell.css            ← App shell, nav, tabs, container
+│   │   └── rtl.css              ← All [dir="rtl"] overrides in one place
+│   │
+│   ├── components/
+│   │   ├── match-card.css       ← .match-card, .match-card--live, .match-card--finished
+│   │   ├── match-detail.css     ← .match-detail, event rows, stats bars
+│   │   ├── lineup-pitch.css     ← .lineup-section, .pitch-*, formation grid
+│   │   ├── standings.css        ← .standings-table, qualification highlights
+│   │   ├── bracket.css          ← .bracket-*, connectors, .br-game
+│   │   ├── stats.css            ← .scorer-row, leaderboard cards
+│   │   ├── profile.css          ← .profile-overlay, .profile-card, swipe-to-close
+│   │   ├── channels.css         ← .match-channels, .channel-chip
+│   │   └── live.css             ← Live-specific styles: pulse, flash, badges
+│   │
+│   └── utilities/
+│       ├── animations.css       ← @keyframes (fadeIn, pulse, score-flash)
+│       └── scrollbar.css        ← Custom scrollbar styling
+│
+├── DEVLOG.md
+├── V2-PLAN.md
+└── README.md
+```
+
+---
+
+### Migration Strategy (Step by Step)
+
+#### Step 1 — Set up the folder structure
+- Create `src/` and `styles/` directories
+- Create empty placeholder files for each module
+- Keep the existing `app.js` and `style.css` working until migration is complete
+
+#### Step 2 — Extract shared state (`src/state.js`)
+- Move all shared mutable state into one module: `allMatches`, `allMatchesAr`, `currentLang`, `activeTab`, `activeCard`, `activeStageFilter`, `teamSearchQuery`, etc.
+- Export as getters/setters or a simple state object
+- Every other module imports what it needs from `state.js`
+
+#### Step 3 — Extract config (`src/config/`)
+- Move `API URLs`, `STAGE_ID`, `STAGE_LABEL`, `STATUS_*`, `FIFA_TO_ALPHA2`, `ESPN_NAME_MAP` into `config/constants.js`
+- Move `STRINGS` + `t()` into `config/strings.js`
+- These are pure data with zero dependencies — easiest to extract first
+
+#### Step 4 — Extract data-fetching modules (`src/data/`)
+- Each fetch function + its cache Map becomes its own module
+- `matches.js`: `fetchMatches()`, `fetchMatchesAr()`
+- `timeline.js`: `fetchTimeline()`, `parseTimeline()`, `timelineCache`
+- `lineup.js`: `fetchLineup()`, `parseLineupTeam()`, `lineupCache`
+- `espn-index.js`: `fetchEspnIndex()`, `fifaToEspn`
+- `espn-lineup.js`: `fetchEspnLineup()`, `espnLineupCache`
+- `espn-stats.js`: `buildEspnStatsCache()`, `espnStatsCache`, `espnMatchDetailsCache`
+- `espn-live.js`: `fetchEspnLiveStats()`, `espnDetailsToEvents()`
+- `channels.js`: `fetchChannels()`, `israelChannels`
+
+#### Step 5 — Extract UI helpers (`src/ui/helpers.js`)
+- `countryToFlag`, `teamSpan`, `playerSpan`, `bindPlayerLinks`, `bindTeamLinks`
+- `shortName`, `formatKickoff`, `formatDateHeading`, `groupByDate`
+- `eventRow`, `showError`
+
+#### Step 6 — Extract features one by one (`src/features/`)
+- Start with the most isolated: **profiles** (player + team) — they only read data
+- Then **stats** tab (player stats, team stats, ESPN leaderboards)
+- Then **standings** (computeStandings + render)
+- Then **bracket** (R32 + tree)
+- Then **match detail** (timeline rendering, stats panel)
+- Then **live** (pollers, live detail, live patches)
+- Finally **matches** tab (card building, filtering)
+
+#### Step 7 — Wire up entry point (`src/main.js`)
+- Import all feature modules
+- `init()` function orchestrates: fetch data → render first view → start pollers
+- `index.html` changes `<script src="app.js">` to `<script type="module" src="src/main.js">`
+
+#### Step 8 — Split CSS
+- Create `styles/main.css` with `@import` for each partial
+- Move styles methodically: tokens → base → layout → components → utilities
+- `index.html` changes `<link href="style.css">` to `<link href="styles/main.css">`
+- Verify each component's styles are self-contained
+
+#### Step 9 — Add build step (optional, for production)
+- Use **esbuild** or **Vite** to bundle `src/main.js` → `dist/app.js` and `styles/main.css` → `dist/style.css`
+- Update `sw.js` to cache the bundled files
+- Development continues using raw ES modules (instant refresh, no build needed)
+- Production gets a single minified bundle for best performance
+
+#### Step 10 — Verify & clean up
+- Run app in all 3 languages
+- Test all tabs, all match states (upcoming / live / finished)
+- Test profiles, bracket, stats
+- Remove old `app.js` and `style.css` once migration is validated
+- Update `sw.js` cache list
+
+---
+
+### Key Principles for the Split
+
+1. **No circular dependencies** — data modules never import from feature modules; features import from data + config + ui
+2. **One direction of data flow** — state → data → features → DOM
+3. **Each file < 300 lines** — if a file grows beyond that, split it further
+4. **Named exports only** — makes it obvious what each module provides
+5. **No global variables** — everything accessed via imports from `state.js`
+6. **CSS follows JS structure** — if there's a `features/bracket/` folder, there's a `styles/components/bracket.css`
+7. **Service worker updated last** — only after all files are in their final locations
