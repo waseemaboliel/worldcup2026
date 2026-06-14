@@ -31,7 +31,6 @@ const STRINGS = {
     detailGoals: '⚽ Goals', detailYellow: '🟨 Yellow Cards',
     detailRed: '🟥 Red Cards', detailSubs: '🔄 Substitutions',
     matchVs: 'vs', matchFT: 'FT',
-    tvLabel: '📺',
     statsPlayer: '👤 Player Stats', statsTeam: '🏳️ Team Stats',
     statGoals: '⚽ Goals', statAssists: '🎯 Assists', statClean: '🧤 Clean Sheets',
     statYellow: '🟨 Yellow', statRed: '🟥 Red',
@@ -110,7 +109,6 @@ const STRINGS = {
     detailGoals: '⚽ שערים', detailYellow: '🟨 כרטיסים צהובים',
     detailRed: '🟥 כרטיסים אדומים', detailSubs: '🔄 החלפות',
     matchVs: 'נגד', matchFT: 'סיום',
-    tvLabel: '📺',
     statsPlayer: '👤 סטטיסטיקת שחקנים', statsTeam: '🏳️ סטטיסטיקת קבוצות',
     statGoals: '⚽ שערים', statAssists: '🎯 בישולים', statClean: '🧤 שמירות אפס',
     statYellow: '🟨 צהוב', statRed: '🟥 אדום',
@@ -189,7 +187,6 @@ const STRINGS = {
     detailGoals: '⚽ الأهداف', detailYellow: '🟨 البطاقات الصفراء',
     detailRed: '🟥 البطاقات الحمراء', detailSubs: '🔄 التبديلات',
     matchVs: 'ضد', matchFT: 'انتهى',
-    tvLabel: '📺',
     statsPlayer: '👤 إحصاءات اللاعبين', statsTeam: '🏳️ إحصاءات الفرق',
     statGoals: '⚽ الأهداف', statAssists: '🎯 التمريرات', statClean: '🧤 الشباك النظيفة',
     statYellow: '🟨 صفراء', statRed: '🟥 حمراء',
@@ -318,7 +315,7 @@ const STAGE_ID = {
   'Round of 16': '289288',
   'Quarter-final': '289289',
   'Semi-final': '289290',
-  'Final': '289291',
+  'Final': '289292',
 };
 
 // MatchStatus: 0 = finished, 1 = upcoming, 3 = live (confirmed from API inspection)
@@ -764,7 +761,7 @@ function buildEventSections(goals, yellowCards, redCards, subs, homeFlag, awayFl
   }
 
   if (!sections.length) {
-    return `<p class="detail-empty" data-live-empty>${totalEvents === 0 ? t('detailNoEvents') : t('detailNoEvents')}</p>`;
+    return `<p class="detail-empty" data-live-empty>${t('detailNoEvents')}</p>`;
   }
   return `<div data-live-events>${sections.join('')}</div>`;
 }
@@ -2045,14 +2042,6 @@ function renderTeamRows(container, sorted, getFmt, label) {
 }
 
 // ── Bracket (Phase 12b) ───────────────────────────────────────
-const BRACKET_ROUNDS = [
-  { stageId: '289287', labelKey: 'stageR32', matchCount: 16 },
-  { stageId: '289288', labelKey: 'stageR16', matchCount: 8 },
-  { stageId: '289289', labelKey: 'stageQF', matchCount: 4 },
-  { stageId: '289290', labelKey: 'stageSF', matchCount: 2 },
-  { stageId: '289291', labelKey: 'stage3rd', matchCount: 1 }, // M103 = 3rd place
-  { stageId: '289292', labelKey: 'stageFinal', matchCount: 1 }, // M104 = Final
-];
 
 // Resolve a PlaceHolder string to a display name using known results
 // e.g. "W73" → winner of MatchNumber 73, "1A" → "Group A Winner", "2B" → "Group B Runner-up"
