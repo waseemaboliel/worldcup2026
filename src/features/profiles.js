@@ -3,7 +3,7 @@ import { t, dateLocale } from '../config/strings.js';
 import * as state from '../state.js';
 import { countryToFlag, getTeamName, formatKickoff } from '../data/helpers.js';
 import { espnLineupCache } from '../data/espn-lineup.js';
-import { buildEspnStatsCache } from '../data/espn-stats.js';
+import { buildEspnStatsCache, espnMatchDetailsCache } from '../data/espn-stats.js';
 
 // ── Player Profile ────────────────────────────────────────────
 
@@ -42,7 +42,7 @@ export function buildPlayerProfile(playerName, matches) {
         const matchDate = new Date(match.Date).toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short', timeZone: 'Asia/Jerusalem' });
 
         // Events from scoreboard details (goals, cards)
-        const espnDetails = state.espnMatchDetailsCache.get(match.IdMatch);
+        const espnDetails = espnMatchDetailsCache.get(match.IdMatch);
         if (espnDetails?.details?.length) {
             for (const d of espnDetails.details) {
                 const player = d.athletesInvolved?.[0]?.displayName || '';

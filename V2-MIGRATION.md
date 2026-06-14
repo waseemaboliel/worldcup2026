@@ -190,6 +190,11 @@ Extracted the ~50 remaining render functions from `app.js` into 6 feature module
 - Optional: add esbuild/Vite build step for production bundling
 - Optional: move `activeMatches()` from `ui/shell.js` to `state.js` (more logical placement)
 
+### Step 8 — Document final architecture in README
+- Add a full file tree of the project to `README.md`
+- Include a brief explanation of each file/folder's purpose
+- Append at the end of the existing README content
+
 ---
 
 ## Key Principles
@@ -616,7 +621,7 @@ src/main.js                        ← orchestrates everything
 ├── src/ui/links.js                ← state (+ DI from features)
 ├── src/ui/event-sections.js       ← config/strings + ui/helpers
 │
-├── src/features/profiles.js       ← config/constants + config/strings + state + data/helpers + data/espn-lineup + data/espn-stats
+├── src/features/profiles.js       ← config/constants + config/strings + state + data/helpers + data/espn-lineup + data/espn-stats (espnMatchDetailsCache)
 ├── src/features/stats.js          ← config/constants + config/strings + state + data/espn-stats + ui/helpers + ui/links + ui/shell
 ├── src/features/standings.js      ← config/constants + config/strings + state + data/helpers + data/espn-lineup + data/live-scores + ui/helpers + ui/links + ui/shell
 ├── src/features/bracket.js        ← config/constants + config/strings + state + data/helpers + ui/shell (+ DI from features)
@@ -628,3 +633,106 @@ No circular dependencies. Three DI injection points break the only potential cyc
 - `ui/links` ← features/profiles (via `initLinks`)
 - `data/live-scores` ← features/match-detail (via `initLiveScores`)
 - `features/bracket` ← features/match-detail + features/matches (via `initBracket`)
+
+---
+
+## Step 5 — Completed ✅ (2026-06-15)
+
+### What Was Done
+
+Switched the production entry point from the monolithic `app.js` to the modular `src/main.js`. Removed `app.js`, cleaned up scaffolding (empty directories, unused barrel files), and updated the service worker to cache all new module files.
+
+#### Changes Made
+
+| File | Change |
+|------|--------|
+| `src/main.js` | Uncommented `init()`, removed unused verification imports, removed commented-out code. Now a clean 54-line production entry point |
+| `index.html` | Changed `<script src="app.js">` to `<script type="module" src="src/main.js">`; changed SW registration from absolute `/worldcup2026/sw.js` to relative `sw.js`; replaced deprecated `apple-mobile-web-app-capable` meta with `mobile-web-app-capable` |
+| `sw.js` | Bumped cache version `wc2026-v29` → `wc2026-v30`; replaced `app.js` with all 24 module files in SHELL; changed all paths from absolute (`/worldcup2026/...`) to relative (`./...`) |
+| `src/features/profiles.js` | Fixed import — `espnMatchDetailsCache` now imported from `data/espn-stats.js` (where it's populated) instead of reading empty Map from `state.js` |
+| `src/state.js` | Removed dead `espnMatchDetailsCache` export (was never populated) |
+| `app.js` | **Deleted** — all 3,200 lines now live in 24 focused module files |
+
+#### Cleanup
+
+| Removed | Reason |
+|---------|--------|
+| `src/config/index.js` | Barrel re-export never used — modules import directly |
+| `src/data/index.js` | Same |
+| `src/ui/index.js` | Same |
+| `src/features/matches/` (empty dir) | Scaffolding from Step 1 — we used flat files |
+| `src/features/live/` (empty dir) | Same |
+| `src/features/standings/` (empty dir) | Same |
+| `src/features/bracket/` (empty dir) | Same |
+| `src/features/stats/` (empty dir) | Same |
+| `src/features/profiles/` (empty dir) | Same |
+
+### How the App Runs Now
+
+**GitHub Pages (production):**
+- `index.html` loads `<script type="module" src="src/main.js">`
+- Browser fetches `main.js`, follows all `import` statements, loads the full module tree
+- Service worker pre-caches all 24 modules + static assets for offline PWA support
+- Zero configuration — GitHub Pages serves static files, browser handles ES modules natively
+
+**Local development:**
+- ES modules require an HTTP server (they don't work via `file://` due to CORS)
+- Run: `python3 -m http.server 8080` (built into macOS)
+- Or: `npx serve` (if Node.js is available)
+- Open: `http://localhost:8080`
+
+### Challenges Faced
+
+#### 1. `init()` DI Parameters Differ from Original `app.js`
+
+**Problem:** The original `app.js` init calls `initLangToggle()`, `initTabs()`, `initFilters()` with no arguments because they used closures over global variables. Our modular version needs to pass rendering functions as DI parameters to avoid circular imports.
+
+**Solution:** The shell functions already accept DI params (designed in Steps 1-3):
+```js
+initLangToggle({ renderActiveTab });
+initTabs({ renderActiveTab, renderMatches, stopLiveStandingsPoller, hasLiveMatches, startLivePoller });
+initFilters({ renderMatches });
+```
+
+#### 2. Service Worker Paths — Relative Instead of Absolute
+
+**Problem:** GitHub Pages serves this repo at `/worldcup2026/` (not root). Originally the SW SHELL paths used absolute paths with this prefix (`/worldcup2026/index.html`). This caused `Cache.addAll()` failures on localhost because those paths don't exist at root.
+
+**Solution:** Changed all SHELL paths to relative (`./index.html`, `./src/main.js`, etc.) and the SW registration in `index.html` to `navigator.serviceWorker.register('sw.js')` (relative). Since `sw.js` sits at the project root, relative paths resolve correctly on both:
+- **Localhost:** `./index.html` → `http://localhost:8080/index.html`
+- **GitHub Pages:** `./index.html` → `https://...github.io/worldcup2026/index.html`
+
+The SW scope defaults to the script's directory, so it automatically scopes to `/worldcup2026/` on GitHub Pages.
+
+#### 3. Removing Unused Imports
+
+**Problem:** `main.js` had imports from every module for "verification/testing" during Steps 1-4. These added unnecessary module evaluation overhead at startup.
+
+**Decision:** Removed all imports that aren't actually used in `init()` or the DI wiring. The module tree is still fully loaded because features import from data/ui modules internally — we just don't need to re-import them at the top level. Final `main.js` is 54 lines with only the imports it actually uses.
+
+#### 4. Barrel `index.js` Files — Keep or Remove?
+
+**Problem:** Three barrel re-export files existed (`config/index.js`, `data/index.js`, `ui/index.js`). No module in the project actually imports from them — every import uses direct paths like `'./config/strings.js'`.
+
+**Decision:** Removed all three. Direct imports are clearer (you can see exactly which module provides what) and don't add hidden re-export layers. If we ever add a bundler, tree-shaking handles this regardless.
+
+#### 5. Duplicate `espnMatchDetailsCache` — Bug Fix
+
+**Problem:** Two separate `new Map()` instances existed: one in `state.js` (never populated) and one in `data/espn-stats.js` (actually filled with goal/card data from ESPN scoreboard). `features/profiles.js` was reading from `state.espnMatchDetailsCache` — which was always empty. Result: player profile "Tournament Events" section never showed goals or cards (assists still worked because they come from `espnLineupCache`, which was correctly imported).
+
+**Fix:** Changed `profiles.js` to import `espnMatchDetailsCache` directly from `data/espn-stats.js` (where data is actually written). Removed the dead Map from `state.js`.
+
+#### 6. Deprecated `apple-mobile-web-app-capable` Meta Tag
+
+**Problem:** Chrome console warning: `<meta name="apple-mobile-web-app-capable" content="yes">` is deprecated.
+
+**Fix:** Replaced with `<meta name="mobile-web-app-capable" content="yes">` (the standard non-prefixed version).
+
+### Current State
+
+- **24 source files** in `src/` (down from 27 — removed 3 barrel files)
+- **`app.js` deleted** — no longer exists
+- **`src/main.js` is the production entry point** — loaded via `<script type="module">`
+- **Service worker v30** caches all module files
+- **App is fully functional** — tested locally with all matches loading, dates correct, today badge showing, TV channels displaying
+- **Next step (Step 6)** will split `style.css` into component partials

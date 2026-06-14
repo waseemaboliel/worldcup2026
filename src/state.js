@@ -17,7 +17,6 @@ export let activeStatsSection = 'player'; // 'player' or 'team'
 export let activePlayerSub = 'scorers';
 export let activeTeamSub = 'goals-per-game';
 export let espnStatsCache = null;
-export const espnMatchDetailsCache = new Map();
 
 export let activeBracketTab = 'r32';
 

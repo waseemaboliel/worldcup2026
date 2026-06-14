@@ -47,32 +47,49 @@ The app opens full screen with no browser bar, just like a native app.
 
 ---
 
-## Deploy an Update
-
-The site is hosted on GitHub Pages and deploys automatically on every push to `main`.
-
-```bash
-git add .
-git commit -m "your message"
-git push
-```
-
-> **Note:** After pushing, bump the `CACHE` version in `sw.js` (e.g. `wc2026-v2` → `wc2026-v3`) so existing users get the latest version instead of the cached one.
-
----
-
 ## Tech Stack
 
 Pure HTML / CSS / JavaScript — no frameworks, no build tools, no dependencies.
+Uses native ES modules (`<script type="module">`) — the browser handles all imports.
 
-| File | Purpose |
+| Path | Purpose |
 |---|---|
 | `index.html` | App shell, nav, tabs, filters |
 | `style.css` | All styles and design tokens |
-| `app.js` | All logic: data fetch, rendering, tabs, stats, live polling |
+| `src/main.js` | Entry point — imports all modules, wires DI, runs init |
+| `src/config/` | API URLs, constants, strings/translations, language helpers |
+| `src/state.js` | Shared mutable state + setter functions |
+| `src/data/` | Data fetching, parsing, caching (FIFA + ESPN APIs) |
+| `src/ui/` | Shell UI, rendering helpers, lineup pitch, links, event sections |
+| `src/features/` | Feature modules: matches, standings, bracket, stats, profiles, match-detail |
 | `manifest.json` | PWA config (name, icons, theme) |
-| `sw.js` | Service worker — caches app shell for offline/fast load |
+| `sw.js` | Service worker — caches app shell + all modules for offline/fast load |
 | `icons/` | App icons for home screen and browser tab |
+
+---
+
+## Run Locally
+
+ES modules require an HTTP server (they don't work via `file://`).
+
+```bash
+# Option 1 — Python (built into macOS)
+python3 -m http.server 8080
+# Then open http://localhost:8080
+
+# Option 2 — Node.js
+npx serve
+# Then open http://localhost:3000
+```
+
+---
+
+## GitHub Pages (Production)
+
+The site is hosted on GitHub Pages and deploys automatically on every push to `main`.
+GitHub Pages serves static files — the browser loads `src/main.js` as a module and fetches all imports automatically. No build step needed.
+
+> **Note:** After pushing, bump the `CACHE` version in `sw.js` (e.g. `wc2026-v30` → `wc2026-v31`) so existing users get the latest version instead of the cached one.
 
 ---
 

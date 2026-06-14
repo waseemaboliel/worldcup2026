@@ -1,14 +1,37 @@
-const CACHE = 'wc2026-v29';
+const CACHE = 'wc2026-v31';
 const SHELL = [
-  '/worldcup2026/',
-  '/worldcup2026/index.html',
-  '/worldcup2026/style.css',
-  '/worldcup2026/app.js',
-  '/worldcup2026/manifest.json',
-  '/worldcup2026/favicon.ico',
-  '/worldcup2026/icons/icon-192.png',
-  '/worldcup2026/icons/icon-512.png',
-  '/worldcup2026/icons/apple-touch-icon.png'
+  './',
+  './index.html',
+  './style.css',
+  './manifest.json',
+  './favicon.ico',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/apple-touch-icon.png',
+  './src/main.js',
+  './src/state.js',
+  './src/config/api.js',
+  './src/config/constants.js',
+  './src/config/strings.js',
+  './src/data/helpers.js',
+  './src/data/fetchers.js',
+  './src/data/timeline.js',
+  './src/data/lineup.js',
+  './src/data/espn-lineup.js',
+  './src/data/espn-stats.js',
+  './src/data/espn-live.js',
+  './src/data/live-scores.js',
+  './src/ui/shell.js',
+  './src/ui/helpers.js',
+  './src/ui/lineup-pitch.js',
+  './src/ui/links.js',
+  './src/ui/event-sections.js',
+  './src/features/profiles.js',
+  './src/features/stats.js',
+  './src/features/standings.js',
+  './src/features/bracket.js',
+  './src/features/match-detail.js',
+  './src/features/matches.js'
 ];
 
 self.addEventListener('install', e => {
