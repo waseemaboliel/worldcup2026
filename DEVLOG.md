@@ -3,19 +3,25 @@
 This file tracks what has been built, how it works, known bugs, and what's planned next.
 Use this as the reference when resuming development in a future session.
 
+> **AI/LLM Note:** Read `.github/copilot-instructions.md` first — it contains the project rules, architecture summary, common patterns, and a quick-reference table for where to find things. That file is designed specifically for AI context.
+
 ---
 
-## Project Files
+## Project Files (V2 — Modular Architecture)
 
-| File | Purpose |
+The app was migrated from a monolithic `app.js` + `style.css` to 40 focused modules.
+See `README.md` for the full annotated file tree, or `V2-MIGRATION.md` for the migration journal.
+
+| Path | Purpose |
 |---|---|
 | `index.html` | App shell, nav, tabs, filter chips, team search input |
-| `style.css` | All styles, design tokens, responsive layout |
-| `app.js` | All logic: fetch, parse, render, tabs, filters, standings, stats, live polling |
+| `src/` | 24 JS modules (config, state, data, ui, features) |
+| `styles/` | 15 CSS partials (base, layout, components, utilities) |
+| `sw.js` | Service worker v32 — caches all files for offline |
 | `manifest.json` | PWA config |
-| `sw.js` | Service worker — caches shell files, lets API calls go to network |
 | `icons/` | icon-192.png, icon-512.png, apple-touch-icon.png |
 | `favicon.ico` | Browser tab icon (16/32/48px) |
+| `.github/copilot-instructions.md` | AI-focused project context and rules |
 
 ---
 
