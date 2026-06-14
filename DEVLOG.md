@@ -273,3 +273,54 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
 - **Case-insensitive timeline matching** — `matchesName()` helper lowercases all variants so `"Folarin BALOGUN"` (FIFA) matches `"Folarin Balogun"` (ESPN).
 - **Profile now shows ESPN-only stats:** shots, shots on target, saves, fouls, offsides — in addition to FIFA goals/assists/cards with per-match history.
 - **ESPN goals/assists fallback removed** — ESPN `totalGoals` means "goals conceded" for GKs, so only FIFA is authoritative for scoring stats.
+
+---
+
+### Phase 18 — ESPN-Primary Migration ✅ (2026-06-14)
+
+**Problem:** FIFA timeline API is unreliable — it regularly misses goals (penalties, late goals) and uses uppercase-only surnames causing name mismatch issues with ESPN data. This forced complex fallback logic and name-bridging code that still doesn't cover all cases (e.g. "RAÚL" vs "Raúl Jiménez").
+
+**Solution:** Make ESPN the single source of truth for all player/event data. Keep FIFA only for what it does uniquely well (match schedule, bracket structure, TV channels).
+
+#### API Responsibilities After Migration
+
+| Feature | Source | API |
+|---------|--------|-----|
+| Match list (104 matches) | FIFA | `MATCHES_API` |
+| Bracket structure | FIFA | `MATCHES_API` |
+| TV Channels | FIFA | `WATCH_API` |
+| Standings (W/D/L/GF/GA) | FIFA | `MATCHES_API` (computed from scores) |
+| Match detail events (goals/cards/subs) | **ESPN** | Scoreboard `details[]` + FIFA timeline for subs |
+| Match detail lineup | ESPN + FIFA | `ESPN_SUMMARY_API` + `LINEUP_API` (fieldStatus merge) |
+| Match detail stats panel | ESPN | `ESPN_SUMMARY_API` boxscore |
+| Live scores/clock | ESPN | `ESPN_INDEX_API` |
+| Live events | **ESPN** | Scoreboard `details[]` + FIFA timeline for subs |
+| Stats: Top Scorers | **ESPN** | `ESPN_SUMMARY_API` per-player `totalGoals` |
+| Stats: Top Assists | **ESPN** | `ESPN_SUMMARY_API` per-player `goalAssists` |
+| Stats: Clean Sheets | **ESPN** | GK `goalsConceded === 0` per match |
+| Stats: Cards | **ESPN** | `ESPN_SUMMARY_API` per-player `yellowCards`/`redCards` |
+| Stats: Player stats | ESPN | Already using ESPN |
+| Stats: Team stats | ESPN | Already using ESPN |
+| Player profiles | **ESPN** | Aggregated stats + per-match events from `details[]` + assists from roster stats |
+
+#### What was implemented:
+
+- **`renderScorers`** — rewritten to use `espnStatsCache.playerMap` (filters out GKs via `position !== 0`)
+- **`renderAssists`** — rewritten to use `espnStatsCache.playerMap.assists`
+- **`renderCleanSheets`** — rewritten using `cleanSheets` counter tracked in `buildEspnStatsCache` (starter GK with `goalsConceded === 0`)
+- **`buildEspnStatsCache`** — enhanced: now stores `position`, `cleanSheets` per player; fetches ESPN scoreboard once to populate `espnMatchDetailsCache`
+- **`espnMatchDetailsCache`** — new Map keyed by FIFA `IdMatch` storing ESPN scoreboard details per match
+- **Match detail events** — ESPN `details[]` is now primary for goals/cards; FIFA timeline only used for subs
+- **Live detail events** — same ESPN-primary approach in `renderLiveDetail` and `patchLiveDetail`
+- **Player profiles** — completely rewritten:
+  - `buildPlayerProfile` uses ESPN stats cache for aggregates + `espnMatchDetailsCache` for per-match event history + `espnLineupCache` for per-match assists
+  - `openPlayerProfile` only needs to call `buildEspnStatsCache` (no more FIFA timeline fetching)
+- **Removed dead code:** `resolvePlayerNames`, `matchesName`, shirt-number name bridging, FIFA timeline scanning in stats tabs
+
+#### Bug fixes in this phase:
+
+- **Penalty name bug** — `(pen)` separated from player name; stored as `penalty: true` flag, displayed outside the clickable `playerSpan`
+- **OG side attribution** — ESPN's `team` field for OGs = the benefiting team (not the scorer's team); removed incorrect side flip
+- **Halftime sub prefix** — FIFA descriptions like "Before the second half begins FABINHO (in)..." now strip the prefix, showing only "FABINHO" as clickable name; minute shows "HT"
+- **"Match History" renamed** — now "Tournament Events" / "אירועי טורניר" / "أحداث البطولة"
+- **FIFA `converts` penalty detection** — `parseTimeline` now sets `penalty: true` on goals matching "converts"
