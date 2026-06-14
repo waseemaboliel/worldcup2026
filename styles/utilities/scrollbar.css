@@ -1,0 +1,45 @@
+/* ── Loading state ── */
+.loading {
+    text-align: center;
+    padding: 60px 16px;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 16px;
+}
+
+/* ── Error state ── */
+.error {
+    text-align: center;
+    padding: 40px 16px;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.error-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+/* ── Responsive tweaks ── */
+@media (max-width: 400px) {
+    .team-name {
+        font-size: 13px;
+    }
+
+    .flag {
+        font-size: 22px;
+    }
+
+    .match-score {
+        font-size: 18px;
+    }
+}

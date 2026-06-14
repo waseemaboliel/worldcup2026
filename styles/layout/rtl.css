@@ -1,0 +1,69 @@
+/* ── RTL overrides ── */
+[dir="rtl"] .match-group,
+[dir="rtl"] .match-status,
+[dir="rtl"] .nav-sub {
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+[dir="rtl"] .detail-section-title {
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+[dir="rtl"] .match-card--finished {
+    border-left: none;
+    border-right: 3px solid var(--text-muted);
+}
+
+/* Away team (right side in LTR) becomes normal row in RTL — grid already mirrors it */
+[dir="rtl"] .team--right {
+    flex-direction: row;
+    text-align: left;
+}
+
+/* Home team (left side in LTR) needs to mirror in RTL */
+[dir="rtl"] .team:not(.team--right) {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+/* Date label padding */
+[dir="rtl"] .date-label {
+    padding-left: 0;
+    padding-right: 2px;
+}
+
+/* Standings: flip first-child alignment */
+[dir="rtl"] .standings-table th:first-child {
+    text-align: right;
+    padding-left: 6px;
+    padding-right: 2px;
+}
+
+[dir="rtl"] .standings-table td:first-child {
+    text-align: right;
+    padding-left: 6px;
+    padding-right: 2px;
+}
+
+/* detail-row is always direction:ltr (two-column layout), no RTL override needed */
+
+/* Filter chips: start scroll from the right in RTL */
+[dir="rtl"] .filters {
+    direction: rtl;
+}
+
+/* Scorer value column: right-align label in RTL */
+[dir="rtl"] .scorer-goals-label {
+    text-align: right;
+}
+
+/* Live detail header: mirror team sides in RTL (grid columns auto-flip) */
+[dir="rtl"] .live-team {
+    text-align: right;
+}
+
+[dir="rtl"] .live-team--right {
+    text-align: left;
+}

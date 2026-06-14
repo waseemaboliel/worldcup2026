@@ -1,0 +1,124 @@
+/* ── Stats section tabs (Player / Team) ── */
+.stats-section-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.stats-section-tab {
+    flex: 1;
+    background: #1a1a1a;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 0;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.stats-section-tab:hover {
+    color: var(--text);
+    border-color: #444;
+}
+
+.stats-section-tab--active {
+    background: #1e1a0e;
+    border-color: var(--gold);
+    color: var(--gold);
+}
+
+/* ── Stats sub-tabs ── */
+.stats-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.stats-tab {
+    background: #1a1a1a;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-muted);
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.stats-tab:hover {
+    color: var(--text);
+    border-color: #444;
+}
+
+.stats-tab--active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #000;
+}
+
+/* ── Top Scorers / Leaderboards ── */
+.scorers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.scorer-row {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.scorer-rank {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--gold);
+    min-width: 28px;
+    text-align: center;
+}
+
+.scorer-rank--top {
+    color: var(--gold);
+}
+
+.scorer-flag {
+    font-size: 22px;
+}
+
+.scorer-info {
+    flex: 1;
+}
+
+.scorer-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.scorer-team {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 1px;
+}
+
+.scorer-goals {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--text);
+}
+
+.scorer-goals-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: center;
+}

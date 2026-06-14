@@ -1,0 +1,234 @@
+/* ── Match Stats Panel ── */
+.mstat-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 4px;
+    margin-bottom: 10px;
+    direction: ltr;
+}
+
+.mstat-team-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mstat-team-label--away {
+    text-align: right;
+}
+
+.mstat-row {
+    display: grid;
+    grid-template-columns: 52px 1fr 52px;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+    direction: ltr;
+}
+
+.mstat-val {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+}
+
+.mstat-val--home {
+    text-align: right;
+}
+
+.mstat-val--away {
+    text-align: left;
+}
+
+.mstat-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+}
+
+.mstat-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.mstat-bar {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    display: flex;
+    overflow: hidden;
+}
+
+.mstat-bar-home {
+    background: var(--gold);
+    height: 100%;
+    transition: width 0.4s ease;
+}
+
+.mstat-bar-away {
+    background: #555;
+    height: 100%;
+    transition: width 0.4s ease;
+}
+
+.mstat-leaders-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-align: center;
+    margin: 10px 0 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+
+.mstat-row--leader {
+    grid-template-columns: 1fr auto 1fr;
+}
+
+.mstat-leader-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.mstat-leader-cell--home {
+    align-items: flex-end;
+}
+
+.mstat-leader-cell--away {
+    align-items: flex-start;
+}
+
+.mstat-leader-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.mstat-leader-val {
+    font-size: 11px;
+    color: var(--gold);
+    font-weight: 700;
+}
+
+/* ── Lineup panel ── */
+.lineup-section {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+}
+
+.lineup-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 12px;
+    letter-spacing: 0.5px;
+}
+
+[dir="rtl"] .lineup-title {
+    letter-spacing: 0;
+}
+
+.lineup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 12px;
+    direction: ltr;
+    /* always LTR so home=left away=right regardless of page dir */
+}
+
+.lineup-team {
+    min-width: 0;
+}
+
+.lineup-team--away {
+    text-align: right;
+}
+
+.lineup-formation {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 2px;
+}
+
+.lineup-coach {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.lineup-pos-group {
+    margin-bottom: 6px;
+}
+
+.lineup-pos-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 2px;
+}
+
+[dir="rtl"] .lineup-pos-label {
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.lineup-player {
+    font-size: 12px;
+    color: var(--text);
+    padding: 1px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lineup-shirt {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-right: 4px;
+}
+
+.lineup-team--away .lineup-shirt {
+    margin-right: 0;
+    margin-left: 4px;
+}
+
+.lineup-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 6px 0;
+}
+
+.lineup-subs-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 2px;
+}
+
+[dir="rtl"] .lineup-subs-label {
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.lineup-player--sub {
+    color: var(--text-muted);
+}

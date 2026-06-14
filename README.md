@@ -55,7 +55,11 @@ Uses native ES modules (`<script type="module">`) — the browser handles all im
 | Path | Purpose |
 |---|---|
 | `index.html` | App shell, nav, tabs, filters |
-| `style.css` | All styles and design tokens |
+| `styles/main.css` | Master stylesheet — `@import`s all CSS partials |
+| `styles/base/` | Reset, design tokens (CSS variables), base typography |
+| `styles/layout/` | Shell chrome (nav, tabs, filters, search) + RTL overrides |
+| `styles/components/` | Match card, detail, stats, lineup pitch, standings, bracket, profile |
+| `styles/utilities/` | Keyframe animations, loading/error states, responsive tweaks |
 | `src/main.js` | Entry point — imports all modules, wires DI, runs init |
 | `src/config/` | API URLs, constants, strings/translations, language helpers |
 | `src/state.js` | Shared mutable state + setter functions |

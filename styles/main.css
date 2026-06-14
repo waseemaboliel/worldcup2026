@@ -1,0 +1,27 @@
+/* ── World Cup 2026 — Main Stylesheet ── */
+/* Imports all partials in dependency order */
+
+/* Base: reset, design tokens, typography */
+@import 'base/reset.css';
+@import 'base/tokens.css';
+@import 'base/typography.css';
+
+/* Utilities: animations (must load before components that reference them) */
+@import 'utilities/animations.css';
+
+/* Layout: shell chrome, RTL */
+@import 'layout/shell.css';
+@import 'layout/rtl.css';
+
+/* Components */
+@import 'components/match-card.css';
+@import 'components/match-detail.css';
+@import 'components/match-stats.css';
+@import 'components/lineup-pitch.css';
+@import 'components/standings.css';
+@import 'components/bracket.css';
+@import 'components/stats.css';
+@import 'components/profile.css';
+
+/* Utilities: states, responsive */
+@import 'utilities/scrollbar.css';

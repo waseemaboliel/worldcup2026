@@ -1,0 +1,96 @@
+/* ── Standings ── */
+.standings-section {
+    margin-bottom: 28px;
+}
+
+.standings-group-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 0 2px 8px;
+}
+
+[dir="rtl"] .standings-group-title {
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.standings-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.standings-table th {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 11px;
+    text-align: center;
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+.standings-table th:first-child {
+    text-align: left;
+    padding-left: 2px;
+}
+
+.standings-table td {
+    padding: 8px 6px;
+    text-align: center;
+    border-bottom: 1px solid #1e1e1e;
+    color: var(--text);
+}
+
+.standings-table td:first-child {
+    text-align: left;
+    padding-left: 2px;
+}
+
+.standings-table tr:last-child td {
+    border-bottom: none;
+}
+
+.standings-team {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.standings-pos {
+    color: var(--text-muted);
+    font-size: 12px;
+    min-width: 16px;
+}
+
+.standings-pts {
+    font-weight: 700;
+    color: var(--gold);
+}
+
+.standings-table tr.qualify td {
+    background: #0d1a0d;
+}
+
+.standings-table tr.qualify-2 td {
+    background: #0a1510;
+}
+
+.standings-table tr.qualify-third td {
+    background: #0a1520;
+}
+
+.standings-live-badge {
+    font-size: 9px;
+    margin-left: 4px;
+    vertical-align: middle;
+    animation: pulse 1.5s ease-in-out infinite;
+    display: inline-block;
+}
+
+[dir="rtl"] .standings-live-badge {
+    margin-left: 0;
+    margin-right: 4px;
+}

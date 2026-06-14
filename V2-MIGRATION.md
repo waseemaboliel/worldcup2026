@@ -736,3 +736,168 @@ The SW scope defaults to the script's directory, so it automatically scopes to `
 - **Service worker v30** caches all module files
 - **App is fully functional** — tested locally with all matches loading, dates correct, today badge showing, TV channels displaying
 - **Next step (Step 6)** will split `style.css` into component partials
+
+---
+
+## Step 6 — Completed ✅ (2026-06-15)
+
+### What Was Done
+
+Split the monolithic `style.css` (1,987 lines) into 14 focused CSS partials under `styles/`, organized by purpose. The browser loads them via CSS `@import` from `styles/main.css`. Zero bundler required.
+
+#### Files Created (14 partials + 1 entry point)
+
+| File | Lines | What It Contains |
+|------|-------|-----------------|
+| `styles/main.css` | 27 | Master stylesheet — `@import`s all partials in dependency order |
+| `styles/base/reset.css` | 9 | Universal box-sizing, zero margins/padding |
+| `styles/base/tokens.css` | 14 | CSS custom properties (colors, radius, font) |
+| `styles/base/typography.css` | 13 | `html`/`body` base styles |
+| `styles/layout/shell.css` | 176 | Nav, language toggle, tabs, filter chips, team search, `.main` container |
+| `styles/layout/rtl.css` | 64 | All `[dir="rtl"]` overrides for the layout and components |
+| `styles/components/match-card.css` | 175 | Date groups, match card, teams row, center score/time, meta, live card state, TV channels |
+| `styles/components/match-detail.css` | 168 | Expanded detail panel, two-column event rows, pitch player field status, live detail header |
+| `styles/components/match-stats.css` | 196 | Match stats bars, leaders, lineup list (grid view) |
+| `styles/components/lineup-pitch.css` | 130 | Visual pitch formation, shirts, subs chips |
+| `styles/components/standings.css` | 90 | Group tables, qualify/third row highlights, live badge |
+| `styles/components/bracket.css` | 269 | Bracket tabs, R32 cards, visual tree (connectors, game slots, 3rd place) |
+| `styles/components/stats.css` | 112 | Stats section/sub tabs, scorers/leaderboard list rows |
+| `styles/components/profile.css` | 230 | Player + team profile overlay (backdrop, card, stats grid, events, match rows, team-link) |
+| `styles/utilities/animations.css` | 46 | All `@keyframes`: pulse, spin, fadeIn, slideUp, scoreFlash |
+| `styles/utilities/scrollbar.css` | 40 | Loading spinner, error state, responsive media query |
+
+#### Also Updated
+
+| File | Change |
+|------|--------|
+| `index.html` | `<link href="style.css">` → `<link href="styles/main.css">` |
+| `sw.js` | Bumped `wc2026-v31` → `wc2026-v32`; replaced `./style.css` with all 16 CSS file paths in SHELL |
+| `README.md` | Updated Tech Stack table (replaced `style.css` row with `styles/` directory breakdown) |
+| `style.css` | **Deleted** — all 1,987 lines now live in 14 focused partials |
+
+### CSS Architecture
+
+```
+styles/main.css
+├── base/reset.css            ← Universal reset
+├── base/tokens.css           ← :root CSS variables
+├── base/typography.css       ← html, body defaults
+│
+├── utilities/animations.css  ← @keyframes (loaded early so components can reference them)
+│
+├── layout/shell.css          ← Nav, tabs, filters, search, .main container
+├── layout/rtl.css            ← All [dir="rtl"] overrides
+│
+├── components/match-card.css     ← Cards, teams, scores, live state, channels
+├── components/match-detail.css   ← Expanded detail, event rows, live header
+├── components/match-stats.css    ← Stats bars, leaders, lineup grid
+├── components/lineup-pitch.css   ← Visual pitch formation
+├── components/standings.css      ← Group tables
+├── components/bracket.css        ← Bracket tabs + visual tree
+├── components/stats.css          ← Leaderboard tabs + rows
+├── components/profile.css        ← Player/team overlays
+│
+└── utilities/scrollbar.css       ← Loading, error, responsive
+```
+
+### Design Decisions
+
+#### 1. CSS `@import` vs. Build Tool
+
+Used native CSS `@import` instead of a bundler. Tradeoffs:
+- **Pro:** Zero build step, works exactly like the JS modules approach (browser-native)
+- **Pro:** GitHub Pages serves it directly, no CI/CD pipeline needed
+- **Con:** 16 HTTP requests for CSS on first load (vs 1 if bundled)
+- **Mitigated by:** Service worker pre-caches all files. After first visit, all CSS loads from cache instantly. HTTP/2 multiplexing also helps.
+
+#### 2. Animations in a Separate File (Not Inlined)
+
+Moved all `@keyframes` into `utilities/animations.css` loaded before components. This avoids duplicating animations across partials (e.g. `pulse` is used by match-card, standings, bracket, and live detail).
+
+#### 3. RTL as a Separate File
+
+Kept all `[dir="rtl"]` overrides in `layout/rtl.css` rather than co-locating them with each component. Reasoning:
+- Easy to audit all RTL rules in one place
+- Components stay simpler (only LTR logic)
+- Some RTL rules span multiple components (e.g. team rows affect both match-card and standings)
+
+#### 4. `scrollbar.css` Contains Loading/Error/Responsive (Naming)
+
+The V2 plan named this file `scrollbar.css` but it actually contains loading states, error states, and responsive media queries. This is from the original plan's naming. Could be renamed to `states.css` in future but functionally correct as-is.
+
+### Current State
+
+- **14 CSS partials** + 1 entry point in `styles/`
+- **24 JS modules** in `src/`
+- **`style.css` deleted** — no longer exists
+- **Service worker v32** caches all JS and CSS files
+- **App fully functional** — all CSS loads correctly via `@import`
+- **Zero build step** — pure static files served by any HTTP server
+
+---
+
+## Step 7 — Completed ✅ (2026-06-15)
+
+### What Was Done
+
+Final verification and cleanup pass. Confirmed the entire app works with the modular architecture — both JS (ES modules) and CSS (`@import` partials).
+
+#### Verification Checklist
+
+| Check | Status |
+|-------|--------|
+| All 16 CSS files serve with HTTP 200 | ✅ |
+| All 24 JS modules serve with HTTP 200 | ✅ (verified in Step 5) |
+| `index.html` references `styles/main.css` | ✅ |
+| `index.html` references `src/main.js` as `type="module"` | ✅ |
+| SW registration uses relative path (`sw.js`) | ✅ |
+| SW SHELL array includes all CSS + JS paths (relative) | ✅ |
+| No stale references to `app.js` in codebase | ✅ (deleted) |
+| No stale references to `style.css` in runtime files | ✅ (only in docs) |
+| `node --check src/main.js` passes | ✅ |
+| Empty scaffolding directories removed | ✅ (done in Step 5) |
+| Barrel `index.js` files removed | ✅ (done in Step 5) |
+| README Tech Stack table updated | ✅ |
+
+#### Cleanup Already Done (Steps 5-6)
+
+- Empty feature subdirs (`src/features/matches/`, `live/`, `standings/`, `bracket/`, `stats/`, `profiles/`) — removed in Step 5
+- Barrel re-exports (`src/config/index.js`, `src/data/index.js`, `src/ui/index.js`) — removed in Step 5
+- `app.js` — deleted in Step 5
+- `style.css` — deleted in Step 6
+
+#### What Remains (Step 8 — Documentation)
+
+- Add a final complete file tree to `README.md` showing the full project structure
+- This is the last step in the migration plan
+
+### Final Architecture Summary
+
+```
+worldcup2026/
+├── index.html                     ← App shell (loads styles/main.css + src/main.js)
+├── styles/
+│   ├── main.css                   ← @imports all 14 partials
+│   ├── base/                      ← reset, tokens, typography (3 files)
+│   ├── layout/                    ← shell, rtl (2 files)
+│   ├── components/                ← match-card, match-detail, match-stats, lineup-pitch,
+│   │                                 standings, bracket, stats, profile (8 files)
+│   └── utilities/                 ← animations, scrollbar (2 files)
+├── src/
+│   ├── main.js                    ← Entry point (imports all, wires DI, runs init)
+│   ├── state.js                   ← Shared mutable state + setters
+│   ├── config/                    ← api, constants, strings (3 files)
+│   ├── data/                      ← helpers, fetchers, timeline, lineup, espn-* (8 files)
+│   ├── ui/                        ← shell, helpers, lineup-pitch, links, event-sections (5 files)
+│   └── features/                  ← profiles, stats, standings, bracket, match-detail, matches (6 files)
+├── sw.js                          ← Service worker v32 (caches all files)
+├── manifest.json                  ← PWA config
+├── favicon.ico
+├── icons/                         ← PWA icons
+├── DEVLOG.md                      ← Full development history
+├── V2-MIGRATION.md                ← This file
+└── README.md                      ← Project documentation
+```
+
+**Total:** 40 source files (24 JS + 15 CSS + 1 HTML) replacing the original 2 monolithic files (`app.js` + `style.css`).
+No build step. No bundler. No framework. Pure browser-native ES modules + CSS imports.
