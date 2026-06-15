@@ -136,7 +136,7 @@ async function renderTeamLeaderboard(matches, container, type) {
             : type === 'conceded-per-game' ? (tm.played ? +(tm.conceded / tm.played).toFixed(2) : 0)
                 : tm.cleanSheets;
         const label = sub.label();
-        const sorted = [...teamMap.values()].filter(tm => tm.played > 0).sort((a, b) => getValue(b) - getValue(a)).slice(0, 20);
+        const sorted = [...teamMap.values()].filter(tm => tm.played > 0).sort((a, b) => getValue(b) - getValue(a)).slice(0, 48);
         return renderTeamRows(container, sorted, tm => getValue(tm), label);
     }
 
@@ -156,7 +156,7 @@ async function renderTeamLeaderboard(matches, container, type) {
         return sub.pct ? v.toFixed(1) + '%' : v;
     };
     const label = sub.label();
-    const sorted = [...teamMap.values()].filter(tm => tm.played > 0).sort((a, b) => getValue(b) - getValue(a)).slice(0, 20);
+    const sorted = [...teamMap.values()].filter(tm => tm.played > 0).sort((a, b) => getValue(b) - getValue(a)).slice(0, 48);
     renderTeamRows(container, sorted, fmt, label);
 }
 
@@ -197,8 +197,7 @@ async function renderScorers(matches, container) {
 
     const sorted = [...playerMap.values()]
         .filter(p => p.goals > 0 && p.position !== 0)
-        .sort((a, b) => b.goals - a.goals)
-        .slice(0, 20);
+        .sort((a, b) => b.goals - a.goals);
 
     if (sorted.length === 0) {
         main.innerHTML = `<div class="error"><div class="error-icon">⚽</div>${t('errorNoGoals')}</div>`;
@@ -238,8 +237,7 @@ async function renderAssists(matches, container) {
 
     const sorted = [...playerMap.values()]
         .filter(p => p.assists > 0)
-        .sort((a, b) => b.assists - a.assists)
-        .slice(0, 20);
+        .sort((a, b) => b.assists - a.assists);
 
     if (sorted.length === 0) {
         container.innerHTML = `<div class="error"><div class="error-icon">🎯</div>${t('errorNoAssists')}</div>`;
@@ -277,8 +275,7 @@ async function renderCleanSheets(matches, container) {
 
     const sorted = [...playerMap.values()]
         .filter(p => p.position === 0 && p.cleanSheets > 0)
-        .sort((a, b) => b.cleanSheets - a.cleanSheets)
-        .slice(0, 20);
+        .sort((a, b) => b.cleanSheets - a.cleanSheets);
 
     if (sorted.length === 0) {
         container.innerHTML = `<div class="error"><div class="error-icon">🧤</div>${t('errorNoClean')}</div>`;
@@ -327,10 +324,11 @@ async function renderEspnPlayerLeaderboard(matches, container, type) {
     const cfg = CONFIG[type];
     if (!cfg) { container.innerHTML = `<div class="error"><div class="error-icon">📊</div>${t('errorNoData')}</div>`; return; }
 
+    const limit = ['shots', 'shotsOnTarget', 'fouls', 'offsides'].includes(type) ? 40 : Infinity;
     const sorted = [...playerMap.values()]
         .filter(p => p[cfg.field] > 0)
         .sort((a, b) => b[cfg.field] - a[cfg.field])
-        .slice(0, 20);
+        .slice(0, limit);
 
     if (sorted.length === 0) {
         container.innerHTML = `<div class="error"><div class="error-icon">${cfg.icon}</div>${t('errorNoData')}</div>`;
