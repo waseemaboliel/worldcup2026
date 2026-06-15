@@ -23,14 +23,16 @@ const PLAYER_SUBS = [
 ];
 
 const TEAM_SUBS = [
+    { key: 'total-goals', icon: '⚽', label: () => t('teamTotalGoals'), espnKey: null, fifa: true },
     { key: 'goals-per-game', icon: '⚽', label: () => t('teamGoalsGame'), espnKey: null, fifa: true },
+    { key: 'total-assists', icon: '🎯', label: () => t('teamTotalAssists'), espnKey: null, fifa: true },
+    { key: 'assists-per-game', icon: '🎯', label: () => t('teamAssistsGame'), espnKey: null, fifa: true },
     { key: 'conceded-per-game', icon: '🥅', label: () => t('teamConcededGame'), espnKey: null, fifa: true },
     { key: 'clean-sheets', icon: '🧤', label: () => t('teamClean'), espnKey: null, fifa: true },
     { key: 'possession', icon: '🔵', label: () => t('teamPossession'), espnKey: 'possessionPct', avg: true },
     { key: 'shots', icon: '🎯', label: () => t('teamShots'), espnKey: 'totalShots', avg: true },
     { key: 'shots-on-target', icon: '🎯', label: () => t('teamOnTarget'), espnKey: 'shotsOnTarget', avg: true },
     { key: 'passes', icon: '📋', label: () => t('teamPasses'), espnKey: 'totalPasses', avg: true },
-    { key: 'pass-accuracy', icon: '📋', label: () => t('teamPassAcc'), espnKey: 'passPct', avg: true, pct: true },
     { key: 'tackles', icon: '💪', label: () => t('teamTackles'), espnKey: 'effectiveTackles', avg: true },
     { key: 'interceptions', icon: '✋', label: () => t('teamInterceptions'), espnKey: 'interceptions', avg: true },
     { key: 'yellow-cards', icon: '🟨', label: () => t('teamYellow'), espnKey: 'yellowCards' },
@@ -132,9 +134,33 @@ async function renderTeamLeaderboard(matches, container, type) {
             if (as === 0) home.cleanSheets++;
             if (hs === 0) away.cleanSheets++;
         }
-        const getValue = (tm) => type === 'goals-per-game' ? (tm.played ? +(tm.scored / tm.played).toFixed(2) : 0)
-            : type === 'conceded-per-game' ? (tm.played ? +(tm.conceded / tm.played).toFixed(2) : 0)
-                : tm.cleanSheets;
+
+        // Accumulate assists from ESPN lineup data per team
+        if (type === 'total-assists' || type === 'assists-per-game') {
+            const { espnLineupCache } = await import('../data/espn-lineup.js');
+            for (const m of finishedMatches) {
+                const espnData = espnLineupCache.get(m.IdMatch);
+                if (!espnData) continue;
+                for (const side of ['home', 'away']) {
+                    const fifaTeam = side === 'home' ? m.Home : m.Away;
+                    if (!fifaTeam || !teamMap.has(fifaTeam.IdTeam)) continue;
+                    const entry = teamMap.get(fifaTeam.IdTeam);
+                    if (!entry.assists) entry.assists = 0;
+                    const roster = espnData[side];
+                    if (!roster) continue;
+                    for (const p of [...(roster.starters || []), ...(roster.subs || [])]) {
+                        entry.assists += p.stats?.goalAssists || 0;
+                    }
+                }
+            }
+        }
+
+        const getValue = (tm) => type === 'total-goals' ? tm.scored
+            : type === 'goals-per-game' ? (tm.played ? +(tm.scored / tm.played).toFixed(2) : 0)
+                : type === 'total-assists' ? (tm.assists || 0)
+                    : type === 'assists-per-game' ? (tm.played ? +((tm.assists || 0) / tm.played).toFixed(2) : 0)
+                        : type === 'conceded-per-game' ? (tm.played ? +(tm.conceded / tm.played).toFixed(2) : 0)
+                            : tm.cleanSheets;
         const label = sub.label();
         const sorted = [...teamMap.values()].filter(tm => tm.played > 0).sort((a, b) => getValue(b) - getValue(a)).slice(0, 48);
         return renderTeamRows(container, sorted, tm => getValue(tm), label);
