@@ -43,8 +43,18 @@ const TEAM_SUBS = [
 
 // ── Main entry ────────────────────────────────────────────────
 
+function removeBackToTop() {
+    const btn = document.querySelector('.stats-back-top');
+    if (btn) btn.remove();
+    if (window._statsScrollHandler) {
+        window.removeEventListener('scroll', window._statsScrollHandler);
+        window._statsScrollHandler = null;
+    }
+}
+
 export function renderStats(matches) {
     const main = document.querySelector('.main');
+    removeBackToTop();
     main.innerHTML = `
     <div class="stats-section-tabs">
       <button class="stats-section-tab ${state.activeStatsSection === 'player' ? 'stats-section-tab--active' : ''}" data-section="player">${t('statsPlayer')}</button>
@@ -128,11 +138,29 @@ function renderPlayerStats(matches, container) {
     else if (state.activePlayerSub === 'assists') renderAssists(matches, inner);
     else if (state.activePlayerSub === 'clean') renderCleanSheets(matches, inner);
     else renderEspnPlayerLeaderboard(matches, inner, state.activePlayerSub);
+
+    // Back to top button
+    let backBtn = document.querySelector('.stats-back-top');
+    if (!backBtn) {
+        backBtn = document.createElement('button');
+        backBtn.className = 'stats-back-top';
+        backBtn.textContent = '↑';
+        backBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+        document.body.appendChild(backBtn);
+    }
+    const onScroll = () => {
+        backBtn.classList.toggle('stats-back-top--visible', window.scrollY > 400);
+    };
+    window.removeEventListener('scroll', window._statsScrollHandler);
+    window._statsScrollHandler = onScroll;
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
 }
 
 // ── Team stats ────────────────────────────────────────────────
 
 function renderTeamStats(matches, container) {
+    removeBackToTop();
     container.innerHTML = `
     <div class="stats-tabs">
       ${TEAM_SUBS.map(s => `<button class="stats-tab ${state.activeTeamSub === s.key ? 'stats-tab--active' : ''}" data-sub="${s.key}">${s.icon} ${s.label()}</button>`).join('')}
@@ -259,6 +287,57 @@ function renderTeamRows(container, sorted, getFmt, label) {
     container.appendChild(list);
 }
 
+// ── Player list rendering with "Show more" ────────────────────
+
+const INITIAL_LIMIT = 40;
+
+function renderPlayerList(container, sorted, buildRowHtml) {
+    container.innerHTML = '';
+    const list = document.createElement('div');
+    list.className = 'scorers-list';
+
+    const showInitial = !state.statsTeamFilter && sorted.length > INITIAL_LIMIT;
+    const initialItems = showInitial ? sorted.slice(0, INITIAL_LIMIT) : sorted;
+
+    initialItems.forEach((s, i) => {
+        const row = document.createElement('div');
+        row.className = 'scorer-row';
+        row.innerHTML = buildRowHtml(s, i);
+        list.appendChild(row);
+    });
+
+    bindPlayerLinks(list, activeMatches());
+    bindTeamLinks(list);
+    container.appendChild(list);
+
+    if (showInitial) {
+        let shown = INITIAL_LIMIT;
+        const addShowMoreBtn = () => {
+            if (shown >= sorted.length) return;
+            const btn = document.createElement('button');
+            btn.className = 'stats-show-more';
+            btn.textContent = t('statsShowMore');
+            btn.addEventListener('click', () => {
+                btn.remove();
+                const next = sorted.slice(shown, shown + INITIAL_LIMIT);
+                next.forEach((s, i) => {
+                    const row = document.createElement('div');
+                    row.className = 'scorer-row';
+                    row.innerHTML = buildRowHtml(s, shown + i);
+                    list.appendChild(row);
+                });
+                shown += next.length;
+                bindPlayerLinks(list, activeMatches());
+                bindTeamLinks(list);
+                addShowMoreBtn();
+            });
+            container.appendChild(btn);
+        };
+        addShowMoreBtn();
+        container.appendChild(btn);
+    }
+}
+
 // ── Individual player leaderboards ────────────────────────────
 
 async function renderScorers(matches, container) {
@@ -270,7 +349,7 @@ async function renderScorers(matches, container) {
     let sorted;
     if (state.statsTeamFilter) {
         sorted = [...playerMap.values()]
-            .filter(p => p.teamId === state.statsTeamFilter && p.position !== 0)
+            .filter(p => p.teamId === state.statsTeamFilter && p.position !== 0 && p.goals > 0)
             .sort((a, b) => b.goals - a.goals);
     } else {
         sorted = [...playerMap.values()]
@@ -283,14 +362,7 @@ async function renderScorers(matches, container) {
         return;
     }
 
-    main.innerHTML = '';
-    const list = document.createElement('div');
-    list.className = 'scorers-list';
-
-    sorted.forEach((s, i) => {
-        const row = document.createElement('div');
-        row.className = 'scorer-row';
-        row.innerHTML = `
+    renderPlayerList(main, sorted, (s, i) => `
       <div class="scorer-rank">${i + 1}</div>
       <span class="scorer-flag">${s.flag}</span>
       <div class="scorer-info">
@@ -300,13 +372,7 @@ async function renderScorers(matches, container) {
       <div>
         <div class="scorer-goals">${s.goals}</div>
         <div class="scorer-goals-label">${t('goalLabel', s.goals)}</div>
-      </div>`;
-        list.appendChild(row);
-    });
-
-    bindPlayerLinks(list, activeMatches());
-    bindTeamLinks(list);
-    main.appendChild(list);
+      </div>`);
 }
 
 async function renderAssists(matches, container) {
@@ -317,7 +383,7 @@ async function renderAssists(matches, container) {
     let sorted;
     if (state.statsTeamFilter) {
         sorted = [...playerMap.values()]
-            .filter(p => p.teamId === state.statsTeamFilter)
+            .filter(p => p.teamId === state.statsTeamFilter && p.assists > 0)
             .sort((a, b) => b.assists - a.assists);
     } else {
         sorted = [...playerMap.values()]
@@ -330,13 +396,7 @@ async function renderAssists(matches, container) {
         return;
     }
 
-    container.innerHTML = '';
-    const list = document.createElement('div');
-    list.className = 'scorers-list';
-    sorted.forEach((s, i) => {
-        const row = document.createElement('div');
-        row.className = 'scorer-row';
-        row.innerHTML = `
+    renderPlayerList(container, sorted, (s, i) => `
       <div class="scorer-rank">${i + 1}</div>
       <span class="scorer-flag">${s.flag}</span>
       <div class="scorer-info">
@@ -346,12 +406,9 @@ async function renderAssists(matches, container) {
       <div>
         <div class="scorer-goals">${s.assists}</div>
         <div class="scorer-goals-label">${t('assistLabel', s.assists)}</div>
-      </div>`;
-        list.appendChild(row);
-    });
-    bindPlayerLinks(list, activeMatches());
-    bindTeamLinks(list);
-    container.appendChild(list);
+      </div>`);
+    bindPlayerLinks(container, activeMatches());
+    bindTeamLinks(container);
 }
 
 async function renderCleanSheets(matches, container) {
@@ -362,7 +419,7 @@ async function renderCleanSheets(matches, container) {
     let sorted;
     if (state.statsTeamFilter) {
         sorted = [...playerMap.values()]
-            .filter(p => p.teamId === state.statsTeamFilter && p.position === 0)
+            .filter(p => p.teamId === state.statsTeamFilter && p.position === 0 && p.cleanSheets > 0)
             .sort((a, b) => b.cleanSheets - a.cleanSheets);
     } else {
         sorted = [...playerMap.values()]
@@ -375,13 +432,7 @@ async function renderCleanSheets(matches, container) {
         return;
     }
 
-    container.innerHTML = '';
-    const list = document.createElement('div');
-    list.className = 'scorers-list';
-    sorted.forEach((s, i) => {
-        const row = document.createElement('div');
-        row.className = 'scorer-row';
-        row.innerHTML = `
+    renderPlayerList(container, sorted, (s, i) => `
       <div class="scorer-rank">${i + 1}</div>
       <span class="scorer-flag">${s.flag}</span>
       <div class="scorer-info">
@@ -391,12 +442,9 @@ async function renderCleanSheets(matches, container) {
       <div>
         <div class="scorer-goals">${s.cleanSheets}</div>
         <div class="scorer-goals-label">${t('cleanLabel', s.cleanSheets)}</div>
-      </div>`;
-        list.appendChild(row);
-    });
-    bindPlayerLinks(list, activeMatches());
-    bindTeamLinks(list);
-    container.appendChild(list);
+      </div>`);
+    bindPlayerLinks(container, activeMatches());
+    bindTeamLinks(container);
 }
 
 async function renderEspnPlayerLeaderboard(matches, container, type) {
@@ -421,14 +469,12 @@ async function renderEspnPlayerLeaderboard(matches, container, type) {
     let sorted;
     if (state.statsTeamFilter) {
         sorted = [...playerMap.values()]
-            .filter(p => p.teamId === state.statsTeamFilter)
+            .filter(p => p.teamId === state.statsTeamFilter && p[cfg.field] > 0)
             .sort((a, b) => b[cfg.field] - a[cfg.field]);
     } else {
-        const limit = ['shots', 'shotsOnTarget', 'fouls', 'offsides'].includes(type) ? 40 : Infinity;
         sorted = [...playerMap.values()]
             .filter(p => p[cfg.field] > 0)
-            .sort((a, b) => b[cfg.field] - a[cfg.field])
-            .slice(0, limit);
+            .sort((a, b) => b[cfg.field] - a[cfg.field]);
     }
 
     if (sorted.length === 0) {
@@ -436,13 +482,7 @@ async function renderEspnPlayerLeaderboard(matches, container, type) {
         return;
     }
 
-    container.innerHTML = '';
-    const list = document.createElement('div');
-    list.className = 'scorers-list';
-    sorted.forEach((s, i) => {
-        const row = document.createElement('div');
-        row.className = 'scorer-row';
-        row.innerHTML = `
+    renderPlayerList(container, sorted, (s, i) => `
       <div class="scorer-rank">${i + 1}</div>
       <span class="scorer-flag">${s.flag}</span>
       <div class="scorer-info">
@@ -452,10 +492,7 @@ async function renderEspnPlayerLeaderboard(matches, container, type) {
       <div>
         <div class="scorer-goals">${s[cfg.field]}</div>
         <div class="scorer-goals-label">${cfg.label()}</div>
-      </div>`;
-        list.appendChild(row);
-    });
-    bindPlayerLinks(list, activeMatches());
-    bindTeamLinks(list);
-    container.appendChild(list);
+      </div>`);
+    bindPlayerLinks(container, activeMatches());
+    bindTeamLinks(container);
 }

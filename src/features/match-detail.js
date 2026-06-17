@@ -34,6 +34,7 @@ export function toggleCard(card, match) {
         card.querySelector('.match-detail')?.remove();
         stopLiveDetailPoller();
         state.setActiveCard(null);
+        setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
         return;
     }
 

@@ -376,6 +376,18 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
 
 ---
 
+### Phase 22 — UX: Show More, Back-to-Top & Scroll Fixes ✅ (2026-06-18)
+
+- **"Show more" pagination** — all player stats show 40 initially, then reveal 40 more each click (no hard limit). When team-filtered, all qualifying players shown directly.
+- **Back-to-top button (Stats)** — floating ↑ button appears after 400px scroll in player stats. Hidden when switching to Team Stats or leaving the tab.
+- **Back-to-top button (Matches)** — floating ↑ button on matches page. Scrolls to active expanded match, or next upcoming match if none expanded.
+- **Scroll-back on card close** — closing an expanded match detail scrolls smoothly back to that card.
+- **Scroll offset fix** — `scroll-margin-top: 150px` on `.match-card` and `.date-group` to offset the sticky header on all scroll operations (arrow button, card close, initial page load scroll-to-today).
+- **RTL support** — both ↑ buttons positioned right in RTL (Hebrew/Arabic).
+- **Service worker:** bumped to `wc2026-v37`
+
+---
+
 ## V2 — Code Splitting & Modularization (In Progress)
 
 > Full migration plan, progress, and technical details: **[V2-MIGRATION.md](V2-MIGRATION.md)**
