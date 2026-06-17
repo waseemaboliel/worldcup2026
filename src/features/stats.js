@@ -20,6 +20,7 @@ const PLAYER_SUBS = [
     { key: 'offsides', icon: '🚩', label: () => t('statOffsides') },
     { key: 'yellow', icon: '🟨', label: () => t('statYellow') },
     { key: 'red', icon: '🟥', label: () => t('statRed') },
+    { key: 'ownGoals', icon: '⚽', label: () => t('statOwnGoals') },
 ];
 
 const TEAM_SUBS = [
@@ -411,6 +412,7 @@ async function renderEspnPlayerLeaderboard(matches, container, type) {
         offsides: { field: 'offsides', icon: '🚩', label: () => t('labelOffsides') },
         yellow: { field: 'yellowCards', icon: '🟨', label: () => '🟨' },
         red: { field: 'redCards', icon: '🟥', label: () => '🟥' },
+        ownGoals: { field: 'ownGoals', icon: '⚽', label: () => t('labelOwnGoals') },
     };
 
     const cfg = CONFIG[type];

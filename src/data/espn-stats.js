@@ -87,7 +87,7 @@ export async function buildEspnStatsCache(matches) {
                 const key = `${p.name}|${teamName}`;
                 const isStarter = (roster.starters || []).includes(p);
                 if (!playerMap.has(key)) {
-                    playerMap.set(key, { name: p.name, flag, teamName, teamId, position: p.position, goals: 0, assists: 0, shots: 0, shotsOnTarget: 0, saves: 0, yellowCards: 0, redCards: 0, fouls: 0, offsides: 0, cleanSheets: 0, appearances: 0 });
+                    playerMap.set(key, { name: p.name, flag, teamName, teamId, position: p.position, goals: 0, assists: 0, shots: 0, shotsOnTarget: 0, saves: 0, yellowCards: 0, redCards: 0, fouls: 0, offsides: 0, cleanSheets: 0, ownGoals: 0, appearances: 0 });
                 }
                 const e = playerMap.get(key);
                 if (p.stats) {
@@ -105,6 +105,24 @@ export async function buildEspnStatsCache(matches) {
                     if (isStarter && p.position === 0 && (p.stats.goalsConceded || 0) === 0) {
                         e.cleanSheets++;
                     }
+                }
+            }
+        }
+    }
+
+    // Count own goals from ESPN scoreboard details
+    for (const [fifaId, details] of espnMatchDetailsCache) {
+        const match = finishedMatches.find(m => m.IdMatch === fifaId);
+        if (!match) continue;
+        for (const d of (details.details || [])) {
+            if (!d.ownGoal) continue;
+            const playerName = d.athletesInvolved?.[0]?.displayName;
+            if (!playerName) continue;
+            // Find this player in playerMap
+            for (const [key, entry] of playerMap) {
+                if (entry.name === playerName && (entry.teamId === match.Home?.IdTeam || entry.teamId === match.Away?.IdTeam)) {
+                    entry.ownGoals++;
+                    break;
                 }
             }
         }

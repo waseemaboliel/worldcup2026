@@ -369,9 +369,10 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
 - **Team filter for Player Stats** — scrollable row of team chips above the stat sub-tabs. Select a team to see ALL its players for the current stat (no limit). Includes a search input to quickly find teams.
 - **New state:** `statsTeamFilter` in `state.js` (null = all, teamId = filtered)
 - **"Total Conceded"** added to TEAM_SUBS before Conceded/Game (same pattern as Total Goals / Goals per Game)
+- **Own Goals leaderboard** — new player stat sub-tab counting own goals from ESPN scoreboard details (`d.ownGoal`). Data sourced from `espnMatchDetailsCache` in `espn-stats.js`.
 - **Standings table fix** — added `max-width: 130px` + ellipsis on `.standings-team` to prevent long names (e.g. Bosnia and Herzegovina) from pushing stat columns apart
-- **Translations:** `statsAllTeams`, `teamTotalConceded` added to EN, HE, AR
-- **Service worker:** bumped to `wc2026-v35`
+- **Translations:** `statsAllTeams`, `teamTotalConceded`, `statOwnGoals`, `labelOwnGoals` added to EN, HE, AR
+- **Service worker:** bumped to `wc2026-v36`
 
 ---
 
