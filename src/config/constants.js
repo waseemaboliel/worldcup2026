@@ -4,7 +4,7 @@
 export const FIFA_TO_ALPHA2 = {
     MEX: 'MX', RSA: 'ZA', KOR: 'KR', CZE: 'CZ', CAN: 'CA', BIH: 'BA', USA: 'US', PAR: 'PY',
     QAT: 'QA', SUI: 'CH', BRA: 'BR', MAR: 'MA', ARG: 'AR', ESP: 'ES', POR: 'PT', FRA: 'FR',
-    GER: 'DE', ENG: 'GB', ITA: 'IT', NED: 'NL', BEL: 'BE', URU: 'UY', COL: 'CO', CHI: 'CL',
+    GER: 'DE', ENG: 'GB-ENG', ITA: 'IT', NED: 'NL', BEL: 'BE', URU: 'UY', COL: 'CO', CHI: 'CL',
     ECU: 'EC', PER: 'PE', VEN: 'VE', BOL: 'BO', HON: 'HN', CRC: 'CR', PAN: 'PA', JAM: 'JM',
     TRI: 'TT', NGA: 'NG', GHA: 'GH', CMR: 'CM', SEN: 'SN', CIV: 'CI', EGY: 'EG', ALG: 'DZ',
     TUN: 'TN', MAL: 'ML', BFA: 'BF', ZAM: 'ZM', UGA: 'UG', JPN: 'JP', AUS: 'AU', TUR: 'TR',

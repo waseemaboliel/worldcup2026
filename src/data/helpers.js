@@ -7,6 +7,7 @@ export function countryToFlag(fifaCode) {
     if (!fifaCode) return '🏴';
     const alpha2 = FIFA_TO_ALPHA2[fifaCode] || fifaCode;
     if (alpha2 === 'GB-SCT') return '🏴󠁧󠁢󠁳󠁣󠁴󠁿';
+    if (alpha2 === 'GB-ENG') return '🏴󠁧󠁢󠁥󠁮󠁧󠁿';
     if (!alpha2 || alpha2.length !== 2) return '🏳️';
     const base = 0x1F1E6;
     return String.fromCodePoint(
