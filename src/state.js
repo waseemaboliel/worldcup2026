@@ -16,6 +16,7 @@ export let liveDetailPoller = null;
 export let activeStatsSection = 'player'; // 'player' or 'team'
 export let activePlayerSub = 'scorers';
 export let activeTeamSub = 'goals-per-game';
+export let statsTeamFilter = null; // null = all teams, string = teamId
 export let espnStatsCache = null;
 
 export let activeBracketTab = 'r32';
@@ -39,6 +40,7 @@ export function setLiveDetailPoller(v) { liveDetailPoller = v; }
 export function setActiveStatsSection(v) { activeStatsSection = v; }
 export function setActivePlayerSub(v) { activePlayerSub = v; }
 export function setActiveTeamSub(v) { activeTeamSub = v; }
+export function setStatsTeamFilter(v) { statsTeamFilter = v; }
 export function setEspnStatsCache(v) { espnStatsCache = v; }
 export function setActiveBracketTab(v) { activeBracketTab = v; }
 export function setLivePoller(v) { livePoller = v; }

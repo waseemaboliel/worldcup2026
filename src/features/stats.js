@@ -27,6 +27,7 @@ const TEAM_SUBS = [
     { key: 'goals-per-game', icon: '⚽', label: () => t('teamGoalsGame'), espnKey: null, fifa: true },
     { key: 'total-assists', icon: '🎯', label: () => t('teamTotalAssists'), espnKey: null, fifa: true },
     { key: 'assists-per-game', icon: '🎯', label: () => t('teamAssistsGame'), espnKey: null, fifa: true },
+    { key: 'total-conceded', icon: '🥅', label: () => t('teamTotalConceded'), espnKey: null, fifa: true },
     { key: 'conceded-per-game', icon: '🥅', label: () => t('teamConcededGame'), espnKey: null, fifa: true },
     { key: 'clean-sheets', icon: '🧤', label: () => t('teamClean'), espnKey: null, fifa: true },
     { key: 'possession', icon: '🔵', label: () => t('teamPossession'), espnKey: 'possessionPct', avg: true },
@@ -64,12 +65,55 @@ export function renderStats(matches) {
 
 // ── Player stats ──────────────────────────────────────────────
 
+function getTeamList(matches) {
+    const teams = new Map();
+    for (const m of matches) {
+        if (m.MatchStatus !== STATUS_FINISHED) continue;
+        for (const side of [m.Home, m.Away]) {
+            if (!side || teams.has(side.IdTeam)) continue;
+            teams.set(side.IdTeam, {
+                id: side.IdTeam,
+                name: getTeamName(side) || '?',
+                flag: countryToFlag(side.IdCountry),
+            });
+        }
+    }
+    return [...teams.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
 function renderPlayerStats(matches, container) {
+    const teamList = getTeamList(matches);
+    const filterTeam = state.statsTeamFilter;
+
     container.innerHTML = `
+    <div class="stats-team-filter">
+      <button class="stats-team-chip ${!filterTeam ? 'stats-team-chip--active' : ''}" data-team="">${t('statsAllTeams')}</button>
+      <input class="stats-team-search" type="search" placeholder="🔍 Search team…" autocomplete="off" />
+      ${teamList.map(tm => `<button class="stats-team-chip ${filterTeam === tm.id ? 'stats-team-chip--active' : ''}" data-team="${tm.id}">${tm.flag} ${tm.name}</button>`).join('')}
+    </div>
     <div class="stats-tabs">
       ${PLAYER_SUBS.map(s => `<button class="stats-tab ${state.activePlayerSub === s.key ? 'stats-tab--active' : ''}" data-sub="${s.key}">${s.icon} ${s.label()}</button>`).join('')}
     </div>
     <div id="player-stats-content"></div>`;
+
+    // Team search filtering
+    const searchInput = container.querySelector('.stats-team-search');
+    const chips = container.querySelectorAll('.stats-team-chip[data-team]');
+    searchInput.addEventListener('input', () => {
+        const q = searchInput.value.trim().toLowerCase();
+        chips.forEach(chip => {
+            if (!chip.dataset.team) { chip.style.display = ''; return; } // "All" always visible
+            const name = chip.textContent.toLowerCase();
+            chip.style.display = name.includes(q) ? '' : 'none';
+        });
+    });
+
+    container.querySelectorAll('.stats-team-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+            state.setStatsTeamFilter(btn.dataset.team || null);
+            renderPlayerStats(matches, container);
+        });
+    });
 
     container.querySelectorAll('.stats-tab').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -159,8 +203,9 @@ async function renderTeamLeaderboard(matches, container, type) {
             : type === 'goals-per-game' ? (tm.played ? +(tm.scored / tm.played).toFixed(2) : 0)
                 : type === 'total-assists' ? (tm.assists || 0)
                     : type === 'assists-per-game' ? (tm.played ? +((tm.assists || 0) / tm.played).toFixed(2) : 0)
-                        : type === 'conceded-per-game' ? (tm.played ? +(tm.conceded / tm.played).toFixed(2) : 0)
-                            : tm.cleanSheets;
+                        : type === 'total-conceded' ? tm.conceded
+                            : type === 'conceded-per-game' ? (tm.played ? +(tm.conceded / tm.played).toFixed(2) : 0)
+                                : tm.cleanSheets;
         const label = sub.label();
         const sorted = [...teamMap.values()].filter(tm => tm.played > 0).sort((a, b) => getValue(b) - getValue(a)).slice(0, 48);
         return renderTeamRows(container, sorted, tm => getValue(tm), label);
@@ -221,9 +266,16 @@ async function renderScorers(matches, container) {
 
     const { playerMap } = await buildEspnStatsCache(matches);
 
-    const sorted = [...playerMap.values()]
-        .filter(p => p.goals > 0 && p.position !== 0)
-        .sort((a, b) => b.goals - a.goals);
+    let sorted;
+    if (state.statsTeamFilter) {
+        sorted = [...playerMap.values()]
+            .filter(p => p.teamId === state.statsTeamFilter && p.position !== 0)
+            .sort((a, b) => b.goals - a.goals);
+    } else {
+        sorted = [...playerMap.values()]
+            .filter(p => p.goals > 0 && p.position !== 0)
+            .sort((a, b) => b.goals - a.goals);
+    }
 
     if (sorted.length === 0) {
         main.innerHTML = `<div class="error"><div class="error-icon">⚽</div>${t('errorNoGoals')}</div>`;
@@ -261,9 +313,16 @@ async function renderAssists(matches, container) {
 
     const { playerMap } = await buildEspnStatsCache(matches);
 
-    const sorted = [...playerMap.values()]
-        .filter(p => p.assists > 0)
-        .sort((a, b) => b.assists - a.assists);
+    let sorted;
+    if (state.statsTeamFilter) {
+        sorted = [...playerMap.values()]
+            .filter(p => p.teamId === state.statsTeamFilter)
+            .sort((a, b) => b.assists - a.assists);
+    } else {
+        sorted = [...playerMap.values()]
+            .filter(p => p.assists > 0)
+            .sort((a, b) => b.assists - a.assists);
+    }
 
     if (sorted.length === 0) {
         container.innerHTML = `<div class="error"><div class="error-icon">🎯</div>${t('errorNoAssists')}</div>`;
@@ -299,9 +358,16 @@ async function renderCleanSheets(matches, container) {
 
     const { playerMap } = await buildEspnStatsCache(matches);
 
-    const sorted = [...playerMap.values()]
-        .filter(p => p.position === 0 && p.cleanSheets > 0)
-        .sort((a, b) => b.cleanSheets - a.cleanSheets);
+    let sorted;
+    if (state.statsTeamFilter) {
+        sorted = [...playerMap.values()]
+            .filter(p => p.teamId === state.statsTeamFilter && p.position === 0)
+            .sort((a, b) => b.cleanSheets - a.cleanSheets);
+    } else {
+        sorted = [...playerMap.values()]
+            .filter(p => p.position === 0 && p.cleanSheets > 0)
+            .sort((a, b) => b.cleanSheets - a.cleanSheets);
+    }
 
     if (sorted.length === 0) {
         container.innerHTML = `<div class="error"><div class="error-icon">🧤</div>${t('errorNoClean')}</div>`;
@@ -350,11 +416,18 @@ async function renderEspnPlayerLeaderboard(matches, container, type) {
     const cfg = CONFIG[type];
     if (!cfg) { container.innerHTML = `<div class="error"><div class="error-icon">📊</div>${t('errorNoData')}</div>`; return; }
 
-    const limit = ['shots', 'shotsOnTarget', 'fouls', 'offsides'].includes(type) ? 40 : Infinity;
-    const sorted = [...playerMap.values()]
-        .filter(p => p[cfg.field] > 0)
-        .sort((a, b) => b[cfg.field] - a[cfg.field])
-        .slice(0, limit);
+    let sorted;
+    if (state.statsTeamFilter) {
+        sorted = [...playerMap.values()]
+            .filter(p => p.teamId === state.statsTeamFilter)
+            .sort((a, b) => b[cfg.field] - a[cfg.field]);
+    } else {
+        const limit = ['shots', 'shotsOnTarget', 'fouls', 'offsides'].includes(type) ? 40 : Infinity;
+        sorted = [...playerMap.values()]
+            .filter(p => p[cfg.field] > 0)
+            .sort((a, b) => b[cfg.field] - a[cfg.field])
+            .slice(0, limit);
+    }
 
     if (sorted.length === 0) {
         container.innerHTML = `<div class="error"><div class="error-icon">${cfg.icon}</div>${t('errorNoData')}</div>`;

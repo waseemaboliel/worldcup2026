@@ -31,6 +31,7 @@ Mobile-first PWA showing all 104 FIFA World Cup 2026 matches — live scores, st
 | Add a new CSS component | `styles/components/new.css` + add `@import` in `styles/main.css` |
 | Modify match card layout | `src/features/match-detail.js` (buildMatchCard) + `styles/components/match-card.css` |
 | Add a new stat category | `src/features/stats.js` (PLAYER_SUBS or TEAM_SUBS arrays) |
+| Add/modify team filter in player stats | `src/features/stats.js` (`renderPlayerStats`, `getTeamList`) + `state.js` (`statsTeamFilter`) |
 | Fix live polling | `src/data/live-scores.js` |
 | Fix lineup/pitch display | `src/ui/lineup-pitch.js` + `styles/components/lineup-pitch.css` |
 
