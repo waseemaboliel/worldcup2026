@@ -20,6 +20,7 @@ export let statsTeamFilter = null; // null = all teams, string = teamId
 export let espnStatsCache = null;
 
 export let activeBracketTab = 'r32';
+export let activeStandingsTab = 'groups'; // 'groups' or 'thirds'
 
 export let livePoller = null;
 export const espnLiveData = new Map(); // IdMatch → { score, clock, state, startDate }
@@ -43,5 +44,6 @@ export function setActiveTeamSub(v) { activeTeamSub = v; }
 export function setStatsTeamFilter(v) { statsTeamFilter = v; }
 export function setEspnStatsCache(v) { espnStatsCache = v; }
 export function setActiveBracketTab(v) { activeBracketTab = v; }
+export function setActiveStandingsTab(v) { activeStandingsTab = v; }
 export function setLivePoller(v) { livePoller = v; }
 export function setLiveStandingsPoller(v) { liveStandingsPoller = v; }

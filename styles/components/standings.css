@@ -1,4 +1,46 @@
 /* ── Standings ── */
+
+/* Sub-tabs */
+.standings-sub-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    position: sticky;
+    top: var(--nav-height, 100px);
+    z-index: 10;
+    background: var(--bg);
+}
+
+.standings-sub-tab {
+    flex: 1;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--card-bg);
+    color: var(--text-muted);
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.standings-sub-tab:not(:last-child) {
+    border-right: 1px solid var(--border);
+}
+
+[dir="rtl"] .standings-sub-tab:not(:last-child) {
+    border-right: none;
+    border-left: 1px solid var(--border);
+}
+
+.standings-sub-tab--active {
+    background: var(--accent);
+    color: #fff;
+}
+
+/* Group sections */
 .standings-section {
     margin-bottom: 28px;
 }
@@ -49,6 +91,15 @@
     padding-left: 2px;
 }
 
+.standings-table td:nth-child(2) {
+    text-align: left;
+}
+
+[dir="rtl"] .standings-table td:first-child,
+[dir="rtl"] .standings-table td:nth-child(2) {
+    text-align: right;
+}
+
 .standings-table tr:last-child td {
     border-bottom: none;
 }
@@ -57,6 +108,13 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    max-width: 130px;
+}
+
+.standings-team span:last-of-type {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .standings-pos {
@@ -70,6 +128,7 @@
     color: var(--gold);
 }
 
+/* Qualification row backgrounds */
 .standings-table tr.qualify td {
     background: #0d1a0d;
 }
@@ -82,6 +141,44 @@
     background: #0a1520;
 }
 
+.standings-table tr.standings-eliminated td {
+    background: #1a0d0d;
+}
+
+/* Qualified label */
+.standings-clinched,
+.standings-qualified {
+    font-size: 10px;
+    font-weight: 600;
+    color: #4caf50;
+    line-height: 1;
+}
+
+.standings-team-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+    text-align: left;
+}
+
+[dir="rtl"] .standings-team-info {
+    text-align: right;
+}
+
+.standings-team-info>span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+[dir="rtl"] .standings-clinched,
+[dir="rtl"] .standings-qualified {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Live badge */
 .standings-live-badge {
     font-size: 9px;
     margin-left: 4px;
@@ -93,4 +190,42 @@
 [dir="rtl"] .standings-live-badge {
     margin-left: 0;
     margin-right: 4px;
+}
+
+/* Row live highlight */
+.standings-row--live td {
+    background: rgba(76, 175, 80, 0.05) !important;
+}
+
+/* Best thirds badges */
+.standings-group-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.standings-qualify-badge {
+    font-size: 10px;
+    font-weight: 600;
+    color: #4caf50;
+    margin-left: 6px;
+}
+
+.standings-elim-badge {
+    font-size: 10px;
+    font-weight: 600;
+    color: #ef5350;
+    margin-left: 6px;
+}
+
+[dir="rtl"] .standings-qualify-badge,
+[dir="rtl"] .standings-elim-badge {
+    margin-left: 0;
+    margin-right: 6px;
+}
+
+/* Best thirds table adjustments */
+.standings-table--thirds .standings-team {
+    max-width: 110px;
 }

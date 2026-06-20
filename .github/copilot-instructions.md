@@ -32,6 +32,9 @@ Mobile-first PWA showing all 104 FIFA World Cup 2026 matches — live scores, st
 | Modify match card layout | `src/features/match-detail.js` (buildMatchCard) + `styles/components/match-card.css` |
 | Add a new stat category | `src/features/stats.js` (PLAYER_SUBS or TEAM_SUBS arrays) |
 | Add/modify team filter in player stats | `src/features/stats.js` (`renderPlayerStats`, `getTeamList`) + `state.js` (`statsTeamFilter`) |
+| Modify standings sort/tiebreakers | `src/features/standings.js` (`fifaGroupSort`, `resolveWithH2H`, `bestThirdsSort`) |
+| Modify standings qualification logic | `src/features/standings.js` (`computeClinched`) — H2H-aware, suppressed during live matches |
+| Add standings sub-tab | `src/features/standings.js` (`renderStandings`) + `state.js` (`activeStandingsTab`) + `styles/components/standings.css` |
 | Fix live polling | `src/data/live-scores.js` |
 | Fix lineup/pitch display | `src/ui/lineup-pitch.js` + `styles/components/lineup-pitch.css` |
 
@@ -62,5 +65,5 @@ Mobile-first PWA showing all 104 FIFA World Cup 2026 matches — live scores, st
 | File | What It Contains |
 |------|-----------------|
 | `README.md` | Full file tree, architecture, install/deploy instructions |
-| `DEVLOG.md` | Phase-by-phase build history (Phases 1–20), API reference, bugs/fixes |
+| `DEVLOG.md` | Phase-by-phase build history (Phases 1–23), API reference, bugs/fixes |
 | `V2-MIGRATION.md` | 8-step migration journal with dependency graphs and design decisions |

@@ -388,8 +388,27 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
 
 ---
 
-## V2 — Code Splitting & Modularization (In Progress)
+### Phase 23 — Standings: Qualification Logic & Best Thirds Tab ✅ (2026-06-20)
+
+**Goal:** FIFA-correct group sorting with H2H tiebreakers, "Qualified to R32" badges, and a Best Thirds ranking tab.
+
+**What was implemented:**
+- **Sub-tabs:** "Groups" / "Best Thirds" toggle at top of standings (sticky below nav)
+- **FIFA tiebreaker sort** (`fifaGroupSort`): Step 1 H2H (pts → GD → GF among tied teams), Step 2 overall (GD → GF → fair play), Step 3 FIFA ranking (omitted — no data source)
+- **Best thirds sort** (`bestThirdsSort`): overall pts → GD → GF → fair play (no H2H since teams are from different groups)
+- **Clinched logic** (`computeClinched`): H2H-aware — if a team beat another head-to-head, that opponent cannot finish above them at equal points. Only shows "Qualified to R32" when the group has no live matches
+- **Best Thirds table:** ranks all 12 third-placed teams; top 8 highlighted blue (qualified), bottom 4 highlighted red (eliminated), with group badge column
+- **New state:** `activeStandingsTab` ('groups' | 'thirds') + setter
+- **New translations** (EN/HE/AR): `standingsGroups`, `standingsThirds`, `standingsClinched`, `standingsQualified`, `standingsEliminated`, `standingsRank`
+- **New CSS:** sub-tabs (sticky), qualified label, eliminated row background, team-info column layout, best thirds table
+- **SW bumped** to v40
+
+**Files changed:** `state.js`, `strings.js`, `standings.js` (183→447 lines), `standings.css`, `sw.js`
+
+---
+
+## V2 — Code Splitting & Modularization ✅
 
 > Full migration plan, progress, and technical details: **[V2-MIGRATION.md](V2-MIGRATION.md)**
 
-Splitting the monolithic `app.js` (3,200 lines) + `style.css` (1,900 lines) into focused ES modules under `src/` and CSS partials under `styles/`. Step 1 completed — config, state, data helpers, and UI shell extracted (11 modules). The existing `app.js` remains the working entry point until migration is fully wired.
+Monolithic `app.js` (3,200 lines) + `style.css` (1,900 lines) split into 24 ES modules under `src/` and 15 CSS partials under `styles/`. All 8 migration steps completed — old files deleted, entry point switched to `src/main.js`, README rebuilt.
