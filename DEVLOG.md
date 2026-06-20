@@ -407,6 +407,32 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
 
 ---
 
+### Phase 24 — Static Data Archive (Post-Tournament)
+
+**Goal:** After the World Cup ends (July 19, 2026), freeze all API data into local JSON files so the app works forever without external APIs.
+
+**Why:** FIFA and ESPN APIs for this tournament will eventually be removed or change URLs. Since the data is final after the last match, we can serve it locally.
+
+**Plan:**
+1. Build a one-time Node script (`scripts/export-data.js`) that fetches all data from the live APIs and saves only the fields the app uses
+2. Save to `data/` folder: `matches.json`, `espn-stats.json`, `espn-details.json`, `channels.json`, etc.
+3. In `src/data/fetchers.js` and `src/config/api.js`, comment out the original API URLs (keep them for reference) and point to local `./data/` files
+4. Remove live polling (no more live matches) — or let it gracefully find zero live games
+5. Add new `data/` files to SW SHELL array
+
+**What to capture:**
+- FIFA: all 104 matches (scores, teams, timelines, lineups, group/stage IDs)
+- ESPN: match details (stats, lineups, formations), scoreboard index (player/team stats cache)
+- Israel TV channels per match
+
+**What to skip:** live polling endpoints, ESPN live scores (all finished)
+
+**Notes:**
+- Keep original API URLs as comments in the code so future readers understand the data source
+- The rest of the app (rendering, standings logic, bracket, profiles) stays untouched
+
+---
+
 ## V2 — Code Splitting & Modularization ✅
 
 > Full migration plan, progress, and technical details: **[V2-MIGRATION.md](V2-MIGRATION.md)**
