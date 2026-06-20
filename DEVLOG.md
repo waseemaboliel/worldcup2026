@@ -17,7 +17,7 @@ See `README.md` for the full annotated file tree, or `V2-MIGRATION.md` for the m
 | `index.html` | App shell, nav, tabs, filter chips, team search input |
 | `src/` | 24 JS modules (config, state, data, ui, features) |
 | `styles/` | 15 CSS partials (base, layout, components, utilities) |
-| `sw.js` | Service worker v32 — caches all files for offline |
+| `sw.js` | Service worker v42 — caches all files for offline |
 | `manifest.json` | PWA config |
 | `icons/` | icon-192.png, icon-512.png, apple-touch-icon.png |
 | `favicon.ico` | Browser tab icon (16/32/48px) |
@@ -404,6 +404,23 @@ Core app: match list, match detail (goals/cards/subs), standings, stats, Israel 
 - **SW bumped** to v40
 
 **Files changed:** `state.js`, `strings.js`, `standings.js` (183→447 lines), `standings.css`, `sw.js`
+
+---
+
+### Phase 23.1 — Bracket: Unified Tree View (2026-06-21)
+
+**Goal:** Show the full knockout bracket (R32 → R16 → QF → SF → Final) in a single scrollable tree — no sub-tabs.
+
+**What was implemented:**
+- **Removed bracket sub-tabs** (`activeBracketTab` state no longer drives UI): clicking the Bracket tab now directly renders the full tree
+- **R32 column added to tree:** 16 R32 games shown as the leftmost column, paired to feed into R16 matchups via connectors
+- **R32 game ordering:** paired by R16 destination — `[74,77, 73,75, 83,84, 81,82, 76,78, 79,80, 86,88, 85,87]`
+- **Round labels row:** R32 / R16 / QF / SF / Final displayed above the tree
+- **Removed `renderBracketR32()`** — the standalone R32 list view is gone; all 16 games are in the tree
+- **3rd-place match** still shown below the tree in its own section
+- **SW bumped** to v42
+
+**Files changed:** `bracket.js`, `sw.js`
 
 ---
 

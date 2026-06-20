@@ -14,7 +14,7 @@ A mobile-first Progressive Web App for the FIFA World Cup 2026 — live scores, 
 - **Lineups** — visual pitch with formation, player positions, and sub tracking (subbed-off greyed, subbed-on in green)
 - **Match Stats** — possession, shots, passes, tackles, and 12 more stat bars with top performers per match
 - **Standings** — all 12 group tables (A–L) with FIFA H2H tiebreakers, updated live; top 2 highlighted green, best thirds blue; "Qualified to R32" badge for clinched teams; Best Thirds tab ranking all 12 third-placed teams
-- **Bracket** — Round of 32 match list + visual knockout tree (R16 → QF → SF → Final + 3rd place)
+- **Bracket** — full visual knockout tree (R32 → R16 → QF → SF → Final + 3rd place) in a single scrollable view
 - **Player Stats** — goals, assists, clean sheets, shots, on target, saves, fouls, offsides, yellow & red cards
 - **Team Stats** — goals/game, conceded/game, clean sheets, possession %, shots, passes, pass accuracy, tackles, interceptions
 - **Player profiles** — tap any player name to see tournament goals, assists, and cards with match-by-match history

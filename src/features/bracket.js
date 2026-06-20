@@ -281,37 +281,9 @@ export function renderBracket(matches) {
         return;
     }
 
-    main.innerHTML = `
-    <div class="bracket-tabs">
-      <button class="bracket-tab ${state.activeBracketTab === 'r32' ? 'bracket-tab--active' : ''}" data-btab="r32">${t('stageR32')}</button>
-      <button class="bracket-tab ${state.activeBracketTab === 'tree' ? 'bracket-tab--active' : ''}" data-btab="tree">${t('bracketTabTree')}</button>
-    </div>
-    <div id="bracket-content"></div>`;
-
-    main.querySelectorAll('.bracket-tab').forEach(btn => {
-        btn.addEventListener('click', () => {
-            state.setActiveBracketTab(btn.dataset.btab);
-            renderBracket(matches);
-        });
-    });
-
+    main.innerHTML = `<div id="bracket-content"></div>`;
     const content = main.querySelector('#bracket-content');
-    if (state.activeBracketTab === 'r32') renderBracketR32(matches, content);
-    else renderBracketTree(matches, content);
-}
-
-// ── R32 list ──────────────────────────────────────────────────
-
-function renderBracketR32(matches, container) {
-    const r32 = matches.filter(m => m.IdStage === '289287').sort((a, b) => a.MatchNumber - b.MatchNumber);
-    if (r32.length === 0) {
-        container.innerHTML = `<div class="error"><div class="error-icon">\uD83D\uDCC5</div>${t('bracketNotStarted')}</div>`;
-        return;
-    }
-    const wrap = document.createElement('div');
-    wrap.className = 'date-group';
-    r32.forEach(m => wrap.appendChild(buildBracketCard(m, matches)));
-    container.appendChild(wrap);
+    renderBracketTree(matches, content);
 }
 
 // ── Visual tree R16 → QF → SF → Final ────────────────────────
@@ -319,12 +291,20 @@ function renderBracketR32(matches, container) {
 function renderBracketTree(matches, container) {
     const byNum = new Map(matches.map(m => [m.MatchNumber, m]));
 
+    // R32 games ordered to match R16 bracket position:
+    // R16 #89 = W74 vs W77, R16 #90 = W73 vs W75, R16 #93 = W83 vs W84, R16 #94 = W81 vs W82
+    // R16 #91 = W76 vs W78, R16 #92 = W79 vs W80, R16 #95 = W86 vs W88, R16 #96 = W85 vs W87
+    // R16 order in tree: [89, 90, 93, 94, 91, 92, 95, 96]
+    // So R32 order: [74,77, 73,75, 83,84, 81,82, 76,78, 79,80, 86,88, 85,87]
+    const r32Nums = [74, 77, 73, 75, 83, 84, 81, 82, 76, 78, 79, 80, 86, 88, 85, 87];
+    const r32Games = r32Nums.map(n => bracketGameHTML(n, matches)).join('');
     const r16Games = [89, 90, 93, 94, 91, 92, 95, 96].map(n => bracketGameHTML(n, matches)).join('');
     const qfGames = [97, 98, 99, 100].map(n => bracketGameHTML(n, matches)).join('');
     const sfGames = [101, 102].map(n => bracketGameHTML(n, matches)).join('');
     const finalGame = bracketGameHTML(104, matches);
     const thirdGame = bracketGameHTML(103, matches);
 
+    const conn8 = '<div class="br-conn-pair"></div>'.repeat(8);
     const conn4 = '<div class="br-conn-pair"></div>'.repeat(4);
     const conn2 = '<div class="br-conn-pair"></div>'.repeat(2);
     const conn1 = '<div class="br-conn-pair"></div>';
@@ -332,6 +312,8 @@ function renderBracketTree(matches, container) {
     container.innerHTML = `
     <div class="br-wrap">
       <div class="br-round-labels">
+        <div class="br-label">${t('stageR32')}</div>
+        <div class="br-label-spacer"></div>
         <div class="br-label">${t('stageR16')}</div>
         <div class="br-label-spacer"></div>
         <div class="br-label">${t('stageQF')}</div>
@@ -341,6 +323,8 @@ function renderBracketTree(matches, container) {
         <div class="br-label">${t('stageFinal')}</div>
       </div>
       <div class="br-bracket">
+        <div class="br-round br-round--r32">${r32Games}</div>
+        <div class="br-connector-col">${conn8}</div>
         <div class="br-round br-round--r16">${r16Games}</div>
         <div class="br-connector-col">${conn4}</div>
         <div class="br-round br-round--qf">${qfGames}</div>
