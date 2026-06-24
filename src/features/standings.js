@@ -222,6 +222,15 @@ function computeClinched(rows, groupMatches) {
     const clinched = new Set();
     const totalGroupGames = 3;
 
+    // If all teams have played all their games, the group is complete —
+    // positions 1 and 2 are final and clinched automatically.
+    const groupComplete = rows.every(r => r.p >= totalGroupGames);
+    if (groupComplete) {
+        if (rows.length >= 1) clinched.add(rows[0].id);
+        if (rows.length >= 2) clinched.add(rows[1].id);
+        return clinched;
+    }
+
     // Build H2H result map: h2hResult[A][B] = 'win'|'loss'|'draw'|null
     const h2hResult = new Map();
     for (const row of rows) h2hResult.set(row.id, new Map());
