@@ -383,7 +383,8 @@ function renderGroupStandings(standings, container) {
             if (row.live) tr.classList.add('standings-row--live');
 
             const liveBadge = row.live ? '<span class="standings-live-badge">\uD83D\uDFE2</span>' : '';
-            const qualifiedLabel = clinched.has(row.id) ? `<div class="standings-qualified">${t('standingsQualified')}</div>` : '';
+            const qualifiedLabel = (clinched.has(row.id) || (i === 2 && bestThirds.has(row.id)))
+                ? `<div class="standings-qualified">${t('standingsQualified')}</div>` : '';
 
             tr.innerHTML = `
         <td><span class="standings-pos">${i + 1}</span></td>
@@ -436,12 +437,12 @@ function renderBestThirdsTable(standings, container) {
         }
 
         const statusBadge = i < 8
-            ? `<span class="standings-qualify-badge">${t('standingsQualified')}</span>`
-            : `<span class="standings-elim-badge">${t('standingsEliminated')}</span>`;
+            ? `<div class="standings-qualified">${t('standingsQualified')}</div>`
+            : `<div class="standings-qualified" style="color:#ef5350">${t('standingsEliminated')}</div>`;
 
         tr.innerHTML = `
         <td><span class="standings-pos">${i + 1}</span></td>
-        <td><div class="standings-team"><span>${row.flag}</span><span>${teamSpan(row.name, row.id)}</span></div></td>
+        <td><div class="standings-team"><span>${row.flag}</span><div class="standings-team-info"><span>${teamSpan(row.name, row.id)}</span>${statusBadge}</div></div></td>
         <td class="standings-group-badge">${row.group}</td>
         <td>${row.p}</td><td>${row.w}</td><td>${row.d}</td><td>${row.l}</td>
         <td>${row.gf}</td><td>${row.ga}</td><td>${gd > 0 ? '+' : ''}${gd}</td>

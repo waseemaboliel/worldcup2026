@@ -339,6 +339,14 @@ function renderBracketTree(matches, container) {
       </div>
     </div>`;
 
+    // Auto-scroll to SF/Final area
+    const sfRound = container.querySelector('.br-round--sf');
+    if (sfRound) {
+        setTimeout(() => {
+            sfRound.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        }, 150);
+    }
+
     container.querySelectorAll('.br-game[data-match]').forEach(el => {
         const m = byNum.get(parseInt(el.dataset.match, 10));
         if (!m) return;

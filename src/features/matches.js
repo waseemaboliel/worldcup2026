@@ -80,7 +80,6 @@ export function renderMatches(matches, scrollToToday = false) {
     }
 
     const todayHeading = getTodayHeading();
-    let todaySection = null;
 
     const groups = groupByDate(filtered);
     for (const [dateLabel, dayMatches] of groups) {
@@ -94,11 +93,19 @@ export function renderMatches(matches, scrollToToday = false) {
             section.appendChild(buildMatchCard(match));
         }
         main.appendChild(section);
-        if (dateLabel === todayHeading) todaySection = section;
     }
 
-    if (scrollToToday && todaySection) {
-        setTimeout(() => todaySection.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    if (scrollToToday) {
+        setTimeout(() => {
+            // Find the first upcoming match (not finished, not live)
+            const nextCard = main.querySelector('.match-card:not(.match-card--finished):not(.match-card--live)');
+            if (nextCard) {
+                nextCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                // All matches finished — scroll to the end
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }
+        }, 100);
     }
 
     // Back to top / active match button

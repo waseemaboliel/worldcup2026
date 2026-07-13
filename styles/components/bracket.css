@@ -55,13 +55,15 @@
     overflow-y: visible;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 20px;
+    direction: ltr;
 }
 
 /* Round labels row above the tree */
 .br-round-labels {
     display: flex;
     align-items: center;
-    min-width: 680px;
+    width: max-content;
+    min-width: 100%;
     direction: ltr;
     margin-bottom: 8px;
     padding: 0 4px;
@@ -88,9 +90,11 @@
 .br-bracket {
     display: flex;
     align-items: stretch;
-    min-width: 680px;
+    width: max-content;
+    min-width: 100%;
     min-height: 680px;
     direction: ltr;
+    padding-right: 16px;
 }
 
 .br-round {
